@@ -2,7 +2,7 @@
 # Loading DD list from csv file
 loadDDlist <- function() {
    if (!exists("DD")) {
-      DD <<- read.csv("drawdownList.csv", col.names = c("startYear", "endYear", "comments"), header=F)
+      DD <<- read.csv("drawdownList.csv", col.names = c("startYear", "endYear", "comments", stringsAsFactors=F), header=F)
       numDD <<- dim(DD)[[1]]
       DD$dates <<- numeric(numDD)
       

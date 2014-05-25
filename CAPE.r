@@ -1,6 +1,16 @@
+defCAPElow   <- 14.6
+defCAPEhigh  <- 16.7
+defCAPEallocLow  <- 1
+defCAPEallocHigh <- 0
+
+defCAPEyears <- 10
+defCAPEavgOver   <- 24
+defCAPEcheat <- 2
+defInitialOffset <- (defCAPEyears+defCAPEcheat)*12 + defCAPEavgOver
+
 
 ## calculating CAPE
-calcCAPE <- function(years=10L, cheat=0L) {
+calcCAPE <- function(years=defCAPEyears, cheat=defCAPEcheat) {
   CAPEname <- paste0("CAPE", years)
   addNumColToDat(CAPEname)
   months <- 12*years
@@ -13,7 +23,7 @@ calcCAPE <- function(years=10L, cheat=0L) {
 
 
 ## Average CAPE over 'avgOver' months
-calcAvgCAPE <- function(CAPEname="CAPE10", avgOver=24L) {
+calcAvgCAPE <- function(CAPEname="CAPE10", avgOver=defCAPEavgOver) {
    if (!(CAPEname %in% colnames(dat))) stop(paste0("dat$", CAPEname, " does not exist."))
    avgCAPEname <- paste0(CAPEname,"avg",avgOver)
    addNumColToDat(avgCAPEname)
@@ -37,7 +47,7 @@ calcModifiedCAPE <- function(CAPEname="CAPE10") {
 
 
 ## Calculating allocation from CAPE
-calcCAPEallocation <- function(CAPEname="CAPE10avg24", offset, CAPElow=14.6, CAPEhigh=16.7, allocLow=1, allocHigh=0, outputName="") {
+calcCAPEallocation <- function(CAPEname="CAPE10avg24", offset, CAPElow=defCAPElow, CAPEhigh=defCAPEhigh, allocLow=defCAPEallocLow, allocHigh=defCAPEallocHigh, outputName="") {
    if(outputName=="") outputName <- paste0(CAPEname, "_", CAPElow, "_", CAPEhigh)
    allocName <- paste0(outputName, "Alloc")
    UBallocName <- paste0(outputName, "UnboundAlloc")
@@ -63,7 +73,8 @@ calcCAPEallocation <- function(CAPEname="CAPE10avg24", offset, CAPElow=14.6, CAP
 
 
 ## Calculating real total returns based on CAPE allocation from previous month
-calcCAPEstrategyReturn <- function(CAPEname="CAPE10avg24", offset=144, CAPElow=14.6, CAPEhigh=16.7, allocLow=1, allocHigh=0, outputName="", force=F) {
+calcCAPEstrategyReturn <- function(CAPEname="CAPE10avg24", offset=defInitialOffset, 
+                                   CAPElow=defCAPElow, CAPEhigh=defCAPEhigh, allocLow=defCAPEallocLow, allocHigh=defCAPEallocHigh, outputName="", force=F) {
    if(outputName=="") outputName <- paste0(CAPEname, "_", CAPElow, "_", CAPEhigh)
    TRname <- paste0(outputName, "TR")
    allocName <- paste0(outputName, "Alloc")
@@ -73,6 +84,26 @@ calcCAPEstrategyReturn <- function(CAPEname="CAPE10avg24", offset=144, CAPElow=1
       if (!(TRname %in% colnames(strategy))) {strategy[, TRname] <<- numeric(numData)}  
       calcStrategyReturn(allocName, TRname, offset)
    }
+   
+   if ( !(outputName %in% stats$strategy) ) {
+      #print( paste0("Adding ", outputName, " to stats.") )
+      index <- nrow(stats)+1 # row where the info will be added
+      stats[index, ] <<- NA
+      stats$strategy[index] <<- outputName
+      stats$type[index] <<- "CAPE"
+      stats$parameterName1[index]  <<- "CAPElow"
+      stats$parameterValue1[index] <<-  CAPElow
+      stats$parameterName2[index]  <<- "CAPEhigh"
+      stats$parameterValue2[index] <<-   CAPEhigh
+      stats$parameterName3[index]  <<- "allocLow"
+      stats$parameterValue3[index] <<-  allocLow
+      stats$parameterName4[index]  <<- "allocHigh"
+      stats$parameterValue4[index] <<-  allocHigh
+      stats$parameterName5[index]  <<- "offset"
+      stats$parameterValue5[index] <<-  offset
+   }
+
+   calcStatisticsForStrategy(strategyName=outputName, years=futureYears, tradingCost=tradingCost, force=force)
 }
 
 

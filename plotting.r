@@ -1,4 +1,4 @@
-typicalStrategies <- c("hiFreq60_20_20", "CAPE10avg24", "balanced40_25_10_25", "stocks")
+typicalStrategies <- c("hiFreq60_20_20", "CAPE10avg24_14.6_16.7", "balanced40_25_10_25", "stocks")
 
 plotAssetReturn <- function(stratName1="bonds", stratName2="gold", stratName3=typicalStrategies[[3]], stratName4="stocks", 
                        startYear=1968, endYear=2014, minTR=.65, maxTR=20, normalize=T, showAlloc=T) {
