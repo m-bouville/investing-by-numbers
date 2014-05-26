@@ -62,28 +62,19 @@ calcCAPEallocation <- function(CAPEname="CAPE10avg24", offset, CAPElow=defCAPElo
 }
 
 
-## Calculating real total returns based on CAPE allocation from previous month
-calcCAPEstrategyReturn <- function(CAPEname="CAPE10avg24", offset=defInitialOffset, 
-                                   CAPElow=defCAPElow, CAPEhigh=defCAPEhigh, allocLow=defCAPEallocLow, allocHigh=defCAPEallocHigh, strategyName="", force=F) {
-   if(strategyName=="") strategyName <- paste0(CAPEname, "_", CAPElow, "_", CAPEhigh)
+createCAPEstrategy <- function(CAPEname="CAPE10avg24", offset=defInitialOffset, 
+                                   CAPElow=defCAPElow, CAPEhigh=defCAPEhigh, allocLow=defCAPEallocLow, allocHigh=defCAPEallocHigh, 
+                                   futureYears=defFutureYears, strategyName="", force=F) {
+
+   if(strategyName=="") strategyName <- paste0(CAPEname, "_", CAPElow, "_", CAPEhigh)  
    TRname <- paste0(strategyName, "TR")
    allocName <- paste0(strategyName, "Alloc")
-
+   
    if (!(TRname %in% colnames(strategy)) | !(allocName %in% colnames(strategy)) | force) { # if data do not exist yet or we force recalculation:   
       calcCAPEallocation(CAPEname, offset, CAPElow, CAPEhigh, allocLow, allocHigh, strategyName)
       if (!(TRname %in% colnames(strategy))) {strategy[, TRname] <<- numeric(numData)}  
       calcStrategyReturn(allocName, TRname, offset)
-   }
-}
-
-
-createCAPEstrategyEntry <- function(CAPEname="CAPE10avg24", offset=defInitialOffset, 
-                                   CAPElow=defCAPElow, CAPEhigh=defCAPEhigh, allocLow=defCAPEallocLow, allocHigh=defCAPEallocHigh, 
-                                   futureYears=defFutureYears, strategyName="", force=F) {
-
-   if(strategyName=="") strategyName <- paste0(CAPEname, "_", CAPElow, "_", CAPEhigh)
-   calcCAPEstrategyReturn(CAPEname=CAPEname, offset=offset, CAPElow=CAPElow, CAPEhigh=CAPEhigh, 
-                          allocLow=allocLow, allocHigh=allocHigh, strategyName=strategyName, force=force) 
+   }  
    
    if ( !(strategyName %in% parameters$strategy) | force) {
       if ( !(strategyName %in% parameters$strategy) ) {
@@ -96,16 +87,15 @@ createCAPEstrategyEntry <- function(CAPEname="CAPE10avg24", offset=defInitialOff
       parameters$type[index] <<- "CAPE"
       parameters$allocLow[index] <<-  allocLow
       parameters$allocHigh[index] <<-  allocHigh
-
+      parameters$offset[index] <<-  offset
+      
       parameters$name1[index]  <<- "CAPElow"
       parameters$value1[index] <<-  CAPElow
       parameters$name2[index]  <<- "CAPEhigh"
       parameters$value2[index] <<-  CAPEhigh
-      parameters$name3[index]  <<- "offset"
-      parameters$value3[index] <<-  offset
    }
-
-calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)
+   calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)
+   stats$type[which(stats$strategy == strategyName)] <<- parameters$type[which(parameters$strategy == strategyName)]
 }
 
 

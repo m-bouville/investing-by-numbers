@@ -86,7 +86,7 @@ calcBollCAPEstrategyReturn <- function(avgOver=defBollAvgOver, factorLow=defBoll
 }
 
 
-createBollStrategyEntry <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, factorHigh=defBollFactorHigh, 
+createBollStrategy <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, factorHigh=defBollFactorHigh, 
                                     strategyName="", type, CAPEyears=defCAPEyears, futureYears=defFutureYears, force=F) {
    
    if(type=="") stop("parameter \'type\' is mandatory: either \'TR\' or \'CAPE\'")
@@ -126,20 +126,20 @@ createBollStrategyEntry <- function(avgOver=defBollAvgOver, factorLow=defBollFac
       if (type=="CAPE") {
          parameters$name4[index]  <<- "CAPEyears"
          parameters$value4[index] <<-  CAPEyears
-      } 
+      }
    }
-   
    calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)
+   stats$type[which(stats$strategy == strategyName)] <<- parameters$type[which(parameters$strategy == strategyName)]
 }
 
-createBollTRstrategyEntry <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, factorHigh=defBollFactorHigh, 
+createBollTRstrategy <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, factorHigh=defBollFactorHigh, 
                                     strategyName="", futureYears=defFutureYears, force=F) {
-   createBollStrategyEntry(avgOver=avgOver, factorLow=factorLow, factorHigh=factorHigh, 
+   createBollStrategy(avgOver=avgOver, factorLow=factorLow, factorHigh=factorHigh, 
                            strategyName=strategyName, type="TR", futureYears=futureYears, force=force)
 }
 
-createBollCAPEstrategyEntry <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, factorHigh=defBollFactorHigh, 
+createBollCAPEstrategy <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, factorHigh=defBollFactorHigh, 
                                       strategyName="", CAPEyears=defCAPEyears, futureYears=defFutureYears, force=F) {
-   createBollStrategyEntry(avgOver=avgOver, factorLow=factorLow, factorHigh=factorHigh, 
+   createBollStrategy(avgOver=avgOver, factorLow=factorLow, factorHigh=factorHigh, 
                            strategyName=strategyName, type="CAPE", CAPEyears=CAPEyears, futureYears=futureYears, force=force)
 }

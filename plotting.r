@@ -1,4 +1,4 @@
-typicalStrategies <- c("hiFreq60_20_20", "CAPE10avg24_14.6_16.7", "balanced40_25_10_25", "stocks")
+typicalStrategies <- c("technical60_20_20", "CAPE10avg24_14.6_16.7", "balanced40_25_10_25", "stocks")
 
 plotAssetReturn <- function(stratName1="bonds", stratName2="gold", stratName3=typicalStrategies[[3]], stratName4="stocks", 
                        startYear=1968, endYear=2014, minTR=.65, maxTR=20, normalize=T, showAlloc=T) {
@@ -140,6 +140,24 @@ plotReturnVsVolatility <- function(futureReturnYears=defFutureYears, tradingCost
           cex=1, bty="n", pch=c(15,16,18,1), col=c("red","blue","black","green"))
 }
 
+plotReturnVsVolatilityWithLine <- function(futureReturnYears=defFutureYears, tradingCost=defTradingCost) { 
+   
+   xRange <- c(10, 20)
+   yRange <- c(4, 10 - 100*tradingCost/2)
+   par( mar=c(4, 4, 1.5, 1.5) )
+   
+   plot(100*subset(stats$volatility, stats$type!="constantAlloc"), 
+        100*(subset(stats$TR, stats$type!="constantAlloc") - 
+                tradingCost/subset(stats$turnover, stats$type!="constantAlloc")), 
+        pch=15, col="black", xlab="volatility", ylab="total return", xlim=xRange, ylim=yRange)
+   par(new=T)
+   plot(100*subset(stats$volatility, stats$type=="constantAlloc"), 
+        100*(subset(stats$TR, stats$type=="constantAlloc") - 
+                tradingCost/subset(stats$turnover, stats$type=="constantAlloc")), 
+        type="l", col="black", xlab="", ylab="", xlim=xRange, ylim=yRange)
+   par(new=F)
+}
+
 plotReturnVsDrawdown <- function(futureReturnYears=defFutureYears, tradingCost=defTradingCost) { 
    
    medianName <- paste0("median", years)
@@ -181,6 +199,16 @@ plotFutureReturnVsAlloc <- function(futureReturnYears=defFutureYears, name1, nam
    print(paste0(name2, ": TR = ", round(100*mod$coefficients[1],1), "% + ", round(100*mod$coefficients[2],2), "%*alloc (r^2 = ", 
                 round(summary(mod)$r.squared*100), "%)"))
 }
+
+
+
+
+plot( abs(strategy$CAPE10avg24_14.6_16.7Alloc - strategy$momentum12_15_25Alloc), 
+      strategy$CAPE10avg24_14.6_16.7Future30, col="blue", ylim=c(0,.15) )
+par(new=T)
+plot( abs(strategy$CAPE10avg24_14.6_16.7Alloc - strategy$momentum12_15_25Alloc), 
+      strategy$momentum12_15_25Future30, col="red", ylim=c(0,.15) )
+par(new=F)
 
 # par(mfrow = c(1, 1))
 # plot(dat$date, dat$CAPE10, xlab="date", ylab="CAPE", type="l", ylim=c(5,27))

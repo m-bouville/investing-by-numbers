@@ -52,32 +52,19 @@ calcSMAallocation <- function(SMA1=defSMA1, SMA2=defSMA2, offset=defSMAoffset,
 }
 
 
-## Calculating real total returns based on SMA ratio
-calcSMAstrategyReturn <- function(SMA1=defSMA1, SMA2=defSMA2, offset=defSMAoffset, 
-                                  ratioLow=defSMAratioLow, ratioHigh=defSMAratioHigh, 
-                                  allocLow=defSMAallocLow, allocHigh=defSMAallocHigh, strategyName, force=F) {
-
+createSMAstrategy <- function(SMA1=defSMA1, SMA2=defSMA2, offset=defSMAoffset, 
+                                   ratioLow=defSMAratioLow, ratioHigh=defSMAratioHigh, allocLow=defSMAallocLow, allocHigh=defSMAallocHigh,
+                                   strategyName="", futureYears=defFutureYears, force=F) {
+   
+   if (strategyName=="") strategyName <- paste0("SMA", SMA1, "_", SMA2, "_", ratioLow, "_", ratioHigh)
    TRname <- paste0(strategyName, "TR")
    allocName <- paste0(strategyName, "Alloc")
-      
+   
    if (!(TRname %in% colnames(strategy)) | force) { # if data do not exist yet or we force recalculation:   
       calcSMAallocation(SMA1, SMA2, offset, ratioLow, ratioHigh, allocLow, allocHigh, strategyName=strategyName)
       if (!(TRname %in% colnames(strategy))) strategy[, TRname] <<- numeric(numData)
       calcStrategyReturn(allocName, TRname, max(SMA1,SMA2))
    }
-}
-
-
-createSMAstrategyEntry <- function(SMA1=defSMA1, SMA2=defSMA2, offset=defSMAoffset, 
-                                   ratioLow=defSMAratioLow, ratioHigh=defSMAratioHigh, allocLow=defSMAallocLow, allocHigh=defSMAallocHigh,
-                                   strategyName="", futureYears=defFutureYears, force=F) {
-   
-   if (strategyName=="") 
-      strategyName <- paste0("SMA", SMA1, "_", SMA2, "_", ratioLow, "_", ratioHigh)
-   
-   calcSMAstrategyReturn (SMA1=SMA1, SMA2=SMA2, offset=offset, 
-                          ratioLow=ratioLow, ratioHigh=ratioHigh, allocLow=allocLow, allocHigh=allocHigh, 
-                          strategyName=strategyName, force=F) 
    
    if ( !(strategyName %in% parameters$strategy) | force) {
       if ( !(strategyName %in% parameters$strategy) ) {
@@ -101,8 +88,8 @@ createSMAstrategyEntry <- function(SMA1=defSMA1, SMA2=defSMA2, offset=defSMAoffs
        parameters$name4[index] <<- "ratioHigh"
       parameters$value4[index] <<-  ratioHigh
    }
-   
    calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)
+   stats$type[which(stats$strategy == strategyName)] <<- parameters$type[which(parameters$strategy == strategyName)]
 }
 
 

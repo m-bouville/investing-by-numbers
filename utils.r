@@ -2,102 +2,6 @@ addNumColToDat <- function(colName) {
    if (!colName %in% colnames(dat)) dat[, colName] <<- numeric(numData)
 }
 
-# Loading gold data from local csv file
-loadGoldData <- function() {
-   if (!"gold" %in% colnames(dat) ) 
-      addNumColToDat("gold")
-   dat$gold <<- NA
-   nominalGold <- read.csv("gold.csv", header=T)[, 1]
-   
-   index1968 <- (1968-1871)*12+1
-   lastGoldIndex <- length(nominalGold)
-   lastDatIndex <- numData
-   
-   if ( lastGoldIndex + index1968 - 1 > lastDatIndex )  # if there are too many months of data for gold
-      lastGoldIndex <- lastDatIndex - index1968 + 1
-   else if (lastGoldIndex + index1968 - 1 < lastDatIndex)  # if there are too few months of data for gold
-      lastDatIndex <- lastGoldIndex + index1968 - 1
-   
-   dat$gold[ index1968:lastDatIndex ] <<- nominalGold[1:lastGoldIndex]
-   dat$gold <<- dat$gold  / dat$CPI * refCPI # calculating real gold prices
-}
-
-checkXlsFileIsUpToDate <- function() {
-   if(!file.exists("ie_data.xls")) 
-      return("ie_data.xls is not on the local disk.")
-   
-   wk <- loadWorkbook("ie_data.xls") # this is the local file
-   rawDat <- readWorksheet(wk, sheet="Data", startRow=8)
-   
-   lastLine <- dim(rawDat)[1] 
-   localMessage1 <- as.character(rawDat$P[lastLine])
-   localMessage2 <- as.character(rawDat$CPI[lastLine])
-   localMessage3 <- as.character(rawDat$Rate.GS10[lastLine])
-   
-   download.file("http://www.econ.yale.edu/~shiller/data/ie_data.xls", "ie_data-remote.xls", mode = "wb")
-   library(XLConnect) # to handle xls file
-   wk <- loadWorkbook("ie_data-remote.xls")  # this is the local file
-   rawDat <- readWorksheet(wk, sheet="Data", startRow=8)
-   file.remove("ie_data-remote.xls") 
-   
-   lastLine <- dim(rawDat)[1] 
-   remoteMessage1 <- as.character(rawDat$P[lastLine])
-   remoteMessage2 <- as.character(rawDat$CPI[lastLine])
-   remoteMessage3 <- as.character(rawDat$Rate.GS10[lastLine])
-   
-   if (localMessage1 != remoteMessage1)
-      print(paste0("On the remote xls file: ", remoteMessage1, "whereas on the local file: ", localMessage1))
-   if (localMessage2 != remoteMessage2)
-      print(paste0("On the remote xls file: ", remoteMessage2, "whereas on the local file: ", localMessage2))
-   if (localMessage3 != remoteMessage3)
-      print(paste0("On the remote xls file: ", remoteMessage3, "whereas on the local file: ", localMessage3))
-}
-
-   
-# Loading data from xls file
-loadData <- function(rowsRemoved = 0L, thorough=F) {  # the xls file has *nominal* values, the "dat" data frame has *real* values
-   library(XLConnect) # to handle xls file
-   if(!file.exists("ie_data.xls")) # download file if not already locally available
-      download.file("http://www.econ.yale.edu/~shiller/data/ie_data.xls", "ie_data.xls", mode = "wb")
-   else if(thorough)
-      checkXlsFileIsUpToDate()
-   
-   wk <- loadWorkbook("ie_data.xls") 
-   rawDat <- readWorksheet(wk, sheet="Data", startRow=8)
-   
-   numData <<- dim(rawDat)[1]-1 # number of rows (minus last row, which contains info, not data)
-   message(paste0("According to the xls file, \'", rawDat$P[numData+1], "\'")) # displaying information given in xls file
-   message(paste0("According to the xls file, \'", rawDat$CPI[numData+1], "\'"))
-   message(paste0("According to the xls file, \'", rawDat$Rate.GS10[numData+1], "\'"))
-   numData <<- numData - rowsRemoved # last few rows, full of NA are removed
-   rawDat <- rawDat[1:numData, ] # removing last row(s)
-   
-   # data are for the last (business) day of each month, 28th is close enough
-   dat <<- data.frame(date       = ISOdate( floor(rawDat$Date), round((rawDat$Date%%1)*100,0), 28 ),
-                      numericDate= as.numeric(rawDat$Fraction),
-                      CPI        = as.numeric(rawDat$CPI), # reference for inflation
-                      dividend   = as.numeric(rawDat$D), # loads nominal dividend (real dividend will be calculated below)
-                      price      = as.numeric(rawDat$P), # loads nominal S&P price (real price will be calculated below)
-                      earnings   = as.numeric(rawDat$E), # loads nominal earnings (real earnings will be calculated below)
-                      totalReturn= numeric(numData),
-                      bonds      = numeric(numData)
-                      )
-
-   refCPI       <<- dat$CPI[numData] # reference for inflation
-   dat$price    <<- dat$price    / dat$CPI * refCPI # calculating real price
-   dat$dividend <<- dat$dividend / dat$CPI * refCPI # calculating real dividend
-   dat$earnings <<- dat$earnings / dat$CPI * refCPI # calculating real earnings
-   
-   dat$totalReturn[1] <<- 1
-   for(i in 2:numData)
-      dat$totalReturn[i] <<- dat$totalReturn[i-1] * dat$price[i]/dat$price[i-1] * (1 + dat$dividend[i]/dat$price[i]/12)
-   
-   dat$bonds <<- read.csv("bonds.csv", header=T)[1:numData, 1]
-   message("Real bond prices were imported from an Excel calculation.")
-
-   message("Shiller's xls file has *nominal* values, the \'dat\' data frame has *real* values.")
-}
-
 
 ## calculating future annualized return of strategies
 calcStrategyFutureReturn <- function(stratName, futureYears = numeric(), force=F) {
@@ -113,14 +17,34 @@ calcStrategyFutureReturn <- function(stratName, futureYears = numeric(), force=F
    }
 }
 
-## calculating future annualized return of stocks
-calcStocksFutureReturn <- function(years = numeric()) {
-   futureReturnName <- paste0("future", years)
-   addNumColToDat(futureReturnName)
-   months <- 12*years
-   for(i in 1:(numData-months))
-      dat[i, futureReturnName] <<- (dat$totalReturn[i+months] / dat$totalReturn[i]) ^ (1/years) - 1
-   for(i in (numData-months+1):numData) { dat[i, futureReturnName] <<- NA }
+   
+createGoldStrategy <- function(strategyName="", futureYears=defFutureYears, tradingCost=defTradingCost, force=F) {
+   if (strategyName == "") strategyName <- "gold" 
+   TRgoldName <- paste0(strategyName, "TR")
+   if (!TRgoldName %in% colnames(strategy)) strategy[, TRgoldName] <<- numeric(numData)
+   
+   index1968 <- (1968-1871)*12+1
+   strategy[, TRgoldName] <<- NA
+   strategy[index1968, TRgoldName] <<- 1
+   for(i in (index1968+1):numData) 
+      strategy[i, TRgoldName] <<- strategy[i-1, TRgoldName] * dat$gold[i] / dat$gold[i-1] 
+   
+#    if ( !(strategyName %in% parameters$strategy) ) {
+#       parameters$type[index] <<- "gold"
+#    }
+   
+   if ( !(strategyName %in% stats$strategy) ) {
+      index <- nrow(stats)+1 # row where the info will be added
+      stats[index, ] <<- NA
+      stats$strategy[index] <<- strategyName
+      stats$avgStockAlloc[index] <<- NA
+      stats$latestStockAlloc[index] <<- NA
+      stats$turnover[index] <<- Inf
+   }
+   stats$type[which(stats$strategy == strategyName)] <<- "gold"
+
+#    calcStatisticsForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)
+## since gold data start in 1968 gold statistics cannot be relevantly compared with other assets or strategies
 }
 
 
@@ -149,35 +73,8 @@ calcTRconstAlloc <- function(stockAllocation = 70L, strategyName="", force=F) { 
    }
 }
 
-   
-createGoldStrategyEntry <- function(strategyName="", futureYears=defFutureYears, tradingCost=defTradingCost, force=F) {
-   if (strategyName == "") strategyName <- "gold" 
-   TRgoldName <- paste0(strategyName, "TR")
-   if (!TRgoldName %in% colnames(strategy)) strategy[, TRgoldName] <<- numeric(numData)
-   
-   index1968 <- (1968-1871)*12+1
-   strategy[, TRgoldName] <<- NA
-   strategy[index1968, TRgoldName] <<- 1
-   for(i in (index1968+1):numData) 
-      strategy[i, TRgoldName] <<- strategy[i-1, TRgoldName] * dat$gold[i] / dat$gold[i-1] 
-   
-#    if ( !(strategyName %in% parameters$strategy) ) {
-#       parameters$type[index] <<- "gold"
-#    }
-   
-   if ( !(strategyName %in% stats$strategy) ) {
-      index <- nrow(stats)+1 # row where the info will be added
-      stats[index, ] <<- NA
-      stats$strategy[index] <<- strategyName
-      stats$avgStockAlloc[index] <<- NA
-      stats$latestStockAlloc[index] <<- NA
-      stats$turnover[index] <<- Inf
-   }
-   calcStatisticsForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)
-}
 
-
-createConstAllocStrategyEntry <- function(stockAllocation = 70L, strategyName="", futureYears=defFutureYears, tradingCost=defTradingCost, force=F) { # parameter is stock allocation in %
+createConstAllocStrategy <- function(stockAllocation = 70L, strategyName="", futureYears=defFutureYears, tradingCost=defTradingCost, force=F) { # parameter is stock allocation in %
 
    if(stockAllocation<0 | stockAllocation>100) stop("Stock allocation must be between 0 and 100 (percents).")
    #   if(stockAllocation != floor(stockAllocation)) stop("Stock allocation must be an integer.")
@@ -204,6 +101,7 @@ createConstAllocStrategyEntry <- function(stockAllocation = 70L, strategyName=""
    }
    
    calcStatisticsForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)
+   stats$type[which(stats$strategy == strategyName)] <<- "constantAlloc"
 }
    
 calcStrategyReturn <- function(allocName, TRname, numNA) {
@@ -215,57 +113,12 @@ calcStrategyReturn <- function(allocName, TRname, numNA) {
             (1-strategy[i-1, allocName]) * dat$bonds[i] / dat$bonds[i-1] )
 }
 
-## Calculating average alloc between 2 strategies, and corresponding results
-calcMultiStrategyReturn <- function(name1, name2, name3, name4, 
-                                    fraction1=.25, fraction2=.25, fraction3=.25, fraction4="", 
-                                    outputName="multi", numNA, delta="", force=T) {
 
-   allocName1 <- paste0(name1, "Alloc")
-   allocName2 <- paste0(name2, "Alloc")
-   allocName3 <- paste0(name3, "Alloc")
-   allocName4 <- paste0(name4, "Alloc")
-
-   UBallocName<- paste0(outputName, "UnboundAlloc")
-   allocName  <- paste0(outputName, "Alloc")
-   TRname     <- paste0(outputName, "TR")
-   
-   if (!is.numeric(fraction1)) fraction1 <- 1 - fraction2 - fraction3 - fraction4
-   if (!is.numeric(fraction2)) fraction1 <- 1 - fraction1 - fraction3 - fraction4
-   if (!is.numeric(fraction3)) fraction1 <- 1 - fraction1 - fraction2 - fraction4
-   if (!is.numeric(fraction4)) fraction1 <- 1 - fraction1 - fraction2 - fraction3
-   sumCoeff <- fraction1 + fraction2 + fraction3 + fraction4
-   if (abs(sumCoeff-1)>1e-6) stop(paste("Sum of coefficients must be 1, not", sumCoeff))
-   
-   if (!(allocName1 %in% colnames(strategy))) stop(paste0("strategy$", allocName1, " does not exist."))
-   if (!(allocName2 %in% colnames(strategy))) stop(paste0("strategy$", allocName2, " does not exist."))
-   if (!(allocName3 %in% colnames(strategy))) stop(paste0("strategy$", allocName3, " does not exist."))
-   if (!(allocName4 %in% colnames(strategy)) & fraction4 != 0) stop(paste0("strategy$", allocName4, " does not exist."))
-   
-   if (!(TRname %in% colnames(strategy)) | force) { # if data do not exist yet or we force recalculation:   
-      if (!(allocName %in% colnames(strategy))) strategy[, allocName] <<- numeric(numData)
-      if (!(UBallocName %in% colnames(strategy))) strategy[, UBallocName] <<- numeric(numData)
-      if (!(TRname %in% colnames(strategy))) {strategy[, TRname] <<- numeric(numData)}
-
-      if(fraction4==0)
-         strategy[, UBallocName] <<- fraction1*strategy[, allocName1] + fraction2*strategy[, allocName2] + fraction3*strategy[, allocName3]
-         else strategy[, UBallocName] <<- fraction1*strategy[, allocName1] + fraction2*strategy[, allocName2] + fraction3*strategy[, allocName3] + fraction4*strategy[, allocName4] 
-      for(i in 1:numData) strategy[i, allocName] <<- max(min(strategy[i, UBallocName], 1), 0)
-      
-      if(is.numeric(delta)) 
-         for(i in (numNA+2):numData) 
-            if (abs(strategy[i, allocName] - strategy[i-1, allocName]) < delta) 
-               strategy[i, allocName] <<- strategy[i-1, allocName] 
-      
-      calcStrategyReturn(allocName, TRname, numNA)
-   }
-}
-
-
-calcSMAofStrategy <- function(name, avgOver=3L, outputName="", force=F) {
-   if (outputName=="") outputName <- paste0(name, "_SMA", avgOver)
+calcSMAofStrategy <- function(name, avgOver=3L, strategyName="", force=F) {
+   if (strategyName=="") strategyName <- paste0(name, "_SMA", avgOver)
    inputAllocName <- paste0(name, "Alloc")
-   outputAllocName <- paste0(outputName, "Alloc")
-   outputTRname <- paste0(outputName, "TR")
+   outputAllocName <- paste0(strategyName, "Alloc")
+   outputTRname <- paste0(strategyName, "TR")
    if (!(inputAllocName %in% colnames(strategy)))  stop(paste0("strategy$", inputAllocName, " does not exist."))
    
    if (!(outputAllocName %in% colnames(strategy)) | !(outputTRname %in% colnames(strategy)) | force) { # if data do not exist yet or we force recalculation:   
@@ -285,16 +138,10 @@ regression <- function(x, y) { # y = a + b x
    return( c(a, b) )
 }
 
-# prepareStrategy <- function(strategyName, futureYears=defFutureYears, force=F) {
-#    if (!(paste0(strategyName, "Future", futureYears) %in% colnames(strategy)) | force) 
-#       calcStrategyFutureReturn(strategyName, futureYears, force=force)
-#    if (!(strategyName %in% colnames(DD)) | force)
-#       CalcAllDrawdowns(strategyName, force=force)
-# }
 
 calcAllForStrategy <- function(strategyName, futureYears=defFutureYears, tradingCost=defTradingCost, force=F) {
 
-   totTime <- proc.time()
+#   totTime <- proc.time()
    
    allocName <- paste0(strategyName, "Alloc")
    TRname <- paste0(strategyName, "TR")
@@ -321,8 +168,8 @@ calcAllForStrategy <- function(strategyName, futureYears=defFutureYears, trading
       if ( !(strategyName %in% stats$strategy) | force ) 
          calcStatisticsForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)
    }
-   print("overall time:")
-   print(proc.time() - totTime)
+#    print("overall time:")
+#    print(proc.time() - totTime)
    
 }
 
@@ -332,20 +179,25 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=defFutureYears, 
    if ( !(strategyName %in% stats$strategy) ) {
       stats[nrow(stats)+1, ] <<- NA
       stats$strategy[nrow(stats)] <<- strategyName
-#      warning("The entry for ", strategyName, " in \'stats\' was not created at the time of allocation generation, and will thus be incomplete.")
+      #      warning("The entry for ", strategyName, " in \'stats\' was not created at the time of allocation generation, and will thus be incomplete.")
    }
    index <- which(stats$strategy == strategyName)
    if(length(index) > 1) 
       stop("There are ", length(index), " entries for ", strategyName, " in stats$strategy.")
-#   print( c( index, stats$strategy[index], stats$score[index], is.na(stats$score[index]), force ) )
+   #   print( c( index, stats$strategy[index], stats$score[index], is.na(stats$score[index]), force ) )
    
    if ( is.na(stats$score[index]) | force) { 
       # if data do not exist (we use 'score' to test this as it requires a lot of other data) yet or we force recalculation:   
       
       if (!(paste0(strategyName, "Future", futureYears) %in% colnames(strategy)) | force) 
          calcStrategyFutureReturn(strategyName, futureYears, force=force)
-      if (!(strategyName %in% colnames(DD)) | force)
+      
+      if (!(strategyName %in% colnames(DD)) | force) {
+         #          time0 <- proc.time()
          CalcAllDrawdowns(strategyName, force=force)
+         #          print("DD:")
+         #          print(proc.time()-time0)
+      }
 
       allocName <- paste0(strategyName, "Alloc")
       TRname <- paste0(strategyName, "TR")
@@ -379,6 +231,7 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=defFutureYears, 
       stats$DD2[index]        <<- sum(DD[, strategyName]^2)
       stats$score[index]      <<- 100*stats$TR[index] - 100*stats$volatility[index]/5 + 100*stats[index, medianName] + 
          100*stats[index, fiveName] - stats$DD2[index] - 1/stats$turnover[index] # + 1.5*tradingCost*100
+      
    }
 }
 
@@ -454,7 +307,7 @@ showSummaries <- function(futureYears=defFutureYears, tradingCost=defTradingCost
    calcBollTRstrategyReturn(avgOver=21, factorLow=0.6, factorHigh=-0.5, "BollTR21_0.6_-0.5", force = F)
    calcSMAstrategyReturn(SMA1=12, SMA2=1, offset="mean", ratioLow=.05, ratioHigh=.055, allocLow=1, allocHigh=0, force = F)
    calcMomentumStrategyReturn(12, offset="mean", momentumLow=.15, momentumHigh=.25, allocLow=1, allocHigh=0, 
-                              outputName="momentum12_15_25", force = F) 
+                              strategyName="momentum12_15_25", force = F) 
    if(detailed) {
       showSummaryForStrategy("BollTR21_0.6_-0.5", displayName="Bollinger", futureYears=futureYears, tradingCost=tradingCost, force=force)
       showSummaryForStrategy("SMA12_1", displayName="SMA 12-1 ", futureYears=futureYears, tradingCost=tradingCost, force=force)   
@@ -462,12 +315,12 @@ showSummaries <- function(futureYears=defFutureYears, tradingCost=defTradingCost
    }
    
      calcMultiStrategyReturn("SMA12_1", "BollTR21_0.6_-0.5", "momentum12_15_25", "", 0.6, 0.2, 0.2, 0, 
-                           outputName="hiFreq60_20_20", 12, delta="", force=F)
+                           strategyName="hiFreq60_20_20", 12, delta="", force=F)
      showSummaryForStrategy("hiFreq60_20_20", displayName="hi freq. ", futureYears=futureYears, tradingCost=tradingCost, force=force)
 
-   calcSMAofStrategy("hiFreq60_20_20", 4, outputName="hiFreq_SMA4", force=F)
+   calcSMAofStrategy("hiFreq60_20_20", 4, strategyName="hiFreq_SMA4", force=F)
    calcMultiStrategyReturn("hiFreq60_20_20", "hiFreq_SMA4", "CAPE10avg24", "CAPE10avg24Unbound", .4, .25, .1, .25,
-                           outputName="balanced40_25_10_25", defInitialOffset, delta="", force=F)
+                           strategyName="balanced40_25_10_25", defInitialOffset, delta="", force=F)
      showSummaryForStrategy("balanced40_25_10_25", displayName="balanced ", futureYears=futureYears, tradingCost=tradingCost, force=force)
    
    print("")

@@ -1,5 +1,6 @@
 ### "http://mathieu.bouville.name/finance/CAPE/"
 
+source("init.r")     # loads data and initializes everything
 source("utils.r")    # general functions (i.e. those not fitting in another file)
 source("DD.r")       # drawdowns
 source("plotting.r") # various functions that generate plots
@@ -9,114 +10,10 @@ source("CAPE.r")
 source("Bollinger.r")
 source("SMA.r")
 source("momentum.r")
+source("multiStrategies.r")
 
 
-# Generating typical strategies
-createTypicalStrategiesEntries <- function(force=F) {
-   message("Creating entries for the typical strategies")
-   calcCAPE(years=defCAPEyears, cheat=defCAPEcheat)
-   calcAvgCAPE(CAPEname="CAPE10", avgOver=defCAPEavgOver)
-   createCAPEstrategyEntry(CAPEname="CAPE10avg24", offset=defInitialOffset, 
-                          CAPElow=defCAPElow, CAPEhigh=defCAPEhigh, 
-                          allocLow=defCAPEallocLow, allocHigh=defCAPEallocHigh, 
-                          futureYears=defFutureYears, force=force)
-   
-   createBollTRstrategyEntry(avgOver=21, factorLow=0.6, factorHigh=-0.5, futureYears=defFutureYears, force=force)
-   
-   createSMAstrategyEntry(SMA1=12, SMA2=1, offset="mean", ratioLow=5, ratioHigh=5.5, allocLow=1, allocHigh=0, 
-                          futureYears=defFutureYears, force=force)
-   
-   createMomentumStrategyEntry(12, offset="mean", momentumLow=15, momentumHigh=25, allocLow=1, allocHigh=0, 
-                              futureYears=defFutureYears, force=force) 
-   
-   calcMultiStrategyReturn("SMA12_1_5_5.5", "BollTR21_0.6_-0.5", "momentum12_15_25", "", 0.6, 0.2, 0.2, 0, 
-                           outputName="hiFreq60_20_20", 12, delta="", force=force)
-   calcSMAofStrategy("hiFreq60_20_20", 4, outputName="hiFreq_SMA4", force=force)
-   calcMultiStrategyReturn("hiFreq60_20_20", "hiFreq_SMA4", "CAPE10avg24_14.6_16.7", "CAPE10avg24_14.6_16.7Unbound", 
-                           .4, .25, .1, .25, outputName="balanced40_25_10_25", defInitialOffset, delta="", force=force)
-}
-
-
-# Loading and preparing data
-start <- function(thorough=F, force=F) {
-   
-   if(!file.exists("utils.r")) stop("Use \'setwd()\' to change the working directory to that containing the data.")
-
-   totTime <- proc.time()
-   
-   defFutureYears <<- 30L    # default value for the number of years over which future returns are calculated
-   defTradingCost <<- 4/100 # default value for the trading costs
-   
-   if (!exists("dat") | force) { # if data frame does not exist (or if we want to force the loading), we load the xls file
-      message("Starting to load the data from the xls file.")
-      message("Then we will also load a list of drawdowns and gold prices.")
-      message("After that, we will create the basic data structures.")
-      message()
-      if (!thorough) message("If you want some strategies to be created and their statistics to be calculated, run \'start(thorough=T)\'.")
-      loadData(2, thorough=thorough)
-   } 
-   
-   if (!exists("strategy") | force) 
-      strategy <<- data.frame(date = dat$date, numericDate = dat$numericDate, stocksTR = dat$totalReturn)
-   calcStocksFutureReturn(defFutureYears)
-   calcCAPE(10, cheat=2)
-   lapply(c(1, 12), calcSMA)
-   
-   if (!exists("DD") | force) 
-      loadDDlist(force=force) # loading the dates of major drawdowns
-   
-   if (!exists("stats") | force) 
-      stats <<- data.frame(strategy = character(), 
-                           TR = numeric(),  # average real total return (exponential regression)
-                           volatility = numeric(), 
-                           avgStockAlloc = numeric(), # average allocation to stocks
-                           latestStockAlloc = numeric(), # allocation to stocks as of the last date of the data
-                           turnover = numeric(), # turnover of the portfolio (in years)
-                           DD2 = numeric(), # sum of the squares of the drawdowns
-                           score = numeric(), 
-                           stringsAsFactors=F)
-   
-   if (!exists("parameters") | force) 
-      parameters <<- data.frame(strategy = character(), 
-                           type = character(), # type: constant allocation, CAPE, SMA, mixed, etc.
-                           subtype = character(), # especially for Bollinger and mixed
-                           allocLow = numeric(),
-                           allocHigh = numeric(),
-                           offset = numeric(),
-                           name1 = character(), # other parameters used to create the strategy
-                           value1 = numeric(), # values of these parameters
-                            name2 = character(), 
-                           value2 = numeric(), 
-                            name3 = character(), 
-                           value3 = numeric(), 
-                            name4 = character(), 
-                           value4 = numeric(), 
-                           stringsAsFactors=F)
-   
-   if (!"gold" %in% colnames(dat) | !"gold" %in% stats$strategy | force) {
-      loadGoldData()
-      createGoldStrategyEntry( futureYears=defFutureYears, tradingCost=defTradingCost, force=force)
-      message("Real gold prices were obtained from a local csv calculation.")
-   }   
-   
-   if (thorough) {
-      message("Creating constant-allocation stock-bond strategies.") 
-      step <- -10
-   }
-   else step <- -100 # 0 to 100 by steps of 100 means we do only 0 and 100, i.e. bonds and stocks
-   
-   invisible ( 
-      lapply(seq(100, 0, by=step), 
-             function(alloc) createConstAllocStrategyEntry(
-                alloc, futureYears=defFutureYears, tradingCost=defTradingCost, force=force) )
-   )     
-   createTypicalStrategiesEntries()
-   print(proc.time() - totTime)
-}
-
-
-
-# start(force=T, thorough=F)
+ start(force=T, thorough=F)
 ## force: forces recalculations (slower)
 ## thorough: does more
 

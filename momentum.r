@@ -50,33 +50,28 @@ calcMomentumAllocation <- function(months=defMomentumMonths, offset=defMomentumO
 }
 
 
-## Calculating real total returns based on momentum
-calcMomentumStrategyReturn <- function(months=defMomentumMonths, offset=defMomentumOffset, 
-                                       momentumLow=defMomentumLow, momentumHigh=defMomentumHigh, 
-                                       allocLow=defMomentumAllocLow, allocHigh=defMomentumAllocHigh, 
-                                       strategyName, force=F) {
-    
-   TRname <- paste0(strategyName, "TR")
-   allocName <- paste0(strategyName, "Alloc")
-   
-   if (!(TRname %in% colnames(strategy)) | force) { # if data do not exist yet or we force recalculation:   
-      calcMomentumAllocation(months=months, offset=offset, momentumLow=momentumLow, momentumHigh=momentumHigh, allocLow=allocLow, allocHigh=allocHigh, strategyName=strategyName)
-      if (!(TRname %in% colnames(strategy))) {strategy[, TRname] <<- numeric(numData)}  
-      calcStrategyReturn(allocName, TRname, months)
-   }
-}
 
-
-createMomentumStrategyEntry <- function(months=defMomentumMonths, offset=defMomentumOffset, 
+createMomentumStrategy <- function(months=defMomentumMonths, offset=defMomentumOffset, 
                                         momentumLow=defMomentumLow, momentumHigh=defMomentumHigh, 
                                         allocLow=defMomentumAllocLow, allocHigh=defMomentumAllocHigh, 
                                         strategyName="", futureYears=defFutureYears, force=F) {
    
    if (strategyName=="") strategyName <- paste0("momentum", months, "_", momentumLow, "_", momentumHigh)
+   TRname <- paste0(strategyName, "TR")
+   allocName <- paste0(strategyName, "Alloc")
    
-   calcMomentumStrategyReturn(months=months, offset=offset, 
-                              momentumLow=momentumLow, momentumHigh=momentumHigh, 
-                              allocLow=allocLow, allocHigh=allocHigh, strategyName=strategyName, force=force) 
+   if (!(TRname %in% colnames(strategy)) | force) { # if data do not exist yet or we force recalculation:   
+      #       time0 <- proc.time()
+      calcMomentumAllocation(months=months, offset=offset, momentumLow=momentumLow, momentumHigh=momentumHigh, allocLow=allocLow, allocHigh=allocHigh, strategyName=strategyName)
+      if (!(TRname %in% colnames(strategy))) {strategy[, TRname] <<- numeric(numData)}  
+      #       print("calcMomentumAllocation:")
+      #       print(proc.time()-time0)
+      
+      #       time0 <- proc.time()
+      calcStrategyReturn(allocName, TRname, months)
+      #       print("calcStrategyReturn:")
+      #       print(proc.time()-time0)
+   } 
    
    if ( !(strategyName %in% parameters$strategy) | force) {
       if ( !(strategyName %in% parameters$strategy) ) {
@@ -98,8 +93,8 @@ createMomentumStrategyEntry <- function(months=defMomentumMonths, offset=defMome
        parameters$name3[index] <<- "momentumHigh"
       parameters$value3[index] <<-   momentumHigh
    }
-   
    calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)
+   stats$type[which(stats$strategy == strategyName)] <<- parameters$type[which(parameters$strategy == strategyName)]
 }
 
 

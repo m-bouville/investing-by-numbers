@@ -5,8 +5,11 @@ loadDDlist <- function(force=F) {
       DD <<- read.csv("drawdownList.csv", col.names = c("startYear", "endYear", "comments"), stringsAsFactors=F, header=F)
       DD <<- DD[-1, ] # removes 1873 DD since it occurs so early that CAPE-based strategies are unavailable at the time
       DD <<- DD[-1, ] # removes 1876-77 DD since it occurs so early that CAPE-based strategies are unavailable at the time
+      DD <<- DD[-48, ] # removes 2000-09 DD since it (i) overlaps with another 3 and (ii) takes a lot of time to process (it is 9 year long)
       numDD <<- dim(DD)[[1]]
       DD$dates <<- character(numDD)
+#      DD$endYear[27] <<- 1949      # Bonds go down a bit more after 1949 but not much and ...
+#      DD$dates[27] <<- "1946-1948" # ... the extra 4 years take a lot of time to process
       
       for (i in 1:numDD) { # creates names for drawdowns
          year1 <- floor(DD$startYear[i])
@@ -21,7 +24,6 @@ loadDDlist <- function(force=F) {
 # wrapper calling either drawdownFast or drawdownSlow
 drawdown <- function(strategyName, startYear, endYear) {
    drawdownFast(strategyName, startYear, endYear) 
-#    drawdownSlow(strategyName, startYear, endYear) 
 }
 
 # Calculate the drawdown for a strategy between 2 years 
@@ -39,7 +41,7 @@ drawdownFast <- function(strategyName, startYear, endYear) {
          highValue <- strategy[i, TRname]
          highIndex <- i
       }
-   else monotonicallyIncreasing <- F
+      else monotonicallyIncreasing <- F
    if (highValue < 0) return(NA) # if all TR values are NA
    if (monotonicallyIncreasing) return(0) # if TR increases monotonically then DD = 0
    
@@ -50,9 +52,18 @@ drawdownFast <- function(strategyName, startYear, endYear) {
          lowIndex <- i
       }
    if(lowIndex > highIndex) # if min occurs after max (as it should)
-      {return(lowValue/highValue - 1)}
-   else 
-      drawdownSlow(strategyName, startYear, endYear) 
+      return(lowValue/highValue - 1)
+   else {
+      if (endYear-startYear < 2){
+#         print(paste0( "Switching to slow algo for DD ", startYear," - ", endYear ) )
+         drawdownSlow(strategyName, startYear, endYear) 
+      }
+      else {
+         if ( highValue - strategy[endIndex, TRname] < strategy[startIndex, TRname]-lowValue ) 
+            drawdownFast(strategyName, startYear, endYear-.25) # maximum value is close to endYear: reruns with narrower range
+         else drawdownFast(strategyName, startYear+.25, endYear) # minimum value is close to startYear: reruns with narrower range
+      }
+   }
 }
 
 # slower but accurate
@@ -77,10 +88,10 @@ CalcAllDrawdowns <- function(strategyName, force=F) {
    if ( !(strategyName %in% colnames(DD)) | force) {# if data do not exist yet or we force recalculation:
       DD[, strategyName]  <<- numeric(numDD)      
       for (i in 1:numDD) {
-#          DD0time <- proc.time()
+#           DD0time <- proc.time()
          DD[i, strategyName] <<- drawdown(strategyName, DD$startYear[i], DD$endYear[i])
-#          if (proc.time() - DD0time > .2) {
-#             print( paste("DD", DD$dates[i], "time:") )
+#          if (proc.time() - DD0time > .4) {
+#             print( paste("DD #", i, "(", DD$dates[i], ") time:") )
 #             print(proc.time() - DD0time)
 #          }
       }
