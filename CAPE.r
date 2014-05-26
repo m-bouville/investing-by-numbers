@@ -48,32 +48,30 @@ calcCAPEallocation <- function(CAPEname="CAPE10avg24", offset, CAPElow=defCAPElo
 
    for(i in 1:numData) {
       if (is.na(dat[i, CAPEname])) {
-         strategy[i, allocName] <<- NA
+         alloc[i, strategyName] <<- NA
          strategy[i, UBallocName] <<- NA
       }
        else {
-          #if (dat[i, CAPEname] < CAPElow) {strategy[i, allocName] <<- allocLow}
-#       else if (dat[i, CAPEname] > CAPEhigh) {strategy[i, allocName] <<- allocHigh}
+          #if (dat[i, CAPEname] < CAPElow) {alloc[i, strategyName] <<- allocLow}
+#       else if (dat[i, CAPEname] > CAPEhigh) {alloc[i, strategyName] <<- allocHigh}
           strategy[i, UBallocName] <<- (dat[i, CAPEname]-CAPEhigh) / (CAPElow-CAPEhigh) * (allocLow-allocHigh) + allocHigh
           strategy[i, UBallocName] <<- max(min(strategy[i, UBallocName], 1.5), -0.5)
-          strategy[i, allocName] <<- max(min(strategy[i, UBallocName], allocLow), allocHigh)
+          alloc[i, strategyName] <<- max(min(strategy[i, UBallocName], allocLow), allocHigh)
        }
    }
 }
 
 
-createCAPEstrategy <- function(CAPEname="CAPE10avg24", offset=defInitialOffset, 
+createCAPEstrategy <- function(inputStrategyName="CAPE10avg24", offset=defInitialOffset, 
                                    CAPElow=defCAPElow, CAPEhigh=defCAPEhigh, allocLow=defCAPEallocLow, allocHigh=defCAPEallocHigh, 
                                    futureYears=defFutureYears, strategyName="", force=F) {
 
-   if(strategyName=="") strategyName <- paste0(CAPEname, "_", CAPElow, "_", CAPEhigh)  
-   TRname <- paste0(strategyName, "TR")
-   allocName <- paste0(strategyName, "Alloc")
+   if(strategyName=="") strategyName <- paste0(inputStrategyName, "_", CAPElow, "_", CAPEhigh)  
    
-   if (!(TRname %in% colnames(strategy)) | !(allocName %in% colnames(strategy)) | force) { # if data do not exist yet or we force recalculation:   
-      calcCAPEallocation(CAPEname, offset, CAPElow, CAPEhigh, allocLow, allocHigh, strategyName)
-      if (!(TRname %in% colnames(strategy))) {strategy[, TRname] <<- numeric(numData)}  
-      calcStrategyReturn(allocName, TRname, offset)
+   if (!(strategyName %in% colnames(TR)) | !(strategyName %in% colnames(alloc)) | force) { # if data do not exist yet or we force recalculation:   
+      calcCAPEallocation(inputStrategyName, offset, CAPElow, CAPEhigh, allocLow, allocHigh, strategyName)
+      if (!(strategyName %in% colnames(TR))) {TR[, strategyName] <<- numeric(numData)}  
+      calcStrategyReturn(strategyName, offset)
    }  
    
    if ( !(strategyName %in% parameters$strategy) | force) {
@@ -100,17 +98,18 @@ createCAPEstrategy <- function(CAPEname="CAPE10avg24", offset=defInitialOffset,
 
 
 
-compareCAPE <-function(minCAPElow=4, maxCAPElow=28, byCAPElow=4, mindCAPE=0, maxdCAPE=28, bydCAPE=4, maxCAPEhigh=32, cutoffScore=17, force=F) {
+compareCAPE <-function(minCAPElow=4, maxCAPElow=28, byCAPElow=4, mindCAPE=0, maxdCAPE=28, bydCAPE=4, maxCAPEhigh=32, 
+                       cutoffScore=17, force=F) {
    for ( CAPElow in seq(minCAPElow, maxCAPElow, by=byCAPElow) )       
       for ( dCAPE in seq(mindCAPE, maxdCAPE, by=bydCAPE) ) {
          CAPEhigh <- CAPElow + dCAPE
          if (CAPEhigh < maxCAPEhigh + 1e-6) {
-            name <- paste0("CAPE10_", CAPElow, "_", CAPEhigh)
+            strategyName <- paste0("CAPE10_", CAPElow, "_", CAPEhigh)
             if (dCAPE < 1e-1) CAPEhigh <- CAPElow + 1e-1 # CAPEhigh = CAPElow would not work
             
-            calcCAPEstrategyReturn(CAPEname="CAPE10avg24", strategyName=name, offset=10*12, 
+            calcCAPEstrategyReturn(inputStrategyName="CAPE10avg24", strategyName=name, offset=10*12, 
                                    CAPElow=CAPElow, CAPEhigh=CAPEhigh, allocLow=1, allocHigh=0, force=force)
-            showSummaryStrategy(name, futureYears=futureYears, tradingCost=tradingCost, cutoffScore=cutoffScore, force=F)
+            showSummaryStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, cutoffScore=cutoffScore, force=F)
          }  
       }
    showSummaries(futureYears=futureYears, tradingCost=tradingCost, detailed=F, force=F)

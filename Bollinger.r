@@ -21,7 +21,6 @@ calcBollAlloc <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, fa
    avgName <- paste0(typeName, "avg", avgOver)
    SDname <- paste0(typeName, "SD", avgOver)
    
-   allocName <- paste0(strategyName, "Alloc")
    UBallocName <- paste0(strategyName, "UnboundAlloc")
    
    if ( !(avgName %in% colnames(dat)) | !(SDname %in% colnames(dat)) | force) {# if data do not exist yet or we force recalculation:
@@ -37,15 +36,18 @@ calcBollAlloc <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, fa
       }
    }
    
-   if (!(allocName %in% colnames(strategy)))  strategy[, allocName] <<- numeric(numData)
+   if (!(strategyName %in% colnames(alloc)))  alloc[, strategyName] <<- numeric(numData)
    if (!(UBallocName %in% colnames(strategy)))  strategy[, UBallocName] <<- numeric(numData)
    
+   for(i in (1:avgOver-1) ) 
+      alloc[i, strategyName] <<- NA
+      
    for(i in avgOver:numData) {
       BollLow   <- dat[i, avgName] - factorLow * dat[i, SDname]
       BollHigh  <- dat[i, avgName] + factorHigh * dat[i, SDname]
       strategy[i, UBallocName] <<- 1 - (BollHigh - dat[i, colName]) / (BollHigh - BollLow)
       strategy[i, UBallocName] <<- max(min(strategy[i, UBallocName], 1.5), -0.5)
-      strategy[i, allocName] <<- max(min(strategy[i, UBallocName], 1), 0)   
+      alloc[i, strategyName] <<- max(min(strategy[i, UBallocName], 1), 0)   
    }
 }
 
@@ -61,23 +63,21 @@ calcBollTRalloc <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, 
 calcBollStrategyReturn <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, factorHigh=defBollFactorHigh, strategyName, type, CAPEyears=defCAPEyears, force=F) {
    if(type=="") stop("type is needed: either \'TR\' or \'CAPE\'")
    
-   TRname <- paste0(strategyName, "TR")
-   allocName <- paste0(strategyName, "Alloc")
-   
-   if (!(TRname %in% colnames(strategy)) | force) { # if data do not exist yet or we force recalculation:   
+   if (!(strategyName %in% colnames(TR)) | force) { # if data do not exist yet or we force recalculation:   
       if(type=="TR")        
          calcBollTRalloc(avgOver, factorLow, factorHigh, strategyName, force=force)
       else if(type=="CAPE") 
          calcBollCAPEalloc(avgOver, factorLow, factorHigh, strategyName, CAPEyears=CAPEyears, force=force)
       
-      if (!(TRname %in% colnames(strategy))) {strategy[, TRname] <<- numeric(numData)}
+      if (!(strategyName %in% colnames(TR))) {TR[, strategyName] <<- numeric(numData)}
       
       #print( (defCAPEavgOver-defCAPEcheat)+12*CAPEyears )
-      calcStrategyReturn(allocName, TRname, (defCAPEavgOver-defCAPEcheat)+12*CAPEyears)
+      calcStrategyReturn( strategyName, (defCAPEavgOver-defCAPEcheat)+12*CAPEyears )
    }
 }
 
-calcBollTRstrategyReturn <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, factorHigh=defBollFactorHigh, strategyName="", force=F) {
+calcBollTRstrategyReturn <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, factorHigh=defBollFactorHigh, 
+                                     strategyName="", force=F) {
    calcBollStrategyReturn(avgOver, factorLow, factorHigh, strategyName, type="TR", force)
 }
 

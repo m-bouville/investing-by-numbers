@@ -20,6 +20,13 @@ start <- function(thorough=F, force=F) {
       loadData(2, thorough=thorough)
    } 
    
+   if (!exists("alloc")     | force) alloc     <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+   if (!exists("TR")        | force) TR        <<- data.frame(date = dat$date, numericDate = dat$numericDate, stocks = dat$totalReturn)
+   if (!exists("next5yrs")  | force) next5yrs  <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+   if (!exists("next10yrs") | force) next10yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+   if (!exists("next20yrs") | force) next20yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+   if (!exists("next30yrs") | force) next30yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+   
    if (!exists("strategy") | force) 
       strategy <<- data.frame(date = dat$date, numericDate = dat$numericDate, stocksTR = dat$totalReturn)
 #   calcStocksFutureReturn(defFutureYears)
@@ -29,43 +36,10 @@ start <- function(thorough=F, force=F) {
    if (!exists("DD") | force) 
       loadDDlist(force=force) # loading the dates of major drawdowns
    
-   if (!exists("stats") | force) 
-      stats <<- data.frame(strategy = character(), 
-                           type = character(), # type: constant allocation, CAPE, SMA, mixed, etc.
-                           TR = numeric(),  # average real total return (exponential regression)
-                           volatility = numeric(), 
-                           avgStockAlloc = numeric(), # average allocation to stocks
-                           latestStockAlloc = numeric(), # allocation to stocks as of the last date of the data
-                           turnover = numeric(), # turnover of the portfolio (in years)
-                           DD2 = numeric(), # sum of the squares of the drawdowns
-                           score = numeric(), 
-                           stringsAsFactors=F)
+   if (!exists("stats") | force)  createStatsDF()
    
-   if (!exists("parameters") | force) 
-      parameters <<- data.frame(strategy = character(), 
-                                type = character(), # type: constant allocation, CAPE, SMA, mixed, etc.
-                                subtype = character(), # especially for Bollinger and mixed
-                                allocLow = numeric(),
-                                allocHigh = numeric(),
-                                offset = numeric(),
-                                inputStrategyName1 = character(), # for multi strategies: name of strategy used as input
-                                inputStrategyName2 = character(),
-                                inputStrategyName3 = character(),
-                                inputStrategyName4 = character(),
-                                fraction1 = numeric(), # for multi strategies: fraction (between 0 and 100)
-                                fraction2 = numeric(), 
-                                fraction3 = numeric(),
-                                fraction4 = numeric(), 
-                                name1 = character(), # other parameters used to create the strategy
-                                value1 = numeric(), # values of these parameters
-                                name2 = character(), 
-                                value2 = numeric(), 
-                                name3 = character(), 
-                                value3 = numeric(), 
-                                name4 = character(), 
-                                value4 = numeric(), 
-                                stringsAsFactors=F)
-   
+   if (!exists("parameters") | force) createParametersDF()
+
    if (!"gold" %in% colnames(dat) | !"gold" %in% stats$strategy | force) {
       loadGoldData()
       createGoldStrategy( futureYears=defFutureYears, tradingCost=defTradingCost, force=force)
@@ -83,8 +57,47 @@ start <- function(thorough=F, force=F) {
              function(alloc) createConstAllocStrategy(
                 alloc, futureYears=defFutureYears, tradingCost=defTradingCost, force=force) )
    )     
-   createTypicalStrategies()
+   createTypicalStrategies(force=force)
    print(proc.time() - totTime)
+}
+
+createStatsDF <- function() {
+   stats <<- data.frame(strategy = character(), 
+                        type = character(), # type: constant allocation, CAPE, SMA, mixed, etc.
+                        TR = numeric(),  # average real total return (exponential regression)
+                        volatility = numeric(), 
+                        avgStockAlloc = numeric(), # average allocation to stocks
+                        latestStockAlloc = numeric(), # allocation to stocks as of the last date of the data
+                        turnover = numeric(), # turnover of the portfolio (in years)
+                        DD2 = numeric(), # sum of the squares of the drawdowns
+                        score = numeric(), 
+                        stringsAsFactors=F)
+}
+
+createParametersDF <- function() {
+   parameters <<- data.frame(strategy = character(), 
+                             type = character(), # type: constant allocation, CAPE, SMA, mixed, etc.
+                             subtype = character(), # especially for Bollinger and mixed
+                             allocLow = numeric(),
+                             allocHigh = numeric(),
+                             offset = numeric(),
+                             inputStrategyName1 = character(), # for multi strategies: name of strategy used as input
+                             inputStrategyName2 = character(),
+                             inputStrategyName3 = character(),
+                             inputStrategyName4 = character(),
+                             fraction1 = numeric(), # for multi strategies: fraction (between 0 and 100)
+                             fraction2 = numeric(), 
+                             fraction3 = numeric(),
+                             fraction4 = numeric(), 
+                             name1 = character(), # other parameters used to create the strategy
+                             value1 = numeric(), # values of these parameters
+                             name2 = character(), 
+                             value2 = numeric(), 
+                             name3 = character(), 
+                             value3 = numeric(), 
+                             name4 = character(), 
+                             value4 = numeric(), 
+                             stringsAsFactors=F)
 }
 
 
@@ -186,24 +199,49 @@ loadData <- function(rowsRemoved = 0L, thorough=F) {  # the xls file has *nomina
 # Generating typical strategies
 createTypicalStrategies <- function(force=F) {
    message("Creating entries for the typical strategies")
+
+   time0 <- proc.time()
+   
    calcCAPE(years=defCAPEyears, cheat=defCAPEcheat)
    calcAvgCAPE(CAPEname="CAPE10", avgOver=defCAPEavgOver)
-   createCAPEstrategy(CAPEname="CAPE10avg24", offset=defInitialOffset, 
+   createCAPEstrategy(inputStrategyName="CAPE10avg24", offset=defInitialOffset, 
                       CAPElow=defCAPElow, CAPEhigh=defCAPEhigh, 
                       allocLow=defCAPEallocLow, allocHigh=defCAPEallocHigh, 
                       futureYears=defFutureYears, force=force)
+   print( "CAPE time:" )
+   print( proc.time() - time0 )
+   time0 <- proc.time()
    
-   createBollTRstrategy(avgOver=21, factorLow=0.6, factorHigh=-0.5, futureYears=defFutureYears, force=force)
+   createBollTRstrategy(avgOver=21, factorLow=0.6, factorHigh=-0.5, futureYears=defFutureYears, force=force)   
+   print( "Bollinger time:" )
+   print( proc.time() - time0 )
+   time0 <- proc.time()
    
    createSMAstrategy(SMA1=12, SMA2=1, offset="mean", ratioLow=5, ratioHigh=5.5, allocLow=1, allocHigh=0, 
-                     futureYears=defFutureYears, force=force)
+                     futureYears=defFutureYears, force=force)   
+   print( "SMA time:" )
+   print( proc.time() - time0 )
+   time0 <- proc.time()
    
    createMomentumStrategy(12, offset="mean", momentumLow=15, momentumHigh=25, allocLow=1, allocHigh=0, 
                           futureYears=defFutureYears, force=force) 
+   print( "momentum time:" )
+   print( proc.time() - time0 )
+   time0 <- proc.time()
    
    createMultiStrategy("SMA12_1_5_5.5", "BollTR21_0.6_-0.5", "momentum12_15_25", "", 60, 20, 20, 0, 
-                       strategyName="technical60_20_20", 12, delta="", subtype="technical", force=force)
+                       strategyName="technical60_20_20", 21, delta="", subtype="technical", force=force)
+   print( c( "technical60_20_20 time:", summary(proc.time())[[1]] - time0[[1]] ) )
+   time0 <- proc.time()
+   
    calcSMAofStrategy("technical60_20_20", 4, strategyName="technical_SMA4", force=force)
-   createMultiStrategy("technical60_20_20", "technical_SMA4", "CAPE10avg24_14.6_16.7", "CAPE10avg24_14.6_16.7Unbound", 
+   print( "technical_SMA4 time:" )
+   print( proc.time() - time0 )
+   time0 <- proc.time()
+   
+   createMultiStrategy("technical60_20_20", "technical_SMA4", "CAPE10avg24_14.6_16.7", "CAPE10avg24_14.6_16.7", #"CAPE10avg24_14.6_16.7Unbound", 
                        40, 25, 10, 25, strategyName="balanced40_25_10_25", defInitialOffset, delta="", subtype="balanced", force=force)
+   print( "balanced40_25_10_25 time:" )
+   print( proc.time() - time0 )
+   
 }

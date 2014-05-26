@@ -25,11 +25,10 @@ calcMomentumAllocation <- function(months=defMomentumMonths, offset=defMomentumO
    momentumLow <- momentumLow/100
    momentumHigh <- momentumHigh/100
    
-   allocName <- paste0(strategyName, "Alloc")
    UBallocName <- paste0(strategyName, "UnboundAlloc")
    
    if (!strategyName %in% colnames(dat)) calcMomentum(months, strategyName)
-   if (!(allocName %in% colnames(strategy))) strategy[, allocName] <<- numeric(numData)
+   if (!(strategyName %in% colnames(alloc))) alloc[, strategyName] <<- numeric(numData)
    if (!(UBallocName %in% colnames(strategy))) strategy[, UBallocName] <<- numeric(numData)
    
    if(is.numeric(offset))
@@ -45,7 +44,7 @@ calcMomentumAllocation <- function(months=defMomentumMonths, offset=defMomentumO
    strategy[, UBallocName] <<- (temp-momentumHigh) / (momentumLow-momentumHigh) * (allocLow-allocHigh) + allocHigh
    for(i in 1:numData) {
       strategy[i, UBallocName] <<- max(min(strategy[i, UBallocName], 1.5), -0.5)
-      strategy[i, allocName] <<- max(min(strategy[i, UBallocName], allocLow), allocHigh)
+      alloc[i, strategyName] <<- max(min(strategy[i, UBallocName], allocLow), allocHigh)
    }
 }
 
@@ -57,18 +56,16 @@ createMomentumStrategy <- function(months=defMomentumMonths, offset=defMomentumO
                                         strategyName="", futureYears=defFutureYears, force=F) {
    
    if (strategyName=="") strategyName <- paste0("momentum", months, "_", momentumLow, "_", momentumHigh)
-   TRname <- paste0(strategyName, "TR")
-   allocName <- paste0(strategyName, "Alloc")
    
-   if (!(TRname %in% colnames(strategy)) | force) { # if data do not exist yet or we force recalculation:   
+   if (!(strategyName %in% colnames(TR)) | force) { # if data do not exist yet or we force recalculation:   
       #       time0 <- proc.time()
       calcMomentumAllocation(months=months, offset=offset, momentumLow=momentumLow, momentumHigh=momentumHigh, allocLow=allocLow, allocHigh=allocHigh, strategyName=strategyName)
-      if (!(TRname %in% colnames(strategy))) {strategy[, TRname] <<- numeric(numData)}  
+      if (!(strategyName %in% colnames(TR))) {TR[, strategyName] <<- numeric(numData)}  
       #       print("calcMomentumAllocation:")
       #       print(proc.time()-time0)
       
       #       time0 <- proc.time()
-      calcStrategyReturn(allocName, TRname, months)
+      calcStrategyReturn(strategyName, months)
       #       print("calcStrategyReturn:")
       #       print(proc.time()-time0)
    } 
@@ -86,7 +83,7 @@ createMomentumStrategy <- function(months=defMomentumMonths, offset=defMomentumO
       parameters$allocHigh[index] <<-  allocHigh
       parameters$offset[index] <<-  offset
       
-      parameters$name1[index] <<- "months"
+       parameters$name1[index] <<- "months"
       parameters$value1[index] <<-  months
        parameters$name2[index] <<- "momentumLow"
       parameters$value2[index] <<-  momentumLow

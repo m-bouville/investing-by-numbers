@@ -3,32 +3,27 @@ calcMultiStrategyAlloc <- function(inputStrategyName1, inputStrategyName2, input
                                     fraction1=25, fraction2=25, fraction3=25, fraction4="", 
                                     strategyName, numNA, delta="", force=F) {
    
-   allocName1 <- paste0(inputStrategyName1, "Alloc")
-   allocName2 <- paste0(inputStrategyName2, "Alloc")
-   allocName3 <- paste0(inputStrategyName3, "Alloc")
-   allocName4 <- paste0(inputStrategyName4, "Alloc")
-   
    UBallocName<- paste0(strategyName, "UnboundAlloc")
-   allocName  <- paste0(strategyName, "Alloc")
 
-   if (!(allocName1 %in% colnames(strategy))) stop(paste0("strategy$", allocName1, " does not exist."))
-   if (!(allocName2 %in% colnames(strategy))) stop(paste0("strategy$", allocName2, " does not exist."))
-   if (!(allocName3 %in% colnames(strategy))) stop(paste0("strategy$", allocName3, " does not exist."))
-   if (!(allocName4 %in% colnames(strategy)) & fraction4 != 0) stop(paste0("strategy$", allocName4, " does not exist."))
+   if (!(inputStrategyName1 %in% colnames(alloc))) stop(paste0("alloc$", inputStrategyName1, " does not exist."))
+   if (!(inputStrategyName2 %in% colnames(alloc))) stop(paste0("alloc$", inputStrategyName2, " does not exist."))
+   if (!(inputStrategyName3 %in% colnames(alloc))) stop(paste0("alloc$", inputStrategyName3, " does not exist."))
+   if (!(inputStrategyName4 %in% colnames(alloc)) & fraction4 != 0) stop(paste0("alloc$", inputStrategyName4, " does not exist."))
    
-   if (!(allocName %in% colnames(strategy)) | force) { # if data do not exist yet or we force recalculation:   
-      if (!(allocName %in% colnames(strategy))) strategy[, allocName] <<- numeric(numData)
+   if (!(strategyName %in% colnames(alloc)) | force) { # if data do not exist yet or we force recalculation:   
+      if (!(strategyName %in% colnames(alloc))) alloc[, strategyName] <<- numeric(numData)
       if (!(UBallocName %in% colnames(strategy))) strategy[, UBallocName] <<- numeric(numData)
       
       if(fraction4==0)
-         strategy[, UBallocName] <<- fraction1*strategy[, allocName1] + fraction2*strategy[, allocName2] + fraction3*strategy[, allocName3]
-      else strategy[, UBallocName] <<- fraction1*strategy[, allocName1] + fraction2*strategy[, allocName2] + fraction3*strategy[, allocName3] + fraction4*strategy[, allocName4] 
-      for(i in 1:numData) strategy[i, allocName] <<- max(min(strategy[i, UBallocName], 1), 0)
+         strategy[, UBallocName] <<- fraction1*alloc[, inputStrategyName1] + fraction2*alloc[, inputStrategyName2] + fraction3*alloc[, inputStrategyName3]
+      else strategy[, UBallocName] <<- fraction1*alloc[, inputStrategyName1] + fraction2*alloc[, inputStrategyName2] + 
+         fraction3*alloc[, inputStrategyName3] + fraction4*alloc[, inputStrategyName4] 
+      for(i in 1:numData) alloc[i, strategyName] <<- max(min(strategy[i, UBallocName], 1), 0)
       
       if(is.numeric(delta)) 
          for(i in (numNA+2):numData) 
-            if (abs(strategy[i, allocName] - strategy[i-1, allocName]) < delta) 
-               strategy[i, allocName] <<- strategy[i-1, allocName] 
+            if (abs(alloc[i, strategyName] - alloc[i-1, strategyName]) < delta) 
+               alloc[i, strategyName] <<- alloc[i-1, strategyName] 
    }
 }
 
@@ -50,12 +45,10 @@ createMultiStrategy <- function(inputStrategyName1, inputStrategyName2, inputStr
                            inputStrategyName3=inputStrategyName3, inputStrategyName4=inputStrategyName4, 
                            fraction1=fraction1, fraction2=fraction2, fraction3=fraction3, fraction4=fraction4, 
                            strategyName=strategyName, numNA=numNA, delta=delta, force=force)
-
-   allocName  <- paste0(strategyName, "Alloc")
-   TRname     <- paste0(strategyName, "TR")   
-   if (!(TRname %in% colnames(strategy)) | force) { # if data do not exist yet or we force recalculation:   
-      if (!(TRname %in% colnames(strategy))) {strategy[, TRname] <<- numeric(numData)}
-      calcStrategyReturn(allocName, TRname, numNA)
+ 
+   if (!(strategyName %in% colnames(TR)) | force) { # if data do not exist yet or we force recalculation:   
+      if (!(strategyName %in% colnames(TR))) {TR[, strategyName] <<- numeric(numData)}
+      calcStrategyReturn(strategyName, numNA)
    }
    
    if ( !(strategyName %in% parameters$strategy) | force) {

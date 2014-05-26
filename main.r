@@ -13,7 +13,7 @@ source("momentum.r")
 source("multiStrategies.r")
 
 
- start(force=T, thorough=F)
+ start(force=T, thorough=T)
 ## force: forces recalculations (slower)
 ## thorough: does more
 

@@ -29,16 +29,15 @@ drawdown <- function(strategyName, startYear, endYear) {
 # Calculate the drawdown for a strategy between 2 years 
 # faster but less accurate when drawdown is weak (returns NA)
 drawdownFast <- function(strategyName, startYear, endYear) {
-   TRname <- paste0(strategyName, "TR")
-   if (!(TRname %in% colnames(strategy)))  stop(paste0("strategy$", TRname, " does not exist."))
+   if (!(strategyName %in% colnames(TR)))  stop(paste0("TR$", strategyName, " does not exist."))
    startIndex <- (startYear-1871)*12+1
    endIndex <- min((endYear-1871)*12, numData)
    
    highValue <- -1
    monotonicallyIncreasing <- T
    for (i in startIndex:endIndex) 
-      if (!is.na(strategy[i, TRname]) & (strategy[i, TRname] > highValue) ) {
-         highValue <- strategy[i, TRname]
+      if (!is.na(TR[i, strategyName]) & (TR[i, strategyName] > highValue) ) {
+         highValue <- TR[i, strategyName]
          highIndex <- i
       }
       else monotonicallyIncreasing <- F
@@ -47,8 +46,8 @@ drawdownFast <- function(strategyName, startYear, endYear) {
    
    lowValue <- Inf
    for (i in seq(endIndex, startIndex, by=-1))
-      if (!is.na(strategy[i, TRname]) & (strategy[i, TRname] < lowValue) ) {
-         lowValue <- strategy[i, TRname]
+      if (!is.na(TR[i, strategyName]) & (TR[i, strategyName] < lowValue) ) {
+         lowValue <- TR[i, strategyName]
          lowIndex <- i
       }
    if(lowIndex > highIndex) # if min occurs after max (as it should)
@@ -59,7 +58,7 @@ drawdownFast <- function(strategyName, startYear, endYear) {
          drawdownSlow(strategyName, startYear, endYear) 
       }
       else {
-         if ( highValue - strategy[endIndex, TRname] < strategy[startIndex, TRname]-lowValue ) 
+         if ( highValue - TR[endIndex, strategyName] < TR[startIndex, strategyName]-lowValue ) 
             drawdownFast(strategyName, startYear, endYear-.25) # maximum value is close to endYear: reruns with narrower range
          else drawdownFast(strategyName, startYear+.25, endYear) # minimum value is close to startYear: reruns with narrower range
       }
@@ -68,17 +67,16 @@ drawdownFast <- function(strategyName, startYear, endYear) {
 
 # slower but accurate
 drawdownSlow <- function(strategyName, startYear, endYear) {
-   TRname <- paste0(strategyName, "TR")
-   if (!(TRname %in% colnames(strategy))) stop(paste0("strategy$", TRname, " does not exist."))
+   if (!(strategyName %in% colnames(TR))) stop(paste0("TR$", strategyName, " does not exist."))
    startIndex <- (startYear-1871)*12+1
    endIndex <- min((endYear-1871)*12, numData)
    
    DD <- 1
    for (i in startIndex:(endIndex-1) ) {
-      if (!is.na(strategy[i, TRname]))
+      if (!is.na(TR[i, strategyName]))
           for (j in i:endIndex) 
-             if (!is.na(strategy[j, TRname]) & (strategy[j, TRname] / strategy[i, TRname] < DD ) ) 
-                DD <- strategy[j, TRname]/strategy[i, TRname]
+             if (!is.na(TR[j, strategyName]) & (TR[j, strategyName] / TR[i, strategyName] < DD ) ) 
+                DD <- TR[j, strategyName]/TR[i, strategyName]
    }
    return(DD-1)
 }

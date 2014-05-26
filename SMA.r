@@ -28,9 +28,8 @@ calcSMAallocation <- function(SMA1=defSMA1, SMA2=defSMA2, offset=defSMAoffset,
    if (!(SMAname2 %in% colnames(dat))) stop(paste0("dat$", SMAname2, " does not exist."))
    #   offset = max(SMA1, SMA2)
    
-   allocName <- paste0(strategyName, "Alloc")
    UBallocName <- paste0(strategyName, "UnboundAlloc")
-   if (!(allocName %in% colnames(strategy))) strategy[, allocName] <<- numeric(numData)
+   if (!(strategyName %in% colnames(alloc))) alloc[, strategyName] <<- numeric(numData)
    if (!(UBallocName %in% colnames(strategy))) strategy[, UBallocName] <<- numeric(numData)
    
    if(is.numeric(offset))
@@ -47,7 +46,7 @@ calcSMAallocation <- function(SMA1=defSMA1, SMA2=defSMA2, offset=defSMAoffset,
    strategy[, UBallocName] <<- (temp-ratioHigh) / (ratioLow-ratioHigh) * (allocLow-allocHigh) + allocHigh
    for(i in 1:numData) {
       strategy[i, UBallocName] <<- max(min(strategy[i, UBallocName], 1.5), -0.5)
-      strategy[i, allocName] <<- max(min(strategy[i, UBallocName], allocLow), allocHigh)
+      alloc[i, strategyName] <<- max(min(strategy[i, UBallocName], allocLow), allocHigh)
    }
 }
 
@@ -57,13 +56,11 @@ createSMAstrategy <- function(SMA1=defSMA1, SMA2=defSMA2, offset=defSMAoffset,
                                    strategyName="", futureYears=defFutureYears, force=F) {
    
    if (strategyName=="") strategyName <- paste0("SMA", SMA1, "_", SMA2, "_", ratioLow, "_", ratioHigh)
-   TRname <- paste0(strategyName, "TR")
-   allocName <- paste0(strategyName, "Alloc")
    
-   if (!(TRname %in% colnames(strategy)) | force) { # if data do not exist yet or we force recalculation:   
+   if (!(strategyName %in% colnames(TR)) | force) { # if data do not exist yet or we force recalculation:   
       calcSMAallocation(SMA1, SMA2, offset, ratioLow, ratioHigh, allocLow, allocHigh, strategyName=strategyName)
-      if (!(TRname %in% colnames(strategy))) strategy[, TRname] <<- numeric(numData)
-      calcStrategyReturn(allocName, TRname, max(SMA1,SMA2))
+      if (!(strategyName %in% colnames(TR))) TR[, strategyName] <<- numeric(numData)
+      calcStrategyReturn(strategyName, max(SMA1,SMA2))
    }
    
    if ( !(strategyName %in% parameters$strategy) | force) {
