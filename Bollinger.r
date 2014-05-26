@@ -1,22 +1,28 @@
+#default values of parameters:
+defBollFactorLow <- 0.6
+defBollFactorHigh <- -0.5
+defBollAvgOver <- 21L
+
+
 
 ## TR Bollinger bands over 'avgOver' months of CAPE
-calcBollAlloc <- function(avgOver=21L, factorLow=0.6, factorHigh=-0.5, outputName="", type, years=10L, force=F) {
+calcBollAlloc <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, factorHigh=defBollFactorHigh, strategyName="", type, CAPEyears=defCAPEyears, force=F) {
    if(type=="") stop("type is needed: either \'TR\' or \'CAPE\'")
    else if(type=="TR") {
-      if (outputName=="") outputName <- paste0("BollTR", avgOver, "_", factorLow, "_", factorHigh)
+      if (strategyName=="") strategyName <- paste0("BollTR", avgOver, "_", factorLow, "_", factorHigh)
       typeName <- type
       colName <- "totalReturn"
    }
    else if(type=="CAPE") {
-      if (outputName=="") outputName <- paste0("BollCAPE", years, "_", avgOver, "_", factorLow, "_", factorHigh)
-      typeName <- paste0("CAPE", years)
+      if (strategyName=="") strategyName <- paste0("BollCAPE", CAPEyears, "_", avgOver, "_", factorLow, "_", factorHigh)
+      typeName <- paste0("CAPE", CAPEyears)
       colName <- typeName
    }
    avgName <- paste0(typeName, "avg", avgOver)
    SDname <- paste0(typeName, "SD", avgOver)
    
-   allocName <- paste0(outputName, "Alloc")
-   UBallocName <- paste0(outputName, "UnboundAlloc")
+   allocName <- paste0(strategyName, "Alloc")
+   UBallocName <- paste0(strategyName, "UnboundAlloc")
    
    if ( !(avgName %in% colnames(dat)) | !(SDname %in% colnames(dat)) | force) {# if data do not exist yet or we force recalculation:
       dat[, avgName]  <<- numeric(numData)
@@ -43,53 +49,97 @@ calcBollAlloc <- function(avgOver=21L, factorLow=0.6, factorHigh=-0.5, outputNam
    }
 }
 
-calcBollCAPEalloc <- function(avgOver=21L, factorLow=0.6, factorHigh=-0.5, outputName="", years=10L, force=F) {
-   calcBollAlloc(avgOver, factorLow, factorHigh, outputName, years, type="CAPE", force=force)
+calcBollCAPEalloc <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, factorHigh=defBollFactorHigh, strategyName="", CAPEyears=defCAPEyears, force=F) {
+   calcBollAlloc(avgOver, factorLow, factorHigh, strategyName, CAPEyears, type="CAPE", force=force)
 }
 
-calcBollTRalloc <- function(avgOver=21L, factorLow=0.6, factorHigh=-0.5, outputName="", force=F) {
-   calcBollAlloc(avgOver, factorLow, factorHigh, outputName, type="TR", force=force)
+calcBollTRalloc <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, factorHigh=defBollFactorHigh, strategyName="", force=F) {
+   calcBollAlloc(avgOver, factorLow, factorHigh, strategyName, type="TR", force=force)
 }
-
-
 
 ## Calculating real total returns based on Bollinger band allocation from previous month
-calcBollStrategyReturn <- function(avgOver=21L, factorLow=0.6, factorHigh=-0.5, outputName="", type, years, force=F) {
+calcBollStrategyReturn <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, factorHigh=defBollFactorHigh, strategyName, type, CAPEyears=defCAPEyears, force=F) {
    if(type=="") stop("type is needed: either \'TR\' or \'CAPE\'")
-   else if(type=="TR") {
-      years = 0
-      if(outputName=="")  {
-         if (factorLow==factorHigh) outputName <- paste0("BollTR", avgOver, "_", factorLow)
-         else outputName <- paste0("BollTR", avgOver, "_", factorLow, "_", factorHigh)
-      }
-   }
-   else if(type=="CAPE") {
-      if(!is.numeric(years)) stop("parameter \'years\' is mandatory for CAPE Bollinger.")
-      if(outputName=="")  {
-         if (factorLow==factorHigh) outputName <- paste0("BollCAPE", years, "_", avgOver, "_", factorLow)
-         else outputName <- paste0("BollCAPE", years, "_", avgOver, "_", factorLow, "_", factorHigh)
-      }  
-   }
    
-   TRname <- paste0(outputName, "TR")
-   allocName <- paste0(outputName, "Alloc")
+   TRname <- paste0(strategyName, "TR")
+   allocName <- paste0(strategyName, "Alloc")
    
    if (!(TRname %in% colnames(strategy)) | force) { # if data do not exist yet or we force recalculation:   
       if(type=="TR")        
-         calcBollTRalloc(avgOver, factorLow, factorHigh, outputName, force=force)
+         calcBollTRalloc(avgOver, factorLow, factorHigh, strategyName, force=force)
       else if(type=="CAPE") 
-         calcBollCAPEalloc(avgOver, factorLow, factorHigh, outputName, years=years, force=force)
+         calcBollCAPEalloc(avgOver, factorLow, factorHigh, strategyName, CAPEyears=CAPEyears, force=force)
       
       if (!(TRname %in% colnames(strategy))) {strategy[, TRname] <<- numeric(numData)}
       
-      calcStrategyReturn(allocName, TRname, avgOver+12*years)
+      #print( (defCAPEavgOver-defCAPEcheat)+12*CAPEyears )
+      calcStrategyReturn(allocName, TRname, (defCAPEavgOver-defCAPEcheat)+12*CAPEyears)
    }
 }
 
-calcBollTRstrategyReturn <- function(avgOver=21L, factorLow=0.6, factorHigh=-0.5, outputName="", force=F) {
-   calcBollStrategyReturn(avgOver, factorLow, factorHigh, outputName, type="TR", force)
+calcBollTRstrategyReturn <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, factorHigh=defBollFactorHigh, strategyName="", force=F) {
+   calcBollStrategyReturn(avgOver, factorLow, factorHigh, strategyName, type="TR", force)
 }
 
-calcBollCAPEstrategyReturn <- function(avgOver=21L, factorLow=0.6, factorHigh=-0.5, outputName="", years=10, force=F) {
-   calcBollStrategyReturn(avgOver, factorLow, factorHigh, outputName, type="CAPE", years, force)
+calcBollCAPEstrategyReturn <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, factorHigh=defBollFactorHigh, strategyName="", CAPEyears=defCAPEyears, force=F) {
+   calcBollStrategyReturn(avgOver, factorLow, factorHigh, strategyName, type="CAPE", CAPEyears, force)
+}
+
+
+createBollStrategyEntry <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, factorHigh=defBollFactorHigh, 
+                                    strategyName="", type, CAPEyears=defCAPEyears, futureYears=defFutureYears, force=F) {
+   
+   if(type=="") stop("parameter \'type\' is mandatory: either \'TR\' or \'CAPE\'")
+   else if(type=="TR") {
+      CAPEyears = 0
+      if(strategyName=="")  {
+         if (factorLow==factorHigh) strategyName <- paste0("BollTR", avgOver, "_", factorLow)
+         else strategyName <- paste0("BollTR", avgOver, "_", factorLow, "_", factorHigh)
+      }
+   }
+   else if(type=="CAPE") {
+      if(!is.numeric(CAPEyears)) stop("parameter \'CAPEyears\' is mandatory for CAPE Bollinger.")
+      if(strategyName=="")  {
+         if (factorLow==factorHigh) strategyName <- paste0("BollCAPE", CAPEyears, "_", avgOver, "_", factorLow)
+         else strategyName <- paste0("BollCAPE", CAPEyears, "_", avgOver, "_", factorLow, "_", factorHigh)
+      }
+   }
+   
+   calcBollStrategyReturn(avgOver=avgOver, factorLow=factorLow, factorHigh=factorHigh, 
+                          strategyName=strategyName, type=type, CAPEyears=CAPEyears, force=force)
+
+   if ( !(strategyName %in% parameters$strategy) | force) {
+      if ( !(strategyName %in% parameters$strategy) ) {
+         parameters[nrow(parameters)+1, ] <<- NA
+         parameters$strategy[nrow(parameters)] <<- strategyName
+      }
+      index <- which(parameters$strategy == strategyName)
+      
+      parameters$type[index] <<- "Bollinger"
+      parameters$subtype[index] <<- type
+      parameters$name1[index]  <<- "avgOver"
+      parameters$value1[index] <<-  avgOver
+      parameters$name2[index]  <<- "factorLow"
+      parameters$value2[index] <<-  factorLow
+      parameters$name3[index]  <<- "factorHigh"
+      parameters$value3[index] <<-  factorHigh
+      if (type=="CAPE") {
+         parameters$name4[index]  <<- "CAPEyears"
+         parameters$value4[index] <<-  CAPEyears
+      } 
+   }
+   
+   calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)
+}
+
+createBollTRstrategyEntry <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, factorHigh=defBollFactorHigh, 
+                                    strategyName="", futureYears=defFutureYears, force=F) {
+   createBollStrategyEntry(avgOver=avgOver, factorLow=factorLow, factorHigh=factorHigh, 
+                           strategyName=strategyName, type="TR", futureYears=futureYears, force=force)
+}
+
+createBollCAPEstrategyEntry <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, factorHigh=defBollFactorHigh, 
+                                      strategyName="", CAPEyears=defCAPEyears, futureYears=defFutureYears, force=F) {
+   createBollStrategyEntry(avgOver=avgOver, factorLow=factorLow, factorHigh=factorHigh, 
+                           strategyName=strategyName, type="CAPE", CAPEyears=CAPEyears, futureYears=futureYears, force=force)
 }

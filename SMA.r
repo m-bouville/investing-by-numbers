@@ -1,26 +1,35 @@
+#default values of parameters:
+defSMA1         <- 12L
+defSMA2         <- 1L
+defSMAratioLow  <- 5
+defSMAratioHigh <- 5.5 
+defSMAallocLow  <- 1
+defSMAallocHigh <- 0
+defSMAoffset    <- "mean"
 
 ## calculating simple moving average (SMA)
 calcSMA <- function(avgOver) {
    SMAname <- paste0("SMA", avgOver)
    addNumColToDat(SMAname)
-   for(i in 1:(avgOver-1)) { dat[i, SMAname] <<- NA }
-   for(i in avgOver:numData) 
+   for(i in 1:avgOver) { dat[i, SMAname] <<- NA }
+   for(i in (avgOver+1):numData) {
       dat[i, SMAname] <<- mean(dat$totalReturn[(i-avgOver+1):i], na.rm=F)
+   }
 }
 
 
 ## Calculating allocation from ratio of 2 SMA
-calcSMAallocation <- function(SMA1=12, SMA2=1, offset="mean", ratioLow=.05, ratioHigh=.055, allocLow=1, allocHigh=0, outputName="") {
+calcSMAallocation <- function(SMA1=defSMA1, SMA2=defSMA2, offset=defSMAoffset, 
+                              ratioLow=defSMAratioLow, ratioHigh=defSMAratioHigh, 
+                              allocLow=defSMAallocLow, allocHigh=defSMAallocHigh, strategyName) {
    SMAname1 <- paste0("SMA", SMA1)
    SMAname2 <- paste0("SMA", SMA2)
    if (!(SMAname1 %in% colnames(dat))) stop(paste0("dat$", SMAname1, " does not exist."))
    if (!(SMAname2 %in% colnames(dat))) stop(paste0("dat$", SMAname2, " does not exist."))
    #   offset = max(SMA1, SMA2)
    
-   if (outputName=="") 
-      allocName <- paste0("SMA", SMA1, "_", SMA2, "Alloc")
-   else allocName <- outputName
-   UBallocName <- paste0("SMA", SMA1, "_", SMA2, "UnboundAlloc")
+   allocName <- paste0(strategyName, "Alloc")
+   UBallocName <- paste0(strategyName, "UnboundAlloc")
    if (!(allocName %in% colnames(strategy))) strategy[, allocName] <<- numeric(numData)
    if (!(UBallocName %in% colnames(strategy))) strategy[, UBallocName] <<- numeric(numData)
    
@@ -32,6 +41,9 @@ calcSMAallocation <- function(SMA1=12, SMA2=1, offset="mean", ratioLow=.05, rati
       temp <- temp - m
    } else stop("offset must be either numerical or \'mean\'.")
    
+   ratioLow  <- ratioLow /100
+   ratioHigh <- ratioHigh/100
+   
    strategy[, UBallocName] <<- (temp-ratioHigh) / (ratioLow-ratioHigh) * (allocLow-allocHigh) + allocHigh
    for(i in 1:numData) {
       strategy[i, UBallocName] <<- max(min(strategy[i, UBallocName], 1.5), -0.5)
@@ -41,27 +53,63 @@ calcSMAallocation <- function(SMA1=12, SMA2=1, offset="mean", ratioLow=.05, rati
 
 
 ## Calculating real total returns based on SMA ratio
-calcSMAstrategyReturn <- function(SMA1=12, SMA2=1, offset="mean", ratioLow=.04, ratioHigh=.05, allocLow=1, allocHigh=0, outputName="", force=F) {
-   if (outputName=="") {
-      TRname <- paste0("SMA", SMA1, "_", SMA2, "TR")
-      allocName <- paste0("SMA", SMA1, "_", SMA2, "Alloc")
-   }
-   else {
-      TRname <- paste0(outputName, "TR")
-      allocName <- paste0(outputName, "Alloc")
-   }
+calcSMAstrategyReturn <- function(SMA1=defSMA1, SMA2=defSMA2, offset=defSMAoffset, 
+                                  ratioLow=defSMAratioLow, ratioHigh=defSMAratioHigh, 
+                                  allocLow=defSMAallocLow, allocHigh=defSMAallocHigh, strategyName, force=F) {
+
+   TRname <- paste0(strategyName, "TR")
+   allocName <- paste0(strategyName, "Alloc")
       
    if (!(TRname %in% colnames(strategy)) | force) { # if data do not exist yet or we force recalculation:   
-      calcSMAallocation(SMA1, SMA2, offset, ratioLow, ratioHigh, allocLow, allocHigh, outputName=allocName)
+      calcSMAallocation(SMA1, SMA2, offset, ratioLow, ratioHigh, allocLow, allocHigh, strategyName=strategyName)
       if (!(TRname %in% colnames(strategy))) strategy[, TRname] <<- numeric(numData)
       calcStrategyReturn(allocName, TRname, max(SMA1,SMA2))
    }
 }
 
 
-plotSMA <- function(SMA1=12, SMA2=1, offset="mean", futureReturnYears=20, startYear=1885) {
-   futureReturnName <- paste0("future", futureReturnYears)
-   if (!futureReturnName %in% colnames(dat)) calcStocksFutureReturn(futureReturnYears)
+createSMAstrategyEntry <- function(SMA1=defSMA1, SMA2=defSMA2, offset=defSMAoffset, 
+                                   ratioLow=defSMAratioLow, ratioHigh=defSMAratioHigh, allocLow=defSMAallocLow, allocHigh=defSMAallocHigh,
+                                   strategyName="", futureYears=defFutureYears, force=F) {
+   
+   if (strategyName=="") 
+      strategyName <- paste0("SMA", SMA1, "_", SMA2, "_", ratioLow, "_", ratioHigh)
+   
+   calcSMAstrategyReturn (SMA1=SMA1, SMA2=SMA2, offset=offset, 
+                          ratioLow=ratioLow, ratioHigh=ratioHigh, allocLow=allocLow, allocHigh=allocHigh, 
+                          strategyName=strategyName, force=F) 
+   
+   if ( !(strategyName %in% parameters$strategy) | force) {
+      if ( !(strategyName %in% parameters$strategy) ) {
+         parameters[nrow(parameters)+1, ] <<- NA
+         parameters$strategy[nrow(parameters)] <<- strategyName
+      }
+      index <- which(parameters$strategy == strategyName)
+      
+      parameters$strategy[index] <<- strategyName
+      parameters$type[index] <<- "SMA"
+      parameters$allocLow[index] <<-  allocLow
+      parameters$allocHigh[index] <<-  allocHigh
+      parameters$offset[index] <<-  offset
+      
+       parameters$name1[index] <<- "SMA1"
+      parameters$value1[index] <<-  SMA1
+       parameters$name2[index] <<- "SMA2"
+      parameters$value2[index] <<-  SMA2
+       parameters$name3[index] <<- "ratioLow"
+      parameters$value3[index] <<-  ratioLow
+       parameters$name4[index] <<- "ratioHigh"
+      parameters$value4[index] <<-  ratioHigh
+   }
+   
+   calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)
+}
+
+
+
+plotSMA <- function(SMA1=defSMA1, SMA2=defSMA2, offset=defSMAoffset, futureYears=defFutureYears, startYear=1885) {
+   futureReturnName <- paste0("future", futureYears)
+   if (!futureReturnName %in% colnames(dat)) calcStocksFutureReturn(futureYears)
    SMAname1 <- paste0("SMA", SMA1)
    SMAname2 <- paste0("SMA", SMA2)
    

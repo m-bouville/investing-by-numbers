@@ -1,12 +1,14 @@
 
 # Loading DD list from csv file
-loadDDlist <- function() {
-   if (!exists("DD")) {
-      DD <<- read.csv("drawdownList.csv", col.names = c("startYear", "endYear", "comments", stringsAsFactors=F), header=F)
+loadDDlist <- function(force=F) {
+   if (!exists("DD") | force) {
+      DD <<- read.csv("drawdownList.csv", col.names = c("startYear", "endYear", "comments"), stringsAsFactors=F, header=F)
+      DD <<- DD[-1, ] # removes 1873 DD since it occurs so early that CAPE-based strategies are unavailable at the time
+      DD <<- DD[-1, ] # removes 1876-77 DD since it occurs so early that CAPE-based strategies are unavailable at the time
       numDD <<- dim(DD)[[1]]
-      DD$dates <<- numeric(numDD)
+      DD$dates <<- character(numDD)
       
-      for (i in 1:numDD) {
+      for (i in 1:numDD) { # creates names for drawdowns
          year1 <- floor(DD$startYear[i])
          year2 <- floor(DD$endYear[i] - .01) # 1999.00 means January 1999, i.e. the DD ended in 1998
          if (year1==year2) DD$dates[i] <<- as.character(year1)
@@ -19,9 +21,11 @@ loadDDlist <- function() {
 # wrapper calling either drawdownFast or drawdownSlow
 drawdown <- function(strategyName, startYear, endYear) {
    drawdownFast(strategyName, startYear, endYear) 
+#    drawdownSlow(strategyName, startYear, endYear) 
 }
 
-# faster but less accurate when drawdawn is weak (returns NA)
+# Calculate the drawdown for a strategy between 2 years 
+# faster but less accurate when drawdown is weak (returns NA)
 drawdownFast <- function(strategyName, startYear, endYear) {
    TRname <- paste0(strategyName, "TR")
    if (!(TRname %in% colnames(strategy)))  stop(paste0("strategy$", TRname, " does not exist."))
@@ -68,14 +72,22 @@ drawdownSlow <- function(strategyName, startYear, endYear) {
    return(DD-1)
 }
 
+# Adds values for all drawdowns to the DD data frame
 CalcAllDrawdowns <- function(strategyName, force=F) {
    if ( !(strategyName %in% colnames(DD)) | force) {# if data do not exist yet or we force recalculation:
       DD[, strategyName]  <<- numeric(numDD)      
-      for (i in 1:numDD) 
+      for (i in 1:numDD) {
+#          DD0time <- proc.time()
          DD[i, strategyName] <<- drawdown(strategyName, DD$startYear[i], DD$endYear[i])
+#          if (proc.time() - DD0time > .2) {
+#             print( paste("DD", DD$dates[i], "time:") )
+#             print(proc.time() - DD0time)
+#          }
+      }
    }
 }
 
+# Displays drawdowns worse than the threshold
 showMajorDrawdowns <- function(strategyName, threshold=-.2, na.rm=F, force=F) {
    threshold <- -abs(threshold) # threshould can be positive or negative
    if ( !(strategyName %in% colnames(DD)) | force) # if data do not exist yet or we force recalculation:
@@ -86,8 +98,8 @@ showMajorDrawdowns <- function(strategyName, threshold=-.2, na.rm=F, force=F) {
    return(majorDD)
 }
 
+# Displays drawdowns of strategy when refStrategy lost more than threshold
 showMajorDrawdownsWithReference <- function(strategyName, refStrategyName, threshold=-.2, na.rm=F, force=F) {
-   # Selects drawdowns of strategy when refStrategy lost more than threshold
    threshold <- -abs(threshold) # threshould can be positive or negative
 
    if ( !(strategyName %in% colnames(DD)) | force) # if data do not exist yet or we force recalculation:
@@ -103,12 +115,14 @@ showMajorDrawdownsWithReference <- function(strategyName, refStrategyName, thres
    else return(majorDD[refDD <= threshold])
 }
 
+# Displays drawdowns by their magnitude rather than chronologically
 showWorstDrawdowns <- function(strategyName, threshold=0, na.rm=F, force=F) {
    # threshold=0 means that by default we display all DD in order of their magnitude
    worstDD <- showMajorDrawdowns(strategyName, threshold=threshold, na.rm=na.rm, force=force)
    return(worstDD[order(worstDD)])
 }
 
+# Displays drawdowns when refStrategy lost more than threshold (by their magnitude rather than chronologically)
 showWorstDrawdownsWithReference <- function(strategyName, refStrategyName, threshold=0, na.rm=F, force=F) {
    # Calculates drawdowns of strategy when refStrategy lost the most
    worstDD <- showMajorDrawdownsWithReference(strategyName, refStrategyName, threshold=threshold, force=force)
@@ -142,10 +156,12 @@ plotDD <- function(DDindex, padding=0, minTR=.8, maxTR=1.5, newStartYear="", new
           function(x) round(drawdown(x, newStartYear, newEndYear)*100,1) )
 }
 
+# Displays the inflation during a certain drawdown event (useful to tell how much of the real drawdown was due to inflation)
 showDDinflation <- function(DDindex) {
    return ( dat$CPI[(DD$endYear[DDindex]-1871)*12+1] / dat$CPI[(DD$startYear[DDindex]-1871)*12+1] - 1)
 }
 
+# Calculates the inflation during all drawdown events (useful to tell how much of the real drawdown was due to inflation)
 calcDDinflationAll <- function() {
    DD$inflation <<- numeric(numDD)
    for (i in 1:numDD) 

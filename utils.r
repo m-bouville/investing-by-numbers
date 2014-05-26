@@ -2,6 +2,26 @@ addNumColToDat <- function(colName) {
    if (!colName %in% colnames(dat)) dat[, colName] <<- numeric(numData)
 }
 
+# Loading gold data from local csv file
+loadGoldData <- function() {
+   if (!"gold" %in% colnames(dat) ) 
+      addNumColToDat("gold")
+   dat$gold <<- NA
+   nominalGold <- read.csv("gold.csv", header=T)[, 1]
+   
+   index1968 <- (1968-1871)*12+1
+   lastGoldIndex <- length(nominalGold)
+   lastDatIndex <- numData
+   
+   if ( lastGoldIndex + index1968 - 1 > lastDatIndex )  # if there are too many months of data for gold
+      lastGoldIndex <- lastDatIndex - index1968 + 1
+   else if (lastGoldIndex + index1968 - 1 < lastDatIndex)  # if there are too few months of data for gold
+      lastDatIndex <- lastGoldIndex + index1968 - 1
+   
+   dat$gold[ index1968:lastDatIndex ] <<- nominalGold[1:lastGoldIndex]
+   dat$gold <<- dat$gold  / dat$CPI * refCPI # calculating real gold prices
+}
+
 checkXlsFileIsUpToDate <- function() {
    if(!file.exists("ie_data.xls")) 
       return("ie_data.xls is not on the local disk.")
@@ -32,26 +52,7 @@ checkXlsFileIsUpToDate <- function() {
    if (localMessage3 != remoteMessage3)
       print(paste0("On the remote xls file: ", remoteMessage3, "whereas on the local file: ", localMessage3))
 }
-   
-# Loading gold data from local csv file
-loadGoldData <- function() {
-   if (!"gold" %in% colnames(dat) ) 
-      addNumColToDat("gold")
-   dat$gold <<- NA
-   nominalGold <- read.csv("gold.csv", header=T)[, 1]
-   
-   index1968 <- (1968-1871)*12+1
-   lastGoldIndex <- length(nominalGold)
-   lastDatIndex <- numData
-   
-   if ( lastGoldIndex + index1968 - 1 > lastDatIndex )  # if there are too many months of data for gold
-      lastGoldIndex <- lastDatIndex - index1968 + 1
-   else if (lastGoldIndex + index1968 - 1 < lastDatIndex)  # if there are too few months of data for gold
-      lastDatIndex <- lastGoldIndex + index1968 - 1
-   
-   dat$gold[ index1968:lastDatIndex ] <<- nominalGold[1:lastGoldIndex]
-   dat$gold <<- dat$gold  / dat$CPI * refCPI # calculating real gold prices
-}
+
    
 # Loading data from xls file
 loadData <- function(rowsRemoved = 0L, thorough=F) {  # the xls file has *nominal* values, the "dat" data frame has *real* values
@@ -97,136 +98,20 @@ loadData <- function(rowsRemoved = 0L, thorough=F) {  # the xls file has *nomina
    message("Shiller's xls file has *nominal* values, the \'dat\' data frame has *real* values.")
 }
 
-# Loading and preparing data
-start <- function(thorough=F, force=F) {
-
-   if(!file.exists("utils.r")) stop("Use \'setwd()\' to change the working directory to that containing the data.")
-   
-   source("plotting.r")
-   source("DD.r")
-   
-   source("CAPE.r")
-   source("Bollinger.r")
-   source("SMA.r")
-   source("momentum.r")
-   
-   defFutureYears <<- 30L    # default value for the number of years over which future returns are calculated
-   defTradingCost <<- 4/100 # default value for the trading costs
-   
-   if (!exists("dat") | force) { # if data frame does not exist (or if we want to force the loading), we load the xls file
-      message("Starting to load the data from the xls file.")
-      message("Then we will also load a list of drawdowns and gold prices.")
-      message("After that, we will create the basic data structures.")
-      message()
-      if (!thorough) message("If you want some strategies to be created and their statistics to be calculated, run \'start(thorough=T)\'.")
-      loadData(2, thorough=thorough)
-   } 
-
-   if (!exists("strategy") | force) 
-      strategy <<- data.frame(date = dat$date, numericDate = dat$numericDate, stocksTR = dat$totalReturn)
-   calcStocksFutureReturn(defFutureYears)
-   calcCAPE(10, cheat=2)
-   lapply(c(1, 12), calcSMA)
-
-   if (!exists("DD") | force) 
-      loadDDlist() # loading the dates of major drawdowns
-   
-   if (!exists("stats") | force) 
-      stats <<- data.frame(strategy = character(), 
-                           type = character(), # type: constant allocation, CAPE, SMA, mixed, etc.
-                           parameterName1  = character(), # parameters used to create the strategy
-                           parameterValue1 = numeric(), # values of these parameters
-                           parameterName2  = character(), 
-                           parameterValue2 = numeric(), 
-                           parameterName3  = character(), 
-                           parameterValue3 = numeric(), 
-                           parameterName4  = character(), 
-                           parameterValue4 = numeric(), 
-                           parameterName5  = character(), 
-                           parameterValue5 = numeric(), 
-                           TR = numeric(),  # average real total return (exponential regression)
-                           volatility = numeric(), 
-                           avgStockAlloc = numeric(), # average allocation to stocks
-                           latestStockAlloc = numeric(), # allocation to stocks as of the last date of the data
-                           turnover = numeric(), # turnover of the portfolio (in years)
-                           DD2 = numeric(), # sum of the squares of the drawdowns
-                           score = numeric(), 
-                           stringsAsFactors=F)
-   
-   if (!"gold" %in% colnames(dat) | !"gold" %in% stats$strategy | force) {
-      loadGoldData()
-      createGoldStrategyEntry( futureYears=defFutureYears, tradingCost=defTradingCost, force=force)
-      message("Real gold prices were obtained from a local csv calculation.")
-   }   
-   
-   if (thorough) {
-      message("Creating constant-allocation stock-bond strategies.") 
-      step <- 10
-   }
-   else step <- 100 # 0 to 100 by steps of 10 means we do only 0 and 100, i.e. bonds and stocks
-   
-   invisible ( 
-      lapply(seq(0, 100, by=step), 
-             function(alloc) createConstAllocStrategyEntry(
-                alloc, years=defFutureYears, tradingCost=defTradingCost, force=force) )
-   )     
-   
-   # Canonical strategies
-   calcCAPE(years=defCAPEyears, cheat=defCAPEcheat)
-   calcAvgCAPE(CAPEname="CAPE10", avgOver=defCAPEavgOver)
-   calcCAPEstrategyReturn(CAPEname="CAPE10avg24", offset=defInitialOffset, 
-                          CAPElow=defCAPElow, CAPEhigh=defCAPEhigh, allocLow=defCAPEallocLow, allocHigh=defCAPEallocHigh, force=force)
-
-   calcBollTRstrategyReturn(avgOver=21, factorLow=0.6, factorHigh=-0.5, "BollTR21_0.6_-0.5", force=force)
-   calcSMAstrategyReturn(SMA1=12, SMA2=1, offset="mean", ratioLow=.05, ratioHigh=.055, allocLow=1, allocHigh=0, force=force)
-   calcMomentumStrategyReturn(12, offset="mean", momentumLow=.15, momentumHigh=.25, allocLow=1, allocHigh=0, 
-                              outputName="momentum12_15_25", force=force) 
-
-   calcMultiStrategyReturn("SMA12_1", "BollTR21_0.6_-0.5", "momentum12_15_25", "", 0.6, 0.2, 0.2, 0, 
-                           outputName="hiFreq60_20_20", 12, delta="", force=force)
-   calcSMAofStrategy("hiFreq60_20_20", 4, outputName="hiFreq_SMA4", force=force)
-   calcMultiStrategyReturn("hiFreq60_20_20", "hiFreq_SMA4", "CAPE10avg24_14.6_16.7", "CAPE10avg24_14.6_16.7Unbound", .4, .25, .1, .25,
-                           outputName="balanced40_25_10_25", defInitialOffset, delta="", force=force)
-}
-
 
 ## calculating future annualized return of strategies
-calcStrategyFutureReturn <- function(stratName, years = numeric(), force=F) {
-   futureReturnName <- paste0(stratName, "Future", years)
+calcStrategyFutureReturn <- function(stratName, futureYears = numeric(), force=F) {
+   futureReturnName <- paste0(stratName, "Future", futureYears)
    TRname <- paste0(stratName, "TR")
    if (!futureReturnName %in% colnames(strategy) | force) {
       strategy[, futureReturnName] <<- numeric(numData)
-      months <- 12*years
+      months <- 12*futureYears
       for(i in 1:(numData-months)) 
-         strategy[i, futureReturnName] <<- (strategy[i+months, TRname] / strategy[i, TRname]) ^ (1/years) - 1
+         strategy[i, futureReturnName] <<- (strategy[i+months, TRname] / strategy[i, TRname]) ^ (1/futureYears) - 1
       for(i in (numData-months+1):numData) 
          strategy[i, futureReturnName] <<- NA
    }
 }
-
-createGoldStrategyEntry <- function(strategyName="", futureYears=defFutureYears, tradingCost=defTradingCost, force=F) {
-   if (strategyName == "") strategyName <- "gold" 
-   TRgoldName <- paste0(strategyName, "TR")
-   if (!TRgoldName %in% colnames(strategy)) strategy[, TRgoldName] <<- numeric(numData)
-
-   index1968 <- (1968-1871)*12+1
-   strategy[, TRgoldName] <<- NA
-   strategy[index1968, TRgoldName] <<- 1
-   for(i in (index1968+1):numData) 
-      strategy[i, TRgoldName] <<- strategy[i-1, TRgoldName] * dat$gold[i] / dat$gold[i-1] 
-   
-   if ( !(strategyName %in% stats$strategy) ) {
-      index <- nrow(stats)+1 # row where the info will be added
-      stats[index, ] <<- NA
-      stats$strategy[index] <<- strategyName
-      stats$type[index] <<- "gold"
-      stats$avgStockAlloc[index] <<- NA
-      stats$latestStockAlloc[index] <<- NA
-      stats$turnover[index] <<- Inf
-   }
-   calcStatisticsForStrategy(strategyName, years=futureYears, tradingCost=tradingCost, force=force)
-}
-
 
 ## calculating future annualized return of stocks
 calcStocksFutureReturn <- function(years = numeric()) {
@@ -265,7 +150,34 @@ calcTRconstAlloc <- function(stockAllocation = 70L, strategyName="", force=F) { 
 }
 
    
-createConstAllocStrategyEntry <- function(stockAllocation = 70L, strategyName="", years=defFutureYears, tradingCost=defTradingCost, force=F) { # parameter is stock allocation in %
+createGoldStrategyEntry <- function(strategyName="", futureYears=defFutureYears, tradingCost=defTradingCost, force=F) {
+   if (strategyName == "") strategyName <- "gold" 
+   TRgoldName <- paste0(strategyName, "TR")
+   if (!TRgoldName %in% colnames(strategy)) strategy[, TRgoldName] <<- numeric(numData)
+   
+   index1968 <- (1968-1871)*12+1
+   strategy[, TRgoldName] <<- NA
+   strategy[index1968, TRgoldName] <<- 1
+   for(i in (index1968+1):numData) 
+      strategy[i, TRgoldName] <<- strategy[i-1, TRgoldName] * dat$gold[i] / dat$gold[i-1] 
+   
+#    if ( !(strategyName %in% parameters$strategy) ) {
+#       parameters$type[index] <<- "gold"
+#    }
+   
+   if ( !(strategyName %in% stats$strategy) ) {
+      index <- nrow(stats)+1 # row where the info will be added
+      stats[index, ] <<- NA
+      stats$strategy[index] <<- strategyName
+      stats$avgStockAlloc[index] <<- NA
+      stats$latestStockAlloc[index] <<- NA
+      stats$turnover[index] <<- Inf
+   }
+   calcStatisticsForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)
+}
+
+
+createConstAllocStrategyEntry <- function(stockAllocation = 70L, strategyName="", futureYears=defFutureYears, tradingCost=defTradingCost, force=F) { # parameter is stock allocation in %
 
    if(stockAllocation<0 | stockAllocation>100) stop("Stock allocation must be between 0 and 100 (percents).")
    #   if(stockAllocation != floor(stockAllocation)) stop("Stock allocation must be an integer.")
@@ -278,17 +190,20 @@ createConstAllocStrategyEntry <- function(stockAllocation = 70L, strategyName=""
 
    TRconstAllocName <- calcTRconstAlloc(stockAllocation=stockAllocation, strategyName=strategyName, force=force) 
    
+#    if ( !(strategyName %in% parameters$strategy) ) {
+#       parameters$type[index] <<- "constantAlloc"
+#    }
+   
    if ( !(strategyName %in% stats$strategy) ) {
       index <- nrow(stats)+1 # row where the info will be added
       stats[index, ] <<- NA
       stats$strategy[index] <<- strategyName
-      stats$type[index] <<- "constantAlloc"
       stats$avgStockAlloc[index] <<- stockAllocation/100
       stats$latestStockAlloc[index] <<- stockAllocation/100
       stats$turnover[index] <<- Inf
    }
    
-   calcStatisticsForStrategy(strategyName, years=years, tradingCost=tradingCost, force=force)
+   calcStatisticsForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)
 }
    
 calcStrategyReturn <- function(allocName, TRname, numNA) {
@@ -370,18 +285,20 @@ regression <- function(x, y) { # y = a + b x
    return( c(a, b) )
 }
 
-prepareStrategy <- function(strategyName, years=defFutureYears, force=F) {
-   if (!(paste0(strategyName, "Future", years) %in% colnames(strategy)) | force) 
-      calcStrategyFutureReturn(strategyName, years, force=force)
-   if (!(strategyName %in% colnames(DD)) | force)
-      CalcAllDrawdowns(strategyName, force=force)
-}
+# prepareStrategy <- function(strategyName, futureYears=defFutureYears, force=F) {
+#    if (!(paste0(strategyName, "Future", futureYears) %in% colnames(strategy)) | force) 
+#       calcStrategyFutureReturn(strategyName, futureYears, force=force)
+#    if (!(strategyName %in% colnames(DD)) | force)
+#       CalcAllDrawdowns(strategyName, force=force)
+# }
 
-calcAllForStrategy <- function(strategyName, years=defFutureYears, tradingCost=defTradingCost, force=F) {
+calcAllForStrategy <- function(strategyName, futureYears=defFutureYears, tradingCost=defTradingCost, force=F) {
 
+   totTime <- proc.time()
+   
    allocName <- paste0(strategyName, "Alloc")
    TRname <- paste0(strategyName, "TR")
-   futureReturnName <- paste0(strategyName, "Future", years)
+   futureReturnName <- paste0(strategyName, "Future", futureYears)
    
    if (!(TRname %in% colnames(strategy) ) |
           !(strategyName %in% stats$strategy) | 
@@ -392,22 +309,30 @@ calcAllForStrategy <- function(strategyName, years=defFutureYears, tradingCost=d
       if ( !(TRname %in% colnames(strategy)) ) stop(paste0("strategy$", TRname, " n'existe pas."))
       
       if ( !(futureReturnName %in% colnames(strategy)) | force)
-         calcStrategyFutureReturn(strategyName, years=years, force=force)
+         calcStrategyFutureReturn(strategyName, futureYears=futureYears, force=force)
       
-      if ( !(strategyName %in% colnames(DD)) | force)
-         CalcAllDrawdowns(strategyName, force=force)      
-      
+#       DDtime <- proc.time()
+#       if ( !(strategyName %in% colnames(DD)) | force)
+#          CalcAllDrawdowns(strategyName, force=force)      
+#       print( "DD time:" )
+#       print( proc.time() - DDtime )
+## calcStatisticsForStrategy calculates DD
+
       if ( !(strategyName %in% stats$strategy) | force ) 
-         calcStatisticsForStrategy(strategyName, years=years, tradingCost=tradingCost, force=force)
+         calcStatisticsForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)
    }
+   print("overall time:")
+   print(proc.time() - totTime)
+   
 }
 
-calcStatisticsForStrategy <- function(strategyName, years=defFutureYears, tradingCost=defTradingCost, force=F) {
+
+calcStatisticsForStrategy <- function(strategyName, futureYears=defFutureYears, tradingCost=defTradingCost, force=F) {
    
    if ( !(strategyName %in% stats$strategy) ) {
       stats[nrow(stats)+1, ] <<- NA
       stats$strategy[nrow(stats)] <<- strategyName
-      warning("The entry for ", strategyName, " in \'stats\' was not created at the time of allocation generation, and will thus be incomplete.")
+#      warning("The entry for ", strategyName, " in \'stats\' was not created at the time of allocation generation, and will thus be incomplete.")
    }
    index <- which(stats$strategy == strategyName)
    if(length(index) > 1) 
@@ -417,11 +342,15 @@ calcStatisticsForStrategy <- function(strategyName, years=defFutureYears, tradin
    if ( is.na(stats$score[index]) | force) { 
       # if data do not exist (we use 'score' to test this as it requires a lot of other data) yet or we force recalculation:   
       
-      prepareStrategy(strategyName, years=years, force=force)
+      if (!(paste0(strategyName, "Future", futureYears) %in% colnames(strategy)) | force) 
+         calcStrategyFutureReturn(strategyName, futureYears, force=force)
+      if (!(strategyName %in% colnames(DD)) | force)
+         CalcAllDrawdowns(strategyName, force=force)
+
       allocName <- paste0(strategyName, "Alloc")
       TRname <- paste0(strategyName, "TR")
-      medianName <- paste0("median", years)
-      fiveName <- paste0("five", years)
+      medianName <- paste0("median", futureYears)
+      fiveName <- paste0("five", futureYears)
       dateRange <- (defInitialOffset+2):numData
       
       fit <- numeric(numData)
@@ -445,22 +374,22 @@ calcStatisticsForStrategy <- function(strategyName, years=defFutureYears, tradin
       
       stats$TR[index]         <<- exp(b)-1 # -TOcost
       stats$volatility[index] <<- sd(fit2[dateRange], na.rm=T)
-      stats[index, medianName]<<- median(strategy[, paste0(strategyName, "Future", years)], na.rm=T) # -TOcost
-      stats[index, fiveName]  <<- quantile(strategy[, paste0(strategyName, "Future", years)], .05, na.rm=T) # -TOcost
+      stats[index, medianName]<<- median(strategy[, paste0(strategyName, "Future", futureYears)], na.rm=T) # -TOcost
+      stats[index, fiveName]  <<- quantile(strategy[, paste0(strategyName, "Future", futureYears)], .05, na.rm=T) # -TOcost
       stats$DD2[index]        <<- sum(DD[, strategyName]^2)
       stats$score[index]      <<- 100*stats$TR[index] - 100*stats$volatility[index]/5 + 100*stats[index, medianName] + 
          100*stats[index, fiveName] - stats$DD2[index] - 1/stats$turnover[index] # + 1.5*tradingCost*100
    }
 }
 
-showSummaryForStrategy <- function(strategyName, displayName="", years=defFutureYears, tradingCost=defTradingCost, 
+showSummaryForStrategy <- function(strategyName, displayName="", futureYears=defFutureYears, tradingCost=defTradingCost, 
                                 refReturn=0, refMedian=0, refFive=0, cutoffScore="", force=F) {
    
    if ( !(strategyName %in% stats$strategy) | force) 
       calcStatisticsForStrategy(strategyName, years=years, tradingCost=tradingCost, force=force) 
    index <- which(stats$strategy == strategyName)
-   medianName <- paste0("median", years)
-   fiveName <- paste0("five", years)
+   medianName <- paste0("median", futureYears)
+   fiveName <- paste0("five", futureYears)
    if(displayName=="") 
       displayName <- strategyName
    
@@ -494,7 +423,7 @@ showSummaryForStrategy <- function(strategyName, displayName="", years=defFuture
      
    if(!is.numeric(cutoffScore) | score >= cutoffScore)
       print(paste0(displayName, ": TR: ", round(ret,1), retPad, "% ", 
-                   "(", years, " yrs, med: ", round(med,1), medPad, "%, 5%: ", round(five,1), fivePad, "%), ",
+                   "(", futureYears, " yrs, med: ", round(med,1), medPad, "%, 5%: ", round(five,1), fivePad, "%), ",
                    "vol.: ", round(vol,1), volPad, "%, ",
                    "avg. stock: ", round(avgAlloc), "% ",
                    "(now: ", round(latestAlloc), latestAllocPad, "%), ",
@@ -503,23 +432,23 @@ showSummaryForStrategy <- function(strategyName, displayName="", years=defFuture
                    "score: ", round(score,1) ) )
 }
 
-showSummaries <- function(years=defFutureYears, tradingCost=defTradingCost, detailed=T, force=F) {
+showSummaries <- function(futureYears=defFutureYears, tradingCost=defTradingCost, detailed=T, force=F) {
    # force pertains only to showSummaryForStrategy, not to calc...StrategyReturn (these are all set to F)
 
    print(paste0("* Statistics of the strategies (trading costs = ", round(100*tradingCost,2), "% per year of turnover):"))
-   showSummaryForStrategy("stocks", displayName="stocks   ", years=years, tradingCost=0, force=force)
+   showSummaryForStrategy("stocks", displayName="stocks   ", futureYears=futureYears, tradingCost=0, force=force)
    #       calcTRconstAlloc(70)
    #       strategy$alloc70_30TR <<- dat$TR70stock
-   showSummaryForStrategy("alloc70_30", displayName="70 - 30  ", years=years, tradingCost=0, force=F)
+   showSummaryForStrategy("alloc70_30", displayName="70 - 30  ", futureYears=futureYears, tradingCost=0, force=F)
    
    if(detailed) {
 # calcTRconstAlloc(0)
 # strategy$bondsTR <<- dat$TR0stock
-# showSummaryForStrategy("bonds", displayName="bonds    ", years=years, tradingCost=0, force=force)
+# showSummaryForStrategy("bonds", displayName="bonds    ", futureYears=futureYears, tradingCost=0, force=force)
 #showSummaryConstAlloc("bonds", displayName="bonds    ")
    }  
    calcAvgCAPE(CAPEname="CAPE10", avgOver=24)
-     showSummaryForStrategy("CAPE10avg24", displayName="CAPE10   ", years=years, tradingCost=tradingCost, force=force)
+     showSummaryForStrategy("CAPE10avg24", displayName="CAPE10   ", futureYears=futureYears, tradingCost=tradingCost, force=force)
 
    calcCAPEstrategyReturn(CAPEname="CAPE10avg24", offset=defInitialOffset, CAPElow=14.6, CAPEhigh=16.7, allocLow=1, allocHigh=0, force = F)
    calcBollTRstrategyReturn(avgOver=21, factorLow=0.6, factorHigh=-0.5, "BollTR21_0.6_-0.5", force = F)
@@ -527,19 +456,19 @@ showSummaries <- function(years=defFutureYears, tradingCost=defTradingCost, deta
    calcMomentumStrategyReturn(12, offset="mean", momentumLow=.15, momentumHigh=.25, allocLow=1, allocHigh=0, 
                               outputName="momentum12_15_25", force = F) 
    if(detailed) {
-      showSummaryForStrategy("BollTR21_0.6_-0.5", displayName="Bollinger", years=years, tradingCost=tradingCost, force=force)
-      showSummaryForStrategy("SMA12_1", displayName="SMA 12-1 ", years=years, tradingCost=tradingCost, force=force)   
-      showSummaryForStrategy("momentum12_15_25", displayName="momentum ", years=years, tradingCost=tradingCost, force=force)
+      showSummaryForStrategy("BollTR21_0.6_-0.5", displayName="Bollinger", futureYears=futureYears, tradingCost=tradingCost, force=force)
+      showSummaryForStrategy("SMA12_1", displayName="SMA 12-1 ", futureYears=futureYears, tradingCost=tradingCost, force=force)   
+      showSummaryForStrategy("momentum12_15_25", displayName="momentum ", futureYears=futureYears, tradingCost=tradingCost, force=force)
    }
    
      calcMultiStrategyReturn("SMA12_1", "BollTR21_0.6_-0.5", "momentum12_15_25", "", 0.6, 0.2, 0.2, 0, 
                            outputName="hiFreq60_20_20", 12, delta="", force=F)
-     showSummaryForStrategy("hiFreq60_20_20", displayName="hi freq. ", years=years, tradingCost=tradingCost, force=force)
+     showSummaryForStrategy("hiFreq60_20_20", displayName="hi freq. ", futureYears=futureYears, tradingCost=tradingCost, force=force)
 
    calcSMAofStrategy("hiFreq60_20_20", 4, outputName="hiFreq_SMA4", force=F)
    calcMultiStrategyReturn("hiFreq60_20_20", "hiFreq_SMA4", "CAPE10avg24", "CAPE10avg24Unbound", .4, .25, .1, .25,
                            outputName="balanced40_25_10_25", defInitialOffset, delta="", force=F)
-     showSummaryForStrategy("balanced40_25_10_25", displayName="balanced ", years=years, tradingCost=tradingCost, force=force)
+     showSummaryForStrategy("balanced40_25_10_25", displayName="balanced ", futureYears=futureYears, tradingCost=tradingCost, force=force)
    
    print("")
 }
