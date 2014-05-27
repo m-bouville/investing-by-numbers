@@ -13,7 +13,7 @@ source("momentum.r")
 source("multiStrategies.r")
 
 
- start(force=T, constAlloc=F)
+ start(force=T, constAlloc=F, thoroughCheck=F)
 ## force: forces recalculations (slower)
 ## thorough: calculates stock-bond constant allocations in increments of 10% (stocks and bonds are always done)
 plotReturn(showAlloc=T)

@@ -1,7 +1,7 @@
 #default values of parameters:
 setMomentumDefaultValues <- function() {
-   def$momentumBearishThreshold <<- 15
-   def$momentumBullishThreshold <<- 25
+   def$momentumBearishThreshold <<- 5
+   def$momentumBullishThreshold <<- 5
    def$momentumOffset           <<- "mean"
    def$momentumMonths           <<- 12L
 }
@@ -27,8 +27,8 @@ calcMomentum <- function(inputDF, inputName, months=def$momentumMonths, momentum
 normalizeMomentum <- function(inputDF, inputName, months=def$momentumMonths, offset=def$momentumOffset,
                           bearishThreshold=def$momentumBearishThreshold, bullishThreshold=def$momentumBullishThreshold, strategyName) {
    
-   bearishThreshold <- bearishThreshold/100
-   bullishThreshold <- bullishThreshold/100
+   bearishThreshold <-  bearishThreshold/100
+   bullishThreshold <- -bullishThreshold/100
 
    momentumName <- paste0("momentum_", inputName, "_", months)
    if (!strategyName %in% colnames(dat)) calcMomentum(inputDF=inputDF, inputName=inputName, months, momentumName=momentumName)
@@ -60,7 +60,8 @@ createMomentumStrategy <- function(inputDF, inputName, months=def$momentumMonths
                         bearishThreshold=bearishThreshold, bullishThreshold=bullishThreshold, strategyName=strategyName)
       calcAllocFromNorm(strategyName)
       if (!(strategyName %in% colnames(TR))) {TR[, strategyName] <<- numeric(numData)}  
-      calcStrategyReturn(strategyName, months+1)
+      startIndex = max(months, sum(is.na(alloc[ ,strategyName])))+1
+      calcStrategyReturn(strategyName, startIndex)
     } 
    
    if ( !(strategyName %in% parameters$strategy) | force) {
@@ -84,6 +85,28 @@ createMomentumStrategy <- function(inputDF, inputName, months=def$momentumMonths
    }
    calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)
    stats$type[which(stats$strategy == strategyName)] <<- parameters$type[which(parameters$strategy == strategyName)]
+}
+
+compareMomentum <-function(inputDF="dat", inputName="TR", offset=def$momentumOffset, 
+                           minMonths=6L, maxMonths=18L, byMonths=6L, 
+                           minBear=4, maxBear=12, byBear=4, minBull=4, maxBull=12, byBull=4,                        
+                           futureYears=def$futureYears, tradingCost=def$tradingCost, 
+                           minTR=6, maxVol=15, maxDD2=2.5, minTO=1.5, force=F) {
+   
+   for ( months in seq(minMonths, maxMonths, by=byMonths) ) 
+      for ( bear in seq(minBear, maxBear, by=byBear) )       
+         for ( bull in seq(minBull, maxBull, by=byBull) ) {
+#             bull <- bear + delta
+#             if ( (bull > minBull - 1e-6) & (bull < maxBull + 1e-6) ) {
+               strategyName <- paste0("momentum_", inputName, "_", months, "_", bear, "_", bull)
+#                if (bull-bear < 1e-1) bull <- bear + 1e-1 # bull = bear would not work
+               
+               createMomentumStrategy(inputDF=inputDF, inputName=inputName, months=months, offset=offset, 
+                                 bearishThreshold=bear, bullishThreshold=bull, strategyName=strategyName, force=force)                  
+               showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
+                                      minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, force=F)
+         }
+   #    showSummaries(futureYears=futureYears, tradingCost=tradingCost, detailed=F, force=F)
 }
 
 

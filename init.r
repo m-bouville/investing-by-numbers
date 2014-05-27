@@ -22,14 +22,14 @@ start <- function(constAlloc=F, thoroughCheck=F, force=F) {
    if (!exists("normalized")| force) normalized<<- data.frame(date = dat$date, numericDate = dat$numericDate)
    if (!exists("alloc")     | force) alloc     <<- data.frame(date = dat$date, numericDate = dat$numericDate)
    if (!exists("TR")        | force) TR        <<- data.frame(date = dat$date, numericDate = dat$numericDate, stocks = dat$TR)
-#  if (!exists("next5yrs")  | force) next5yrs  <<- data.frame(date = dat$date, numericDate = dat$numericDate)
-#  if (!exists("next10yrs") | force) next10yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+   #  if (!exists("next5yrs")  | force) next5yrs  <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+   #  if (!exists("next10yrs") | force) next10yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
    if (!exists("next20yrs") | force) next20yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
    if (!exists("next30yrs") | force) next30yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
-
+   
    if (!exists("strategy") | force) 
       strategy <<- data.frame(date = dat$date, numericDate = dat$numericDate) #, stocksTR = dat$TR)
-#   calcStocksFutureReturn(def$futureYears)
+   #   calcStocksFutureReturn(def$futureYears)
    calcCAPE(10, cheat=2)
    
    if (!exists("DD") | force) loadDDlist(force=force) # loading the dates of major drawdowns
@@ -37,6 +37,16 @@ start <- function(constAlloc=F, thoroughCheck=F, force=F) {
    if (!exists("stats") | force)  createStatsDF()
    
    if (!exists("parameters") | force) createParametersDF()
+   
+   addNumColToDat("TRmonthly")
+   addNumColToDat("bondsMonthly")
+   addNumColToDat("monthlyDifference")
+   for(i in 2:numData) {
+      dat$TRmonthly[i] <<- dat$TR[i] / dat$TR[i-1] 
+      dat$bondsMonthly[i] <<- dat$bonds[i] / dat$bonds[i-1] 
+      dat$monthlyDifference[i] <<- dat$TRmonthly[i] - dat$bondsMonthly[i]
+   }
+
 
    if (!"gold" %in% colnames(dat) | !"gold" %in% stats$strategy | force) {
       loadGoldData()
@@ -67,7 +77,7 @@ setDefaultValues <- function(force=F) {
    if (!exists("def") | force) def <<- list()
    def$futureYears <<- 30L    # default value for the number of years over which future returns are calculated
    def$tradingCost <<- 4/100 # default value for the trading costs
-   def$typicalStrategies <<- c("technical60_20_20", "CAPE10_2avg24_12.6_18.7", "balanced40_25_10_25", "stocks")
+   def$typicalStrategies <<- c("technical60_20_20", "CAPE10_2avg24_16_20", "balanced40_25_10_25", "stocks")
    def$startIndex <<- 10*12+1
    def$startYear <<- (def$startIndex-1)/12+1871 
    

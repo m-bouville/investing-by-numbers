@@ -86,12 +86,10 @@ CalcAllDrawdowns <- function(strategyName, force=F) {
    if ( !(strategyName %in% colnames(DD)) | force) {# if data do not exist yet or we force recalculation:
       DD[, strategyName]  <<- numeric(numDD)      
       for (i in 1:numDD) {
-#           DD0time <- proc.time()
+#          DD0time <- proc.time()
          DD[i, strategyName] <<- drawdown(strategyName, DD$startYear[i], DD$endYear[i])
-#          if (proc.time() - DD0time > .4) {
-#             print( paste("DD #", i, "(", DD$dates[i], ") time:") )
-#             print(proc.time() - DD0time)
-#          }
+#          if (summary(proc.time())[[1]] - DD0time[[1]] > .05) 
+#             print( paste( "Time for DD #", i, "(", DD$dates[i], "): ", round(summary(proc.time())[[1]] - DD0time[[1]] , 2) ) )
       }
    }
 }

@@ -9,7 +9,7 @@ setCAPEdefaultValues <- function() {
    def$CAPEbearishThreshold <<- 12.6
    def$CAPEbullishThreshold <<- 18.7
    
-   def$CAPEstrategies <<- c("CAPE10_22_22", "CAPE10_16_16", "CAPE10_16_24", "stocks")
+   def$CAPEstrategies <<- c("CAPE10_2avg24_15_15", "CAPE10_2avg24_16_20", "CAPE10_2avg24_15_15", "CAPE10_16_24")
 }
 
 
@@ -92,21 +92,31 @@ createCAPEstrategy <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver
 
 
 
-compareCAPE <-function(minCAPElow=4, maxCAPElow=28, byCAPElow=4, mindCAPE=0, maxdCAPE=28, bydCAPE=4, maxCAPEhigh=32, 
-                       cutoffScore=17, force=F) {
-   for ( CAPElow in seq(minCAPElow, maxCAPElow, by=byCAPElow) )       
-      for ( dCAPE in seq(mindCAPE, maxdCAPE, by=bydCAPE) ) {
-         CAPEhigh <- CAPElow + dCAPE
-         if (CAPEhigh < maxCAPEhigh + 1e-6) {
-            strategyName <- paste0("CAPE10_", CAPElow, "_", CAPEhigh)
-            if (dCAPE < 1e-1) CAPEhigh <- CAPElow + 1e-1 # CAPEhigh = CAPElow would not work
-            
-            calcCAPEstrategyReturn(inputStrategyName="CAPE10avg24", strategyName=name, offset=10*12, 
-                                   CAPElow=CAPElow, CAPEhigh=CAPEhigh, allocLow=1, allocHigh=0, force=force)
-            showSummaryStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, cutoffScore=cutoffScore, force=F)
-         }  
+compareCAPE <-function(minCheat=2, maxCheat=2, byCheat=0, minAvgOver=24, maxAvgOver=24, byAvgOver=0, 
+                       minBear=4, maxBear=28, byBear=4, minDelta=0, maxDelta=28, byDelta=4, maxBull=32, 
+                       futureYears=def$futureYears, tradingCost=def$tradingCost, cutoffScore=0, 
+                       minTR=6, maxVol=15, maxDD2=2.5, minTO=1, force=F) {
+
+   for (cheat in seq(minCheat, maxCheat, by=byCheat)) {
+      calcCAPE(years=def$CAPEyears, cheat=cheat)
+      for (avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver)) {
+         calcAvgCAPE(years=def$CAPEyears, cheat=cheat, avgOver=avgOver)
+         for ( bear in seq(minBear, maxBear, by=byBear) )       
+            for ( delta in seq(minDelta, maxDelta, by=byDelta) ) {
+               bull <- bear + delta
+               if (bull < maxBull + 1e-6) {
+                  strategyName <- paste0("CAPE10_", cheat, "avg", avgOver, "_", bear, "_", bull)
+                  if (delta < 1e-1) bull <- bear + 1e-1 # bull = bear would not work
+                  
+                  createCAPEstrategy(years=def$CAPEyears, cheat=cheat, avgOver=avgOver, strategyName=strategyName, 
+                                     bearishThreshold=bear, bullishThreshold=bull, futureYears=futureYears, force=force)
+                  showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
+                                         minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, force=F)
+               }  
+            }
       }
-   showSummaries(futureYears=futureYears, tradingCost=tradingCost, detailed=F, force=F)
+   }
+#    showSummaries(futureYears=futureYears, tradingCost=tradingCost, detailed=F, force=F)
 }
 
 optimizeMetaCAPE <-function(stratName1=def$CAPEstrategies[[1]], stratName2=def$CAPEstrategies[[2]], stratName3=def$CAPEstrategies[[3]], stratName4="",

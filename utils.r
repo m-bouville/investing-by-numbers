@@ -1,3 +1,4 @@
+# Add numeric column to DF if column does not already exist
 addNumColToDat <- function(colName) {
    if (!colName %in% colnames(dat)) dat[, colName] <<- numeric(numData)
 }
@@ -11,6 +12,7 @@ addNumColToTR <- function(colName) {
    if (!colName %in% colnames(TR)) TR[, colName] <<- numeric(numData)
 }
 
+# Stop if column does not exist in DF
 requireColInDat <- function(colName) {
    if (!colName %in% colnames(dat)) stop(paste0("dat$", colName, " does not exist."))
 }
@@ -164,8 +166,7 @@ calcStrategyReturn <- function(strategyName, startIndex) {
    TR[startIndex, strategyName] <<- 1
    for(i in (startIndex+1):numData) 
       TR[i, strategyName] <<- TR[i-1, strategyName] * ( 
-         alloc[i-1, strategyName] * dat$TR[i] / dat$TR[i-1] + 
-            (1-alloc[i-1, strategyName]) * dat$bonds[i] / dat$bonds[i-1] )
+         alloc[i-1, strategyName] * dat$monthlyDifference[i] + dat$bondsMonthly[i] ) # alloc * (stocks-bonds) + bonds = alloc * stocks + (1-alloc) * bonds
 }
 
 
@@ -248,12 +249,16 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
    
    if ( is.na(stats$score[index]) | force) { 
       # if data do not exist (we use 'score' to test this as it requires a lot of other data) yet or we force recalculation:   
-      
+
+#       time1 <- proc.time()
       median_five <- calcStrategyFutureReturn(strategyName, futureYears, force=force)
+#       print( c( "Time for calcStrategyFutureReturn():", round(summary(proc.time())[[1]] - time1[[1]] , 2) ) )
       
+#       time1 <- proc.time()      
       if (!(strategyName %in% colnames(DD)) | force) 
          CalcAllDrawdowns(strategyName, force=force)
- 
+#       print( c( "Time for CalcAllDrawdowns():", round(summary(proc.time())[[1]] - time1[[1]] , 2) ) )
+      
       medianName <- paste0("median", futureYears)
       fiveName <- paste0("five", futureYears)
       
@@ -264,7 +269,8 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
          def$startYear  <<- max(def$startYear, (startIndex-1)/12+1871 )
       } 
       dateRange <- def$startIndex:numData
-      
+            
+#       time1 <- proc.time()      
       fit <- numeric(numData)
       fitPara <- regression(TR$numericDate[dateRange], log(TR[dateRange, strategyName]))
       a <- fitPara[[1]]
@@ -272,7 +278,9 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
       fit[dateRange] <- log(TR[dateRange, strategyName]) - (a + b * TR$numericDate[dateRange])
       fit2 <- numeric(numData)
       fit2[dateRange] <- fit[dateRange] - fit[dateRange-12] # requires startIndex to be at least 13
-      
+#       print( c( "Time for fit:", round(summary(proc.time())[[1]] - time1[[1]] , 2) ) )
+        
+#       time1 <- proc.time()      
       if ( (strategyName %in% colnames(alloc)) ) {# this means we are not dealing with constant allocation (e.g. stocks)
          turnover <- numeric(numData)
          turnover[(def$startIndex+1):numData] <- abs(alloc[(def$startIndex+1):numData, strategyName] - 
@@ -283,6 +291,7 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
          stats$avgStockAlloc[index]    <<- mean(alloc[dateRange, strategyName], na.rm=T)
          stats$latestStockAlloc[index] <<- alloc[numData, strategyName]     
       }
+#       print( c( "Time for turnover:", round(summary(proc.time())[[1]] - time1[[1]] , 2) ) )   
       
       stats$TR[index]         <<- exp(b)-1 # -TOcost
       stats$volatility[index] <<- sd(fit2[dateRange], na.rm=T)
@@ -295,7 +304,7 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
 }
 
 showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def$futureYears, tradingCost=def$tradingCost, 
-                                refReturn=0, refMedian=0, refFive=0, cutoffScore="", force=F) {
+                                   minTR=0, maxVol=20, maxDD2=5, minTO=0, force=F) {
    
    if ( !(strategyName %in% stats$strategy) | force) 
       calcStatisticsForStrategy(strategyName, years=years, tradingCost=tradingCost, force=force) 
@@ -310,10 +319,10 @@ showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def
    avgAlloc <- 100*stats$avgStockAlloc[index]
    latestAlloc <- 100*stats$latestStockAlloc[index]    
 
-   ret  <- 100*(stats$TR[index] - TOcost) - refReturn
+   ret  <- 100*(stats$TR[index] - TOcost) 
    vol  <- 100*stats$volatility[index]
-   med  <- 100*(stats[index, medianName] - TOcost) - refMedian
-   five <- 100*(stats[index, fiveName] - TOcost) - refFive
+   med  <- 100*(stats[index, medianName] - TOcost) 
+   five <- 100*(stats[index, fiveName] - TOcost) 
    DD2  <- stats$DD2[index]
    score<- stats$score[index] - 3*100*TOcost + 1.5*tradingCost*100
                              
@@ -329,16 +338,18 @@ showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def
       else if (latestAlloc < 1e-6) latestAllocPad = "  "
       else if (latestAlloc == 100) latestAllocPad = ""
       else latestAllocPad = " "
+   if (TO>=10) TOpad = ""
+      else TOpad = " "
    if ((10*round(DD2,2))%%1 == 0) DD2Pad = " "
       else DD2Pad = ""
      
-   if(!is.numeric(cutoffScore) | score >= cutoffScore)
+   if(ret>minTR & vol<maxVol & DD2<maxDD2 & TO>minTO)
       print(paste0(displayName, ": TR: ", round(ret,1), retPad, "% ", 
                    "(", futureYears, " yrs, med: ", round(med,1), medPad, "%, 5%: ", round(five,1), fivePad, "%), ",
                    "vol.: ", round(vol,1), volPad, "%, ",
                    "avg. stock: ", round(avgAlloc), "% ",
                    "(now: ", round(latestAlloc), latestAllocPad, "%), ",
-                   "turnover: ", round(TO, 1), " yrs, ",
+                   "TO: ", TOpad, round(TO, 1), " yrs, ",
                    "DD^2: ", round(DD2,2), ", ", DD2Pad,
                    "score: ", round(score,1) ) )
 }
