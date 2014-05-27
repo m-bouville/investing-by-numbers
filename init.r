@@ -2,39 +2,37 @@
 
 
 # Loading and preparing data
-start <- function(thorough=F, force=F) {
+start <- function(constAlloc=F, thoroughCheck=F, force=F) {
    
    if(!file.exists("utils.r")) stop("Use \'setwd()\' to change the working directory to that containing the data.")
    
    totTime <- proc.time()
    
-   defFutureYears <<- 30L    # default value for the number of years over which future returns are calculated
-   defTradingCost <<- 4/100 # default value for the trading costs
+   setDefaultValues(force=force)
    
    if (!exists("dat") | force) { # if data frame does not exist (or if we want to force the loading), we load the xls file
       message("Starting to load the data from the xls file.")
       message("Then we will also load a list of drawdowns and gold prices.")
       message("After that, we will create the basic data structures.")
       message()
-      if (!thorough) message("If you want some strategies to be created and their statistics to be calculated, run \'start(thorough=T)\'.")
-      loadData(2, thorough=thorough)
+      if (!constAlloc) message("If you want stock-bond constant allocations to be created and their statistics to be calculated, run \'start(constAlloc=T)\'.")
+      loadData(2, thoroughCheck=thoroughCheck)
    } 
    
+   if (!exists("normalized")| force) normalized<<- data.frame(date = dat$date, numericDate = dat$numericDate)
    if (!exists("alloc")     | force) alloc     <<- data.frame(date = dat$date, numericDate = dat$numericDate)
-   if (!exists("TR")        | force) TR        <<- data.frame(date = dat$date, numericDate = dat$numericDate, stocks = dat$totalReturn)
-   if (!exists("next5yrs")  | force) next5yrs  <<- data.frame(date = dat$date, numericDate = dat$numericDate)
-   if (!exists("next10yrs") | force) next10yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+   if (!exists("TR")        | force) TR        <<- data.frame(date = dat$date, numericDate = dat$numericDate, stocks = dat$TR)
+#  if (!exists("next5yrs")  | force) next5yrs  <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+#  if (!exists("next10yrs") | force) next10yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
    if (!exists("next20yrs") | force) next20yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
    if (!exists("next30yrs") | force) next30yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
-   
+
    if (!exists("strategy") | force) 
-      strategy <<- data.frame(date = dat$date, numericDate = dat$numericDate, stocksTR = dat$totalReturn)
-#   calcStocksFutureReturn(defFutureYears)
+      strategy <<- data.frame(date = dat$date, numericDate = dat$numericDate) #, stocksTR = dat$TR)
+#   calcStocksFutureReturn(def$futureYears)
    calcCAPE(10, cheat=2)
-   lapply(c(1, 12), calcSMA)
    
-   if (!exists("DD") | force) 
-      loadDDlist(force=force) # loading the dates of major drawdowns
+   if (!exists("DD") | force) loadDDlist(force=force) # loading the dates of major drawdowns
    
    if (!exists("stats") | force)  createStatsDF()
    
@@ -42,11 +40,12 @@ start <- function(thorough=F, force=F) {
 
    if (!"gold" %in% colnames(dat) | !"gold" %in% stats$strategy | force) {
       loadGoldData()
-      createGoldStrategy( futureYears=defFutureYears, tradingCost=defTradingCost, force=force)
+      createGoldStrategy( futureYears=def$futureYears, tradingCost=def$tradingCost, force=force)
       message("Real gold prices were obtained from a local csv calculation.")
    }   
    
-   if (thorough) {
+   time0 <- proc.time()
+   if (constAlloc) {
       message("Creating constant-allocation stock-bond strategies.") 
       step <- -10
    }
@@ -55,10 +54,27 @@ start <- function(thorough=F, force=F) {
    invisible ( 
       lapply(seq(100, 0, by=step), 
              function(alloc) createConstAllocStrategy(
-                alloc, futureYears=defFutureYears, tradingCost=defTradingCost, force=force) )
-   )     
+                alloc, futureYears=def$futureYears, tradingCost=def$tradingCost, force=force) )
+   )
+   print( c( "constant allocation time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
+
    createTypicalStrategies(force=force)
    print(proc.time() - totTime)
+}
+
+
+setDefaultValues <- function(force=F) {
+   if (!exists("def") | force) def <<- list()
+   def$futureYears <<- 30L    # default value for the number of years over which future returns are calculated
+   def$tradingCost <<- 4/100 # default value for the trading costs
+   def$typicalStrategies <<- c("technical60_20_20", "CAPE10_2avg24_12.6_18.7", "balanced40_25_10_25", "stocks")
+   def$startIndex <<- 10*12+1
+   def$startYear <<- (def$startIndex-1)/12+1871 
+   
+   setCAPEdefaultValues()  
+   setBollDefaultValues()
+   setMomentumDefaultValues()
+   setSMAdefaultValues()
 }
 
 createStatsDF <- function() {
@@ -78,8 +94,11 @@ createParametersDF <- function() {
    parameters <<- data.frame(strategy = character(), 
                              type = character(), # type: constant allocation, CAPE, SMA, mixed, etc.
                              subtype = character(), # especially for Bollinger and mixed
-                             allocLow = numeric(),
-                             allocHigh = numeric(),
+                             startIndex = numeric(), # the first index that is not NA
+                             inputDF = character(),
+                             inputName = character(),
+                             bearishThreshold = numeric(),
+                             bullishThreshold = numeric(),
                              offset = numeric(),
                              inputStrategyName1 = character(), # for multi strategies: name of strategy used as input
                              inputStrategyName2 = character(),
@@ -93,10 +112,6 @@ createParametersDF <- function() {
                              value1 = numeric(), # values of these parameters
                              name2 = character(), 
                              value2 = numeric(), 
-                             name3 = character(), 
-                             value3 = numeric(), 
-                             name4 = character(), 
-                             value4 = numeric(), 
                              stringsAsFactors=F)
 }
 
@@ -153,11 +168,11 @@ checkXlsFileIsUpToDate <- function() {
 }
 
 # Loading data from xls file
-loadData <- function(rowsRemoved = 0L, thorough=F) {  # the xls file has *nominal* values, the "dat" data frame has *real* values
+loadData <- function(rowsRemoved = 0L, thoroughCheck=F) {  # the xls file has *nominal* values, the "dat" data frame has *real* values
    library(XLConnect) # to handle xls file
    if(!file.exists("ie_data.xls")) # download file if not already locally available
       download.file("http://www.econ.yale.edu/~shiller/data/ie_data.xls", "ie_data.xls", mode = "wb")
-   else if(thorough)
+   else if(thoroughCheck)
       checkXlsFileIsUpToDate()
    
    wk <- loadWorkbook("ie_data.xls") 
@@ -177,7 +192,7 @@ loadData <- function(rowsRemoved = 0L, thorough=F) {  # the xls file has *nomina
                       dividend   = as.numeric(rawDat$D), # loads nominal dividend (real dividend will be calculated below)
                       price      = as.numeric(rawDat$P), # loads nominal S&P price (real price will be calculated below)
                       earnings   = as.numeric(rawDat$E), # loads nominal earnings (real earnings will be calculated below)
-                      totalReturn= numeric(numData),
+                      TR= numeric(numData),
                       bonds      = numeric(numData)
    )
    
@@ -186,9 +201,9 @@ loadData <- function(rowsRemoved = 0L, thorough=F) {  # the xls file has *nomina
    dat$dividend <<- dat$dividend / dat$CPI * refCPI # calculating real dividend
    dat$earnings <<- dat$earnings / dat$CPI * refCPI # calculating real earnings
    
-   dat$totalReturn[1] <<- 1
+   dat$TR[1] <<- 1
    for(i in 2:numData)
-      dat$totalReturn[i] <<- dat$totalReturn[i-1] * dat$price[i]/dat$price[i-1] * (1 + dat$dividend[i]/dat$price[i]/12)
+      dat$TR[i] <<- dat$TR[i-1] * dat$price[i]/dat$price[i-1] * (1 + dat$dividend[i]/dat$price[i]/12)
    
    dat$bonds <<- read.csv("bonds.csv", header=T)[1:numData, 1]
    message("Real bond prices were imported from an Excel calculation.")
@@ -201,47 +216,36 @@ createTypicalStrategies <- function(force=F) {
    message("Creating entries for the typical strategies")
 
    time0 <- proc.time()
+   createCAPEstrategy(years=10, cheat=2, avgOver=24, 
+                      bearishThreshold=def$CAPEbearishThreshold, bullishThreshold=def$CAPEbullishThreshold,
+                      futureYears=def$futureYears, force=force)
+   print( c( "CAPE time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
-   calcCAPE(years=defCAPEyears, cheat=defCAPEcheat)
-   calcAvgCAPE(CAPEname="CAPE10", avgOver=defCAPEavgOver)
-   createCAPEstrategy(inputStrategyName="CAPE10avg24", offset=defInitialOffset, 
-                      CAPElow=defCAPElow, CAPEhigh=defCAPEhigh, 
-                      allocLow=defCAPEallocLow, allocHigh=defCAPEallocHigh, 
-                      futureYears=defFutureYears, force=force)
-   print( "CAPE time:" )
-   print( proc.time() - time0 )
    time0 <- proc.time()
+   createBollStrategy("dat", "TR", avgOver=21, bearishThreshold=0.6, bullishThreshold=-0.5, futureYears=def$futureYears, force=force)   
+   print( c( "Bollinger time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
-   createBollTRstrategy(avgOver=21, factorLow=0.6, factorHigh=-0.5, futureYears=defFutureYears, force=force)   
-   print( "Bollinger time:" )
-   print( proc.time() - time0 )
    time0 <- proc.time()
+   createSMAstrategy("dat", "TR", SMA1=12, "dat", "TR", SMA2=1, offset="mean", bearishThreshold=5, bullishThreshold=5.5, 
+                     futureYears=def$futureYears, force=force)   
+   print( c( "SMA time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
-   createSMAstrategy(SMA1=12, SMA2=1, offset="mean", ratioLow=5, ratioHigh=5.5, allocLow=1, allocHigh=0, 
-                     futureYears=defFutureYears, force=force)   
-   print( "SMA time:" )
-   print( proc.time() - time0 )
    time0 <- proc.time()
+   createMomentumStrategy("dat", "TR", 12, offset="mean", bearishThreshold=15, bullishThreshold=25,
+                          futureYears=def$futureYears, force=force) 
+   print( c( "momentum time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
-   createMomentumStrategy(12, offset="mean", momentumLow=15, momentumHigh=25, allocLow=1, allocHigh=0, 
-                          futureYears=defFutureYears, force=force) 
-   print( "momentum time:" )
-   print( proc.time() - time0 )
    time0 <- proc.time()
+   createMultiStrategy("SMA_TR12_TR1_5_5.5", "Boll_TR_21_0.6_-0.5", "momentum_TR_12_15_25", "", 60, 20, 20, 0, 
+                       strategyName="technical60_20_20", delta="", subtype="technical", force=force)
+   print( c( "technical60_20_20 time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
-   createMultiStrategy("SMA12_1_5_5.5", "BollTR21_0.6_-0.5", "momentum12_15_25", "", 60, 20, 20, 0, 
-                       strategyName="technical60_20_20", 21, delta="", subtype="technical", force=force)
-   print( c( "technical60_20_20 time:", summary(proc.time())[[1]] - time0[[1]] ) )
    time0 <- proc.time()
-   
    calcSMAofStrategy("technical60_20_20", 4, strategyName="technical_SMA4", force=force)
-   print( "technical_SMA4 time:" )
-   print( proc.time() - time0 )
+   print( c( "technical_SMA4 time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
+   
    time0 <- proc.time()
-   
-   createMultiStrategy("technical60_20_20", "technical_SMA4", "CAPE10avg24_14.6_16.7", "CAPE10avg24_14.6_16.7", #"CAPE10avg24_14.6_16.7Unbound", 
-                       40, 25, 10, 25, strategyName="balanced40_25_10_25", defInitialOffset, delta="", subtype="balanced", force=force)
-   print( "balanced40_25_10_25 time:" )
-   print( proc.time() - time0 )
-   
+   createMultiStrategy("technical60_20_20", "technical_SMA4", "CAPE10_2avg24_12.6_18.7", "CAPE10_2avg24_12.6_18.7", #"CAPE10avg24_14.6_16.7Unbound", 
+                       40, 25, 10, 25, strategyName="balanced40_25_10_25", delta="", subtype="balanced", force=force)
+   print( c( "balanced40_25_10_25 time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
 }

@@ -1,40 +1,32 @@
-typicalStrategies <- c("technical60_20_20", "CAPE10avg24_14.6_16.7", "balanced40_25_10_25", "stocks")
 
-plotAssetReturn <- function(stratName1="bonds", stratName2="gold", stratName3=typicalStrategies[[3]], stratName4="stocks", 
+plotAssetReturn <- function(stratName1="bonds", stratName2="gold", stratName3=def$typicalStrategies[[3]], stratName4="stocks", 
                        startYear=1968, endYear=2014, minTR=.65, maxTR=20, normalize=T, showAlloc=T) {
    plotReturn(stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4, 
               startYear=startYear, endYear=endYear, minTR=minTR, maxTR=maxTR, normalize=normalize, showAlloc=showAlloc) 
 }
 
-plotReturn <- function(stratName1=typicalStrategies[[1]], stratName2=typicalStrategies[[2]], stratName3=typicalStrategies[[3]], stratName4=typicalStrategies[[4]], 
-                       startYear=1885, endYear=2014, minTR=.9, maxTR=100000, normalize=T, showAlloc=T) {
+plotReturn <- function(stratName1=def$typicalStrategies[[1]], stratName2=def$typicalStrategies[[2]], stratName3=def$typicalStrategies[[3]], stratName4=def$typicalStrategies[[4]], 
+                       startYear=def$startYear, endYear=2014, minTR=.9, maxTR=100000, normalize=T, showAlloc=T) {
    genericPlotReturn(stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4, 
                      suffix="TR", startYear=startYear, endYear=endYear, minTR=minTR, maxTR=maxTR, normalize=normalize, showAlloc=showAlloc)  
 }
 
-plotFutureReturn <- function(stratName1=typicalStrategies[[1]], stratName2=typicalStrategies[[2]], stratName3=typicalStrategies[[3]], stratName4=typicalStrategies[[4]], 
-                             years=30, startYear=1885, endYear=2014-years, minTR=0, maxTR=.2, normalize=F, showAlloc=F) {
+plotFutureReturn <- function(stratName1=def$typicalStrategies[[1]], stratName2=def$typicalStrategies[[2]], stratName3=def$typicalStrategies[[3]], stratName4=def$typicalStrategies[[4]], 
+                             years=30, startYear=def$startYear, endYear=2014-years, minTR=0, maxTR=.2, normalize=F, showAlloc=F) {
    genericPlotReturn(stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4, 
                      suffix=paste0("Future",years), startYear=startYear, endYear=endYear, minTR=minTR, maxTR=maxTR, normalize=normalize, showAlloc=showAlloc)  
 }
 
-plotBothReturns <- function(stratName1=typicalStrategies[[1]], stratName2=typicalStrategies[[2]], stratName3=typicalStrategies[[3]], stratName4=typicalStrategies[[4]], 
-                             years=30, startYear=1885, endYear=2014, minTR1=.9, maxTR1=100000, minTR2=0, maxTR2=.2) {
+plotBothReturns <- function(stratName1=def$typicalStrategies[[1]], stratName2=def$typicalStrategies[[2]], stratName3=def$typicalStrategies[[3]], stratName4=def$typicalStrategies[[4]], 
+                             years=30, startYear=def$startYear, endYear=2014, minTR1=.9, maxTR1=100000, minTR2=0, maxTR2=.2) {
    par(mfrow = c(2, 1))
    plotReturn(startYear=startYear, endYear=endYear, minTR=minTR1, maxTR=maxTR1, normalize=T, showAlloc=F)  
    plotFutureReturn(stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4,
                     years=years, startYear=startYear, endYear=endYear, minTR=minTR2, maxTR=maxTR2, normalize=F, showAlloc=F)
 }
 
-genericPlotReturn <- function(stratName1, stratName2, stratName3, stratName4, suffix, startYear=1885, endYear=2014, minTR, maxTR, normalize, showAlloc) { 
-   TRname1    <- paste0(stratName1, suffix)
-   allocName1 <- paste0(stratName1, "Alloc")   
-   TRname2    <- paste0(stratName2, suffix)
-   allocName2 <- paste0(stratName2, "Alloc")
-   TRname3    <- paste0(stratName3, suffix)
-   allocName3 <- paste0(stratName3, "Alloc")
-   TRname4    <- paste0(stratName4, suffix)
-   allocName4 <- paste0(stratName4, "Alloc")
+genericPlotReturn <- function(stratName1, stratName2, stratName3, stratName4, suffix, 
+                              startYear=def$startYear, endYear=2014, minTR, maxTR, normalize, showAlloc) { 
    
    normDate <- (startYear-1871)*12+1
    par(mar=c(2.5, 4, 1.5, 1.5))
@@ -45,51 +37,51 @@ genericPlotReturn <- function(stratName1, stratName2, stratName3, stratName4, su
    if(showAlloc==T) par(mfrow = c(2, 1))
      # else par(mfrow = c(1, 1))
    
-   if(TRname1 %in% colnames(strategy)) {   
-      if(normalize==T) plot(strategy$numericDate, strategy[, TRname1]/strategy[normDate, TRname1], col="red", xlab="", ylab="total return", log=logScale, type="l", lwd=1.5, xlim=xRange, ylim=yRange)
-         else plot(strategy$numericDate, strategy[, TRname1], col="red", xlab="", ylab="total return", log=logScale, type="l", lwd=1.5, xlim=xRange, ylim=yRange)
+   if(stratName1 %in% colnames(TR)) {   
+      if(normalize==T) plot(TR$numericDate, TR[, stratName1]/TR[normDate, stratName1], col="red", xlab="", ylab="total return", log=logScale, type="l", lwd=1.5, xlim=xRange, ylim=yRange)
+         else plot(TR$numericDate, TR[, stratName1], col="red", xlab="", ylab="total return", log=logScale, type="l", lwd=1.5, xlim=xRange, ylim=yRange)
       par(new=T)
    }
-   if(TRname2 %in% colnames(strategy)) {   
-      if(normalize==T) plot(strategy$numericDate, strategy[, TRname2]/strategy[normDate, TRname2], col="blue", xlab="", ylab="", log=logScale, type="l", lwd=1.5, xlim=xRange, ylim=yRange)
-         else plot(strategy$numericDate, strategy[, TRname2], col="blue", xlab="", ylab="", log=logScale, type="l", lwd=1.5, xlim=xRange, ylim=yRange)
+   if(stratName2 %in% colnames(TR)) {   
+      if(normalize==T) plot(TR$numericDate, TR[, stratName2]/TR[normDate, stratName2], col="blue", xlab="", ylab="", log=logScale, type="l", lwd=1.5, xlim=xRange, ylim=yRange)
+         else plot(TR$numericDate, TR[, stratName2], col="blue", xlab="", ylab="", log=logScale, type="l", lwd=1.5, xlim=xRange, ylim=yRange)
       par(new=T)
    }  
-   if(TRname3 %in% colnames(strategy)) {   
-      if(normalize==T) plot(strategy$numericDate, strategy[, TRname3]/strategy[normDate, TRname3], col="black", xlab="", ylab="", log=logScale, type="l", lwd=2, xlim=xRange, ylim=yRange)
-         else plot(strategy$numericDate, strategy[, TRname3], col="black", xlab="", ylab="", log=logScale, type="l", lwd=2, xlim=xRange, ylim=yRange)
+   if(stratName3 %in% colnames(TR)) {   
+      if(normalize==T) plot(TR$numericDate, TR[, stratName3]/TR[normDate, stratName3], col="black", xlab="", ylab="", log=logScale, type="l", lwd=2, xlim=xRange, ylim=yRange)
+         else plot(TR$numericDate, TR[, stratName3], col="black", xlab="", ylab="", log=logScale, type="l", lwd=2, xlim=xRange, ylim=yRange)
       par(new=T)
    }
-   if(TRname4 %in% colnames(strategy)) {   
-      if(normalize==T) plot(strategy$numericDate, strategy[, TRname4]/strategy[normDate, TRname4], col="green", xlab="", ylab="", log=logScale, type="l", lwd=2, xlim=xRange, ylim=yRange)
-         else plot(strategy$numericDate, strategy[, TRname4], col="green", xlab="", ylab="", log=logScale, type="l", lwd=2, xlim=xRange, ylim=yRange)
+   if(stratName4 %in% colnames(TR)) {   
+      if(normalize==T) plot(TR$numericDate, TR[, stratName4]/TR[normDate, stratName4], col="green", xlab="", ylab="", log=logScale, type="l", lwd=2, xlim=xRange, ylim=yRange)
+         else plot(TR$numericDate, TR[, stratName4], col="green", xlab="", ylab="", log=logScale, type="l", lwd=2, xlim=xRange, ylim=yRange)
    }
    legend("topleft", c(stratName1,stratName2,stratName3,stratName4), cex=1, bty="n", lwd=c(1.5,1.5,2,2), lty = c(1,1,1,1), col=c("red","blue","black","green"))
    par(new=F)
 
    if(showAlloc==T) {
       yRange2 <- c(0,1)
-      if(allocName1 %in% colnames(strategy)) {   
-         plot(strategy$numericDate, strategy[, allocName1], col="red", xlab="", ylab="stock alloc.", type="l", xlim=xRange, ylim=yRange2)
+      if(stratName1 %in% colnames(alloc)) {   
+         plot(alloc$numericDate, alloc[, stratName1], col="red", xlab="", ylab="stock alloc.", type="l", xlim=xRange, ylim=yRange2)
          par(new=T)
       }
-      if(allocName2 %in% colnames(strategy)) {   
-         plot(strategy$numericDate, strategy[, allocName2], col="blue", xlab="", ylab="", type="l", xlim=xRange, ylim=yRange2)
+      if(stratName2 %in% colnames(alloc)) {   
+         plot(alloc$numericDate, alloc[, stratName2], col="blue", xlab="", ylab="", type="l", xlim=xRange, ylim=yRange2)
          par(new=T)
       }
-      if(allocName3 %in% colnames(strategy)) {
-         plot(strategy$numericDate, strategy[, allocName3], col="black", xlab="", ylab="", type="l", lwd=2, xlim=xRange, ylim=yRange2)
+      if(stratName3 %in% colnames(alloc)) {
+         plot(alloc$numericDate, alloc[, stratName3], col="black", xlab="", ylab="", type="l", lwd=2, xlim=xRange, ylim=yRange2)
          par(new=T)
       }
-      if(allocName4 %in% colnames(strategy)) {   
-         plot(strategy$numericDate, strategy[, allocName4], col="green", xlab="", ylab="", type="l", xlim=xRange, ylim=yRange2)
+      if(stratName4 %in% colnames(alloc)) {   
+         plot(alloc$numericDate, alloc[, stratName4], col="green", xlab="", ylab="", type="l", xlim=xRange, ylim=yRange2)
       }
       par(new=F)
    }
 }
 
 
-plotFutureReturnVsCAPE <- function(futureReturnYears=defFutureYears, CAPEname1="CAPE10", CAPEname2="CAPE10avg24", CAPEmax=35) { 
+plotFutureReturnVsCAPE <- function(futureReturnYears=def$futureYears, CAPEname1="CAPE10", CAPEname2="CAPE10avg24", CAPEmax=35) { 
    futureReturnName <- paste0("futureReturn", futureReturnYears)
    if (!futureReturnName %in% colnames(dat)) calcFutureReturn(futureReturnYears)
    
@@ -112,14 +104,14 @@ plotFutureReturnVsCAPE <- function(futureReturnYears=defFutureYears, CAPEname1="
                 round(summary(mod)$r.squared*100), "%)"))
 }
 
-plotReturnVsBothBad <- function(futureReturnYears=defFutureYears, tradingCost=defTradingCost) {
+plotReturnVsBothBad <- function(futureReturnYears=def$futureYears, tradingCost=def$tradingCost) {
    par(mfrow = c(2, 1))
    plotReturnVsVolatility(futureReturnYears=futureReturnYears, tradingCost=tradingCost) 
    plotReturnVsDrawdown(futureReturnYears=futureReturnYears, tradingCost=tradingCost)
 }
 
 
-plotReturnVsVolatility <- function(futureReturnYears=defFutureYears, tradingCost=defTradingCost) { 
+plotReturnVsVolatility <- function(futureReturnYears=def$futureYears, tradingCost=def$tradingCost) { 
    
    medianName <- paste0("median", years)
    fiveName <- paste0("five", years)
@@ -140,7 +132,7 @@ plotReturnVsVolatility <- function(futureReturnYears=defFutureYears, tradingCost
           cex=1, bty="n", pch=c(15,16,18,1), col=c("red","blue","black","green"))
 }
 
-plotReturnVsVolatilityWithLine <- function(futureReturnYears=defFutureYears, tradingCost=defTradingCost) { 
+plotReturnVsVolatilityWithLine <- function(futureReturnYears=def$futureYears, tradingCost=def$tradingCost) { 
    
    xRange <- c(10, 20)
    yRange <- c(4, 10 - 100*tradingCost/2)
@@ -158,7 +150,7 @@ plotReturnVsVolatilityWithLine <- function(futureReturnYears=defFutureYears, tra
    par(new=F)
 }
 
-plotReturnVsDrawdown <- function(futureReturnYears=defFutureYears, tradingCost=defTradingCost) { 
+plotReturnVsDrawdown <- function(futureReturnYears=def$futureYears, tradingCost=def$tradingCost) { 
    
    medianName <- paste0("median", years)
    fiveName <- paste0("five", years)
@@ -179,7 +171,7 @@ plotReturnVsDrawdown <- function(futureReturnYears=defFutureYears, tradingCost=d
           cex=1, bty="n", pch=c(15,16,18,1), col=c("red","blue","black","green"))
 }
 
-plotFutureReturnVsAlloc <- function(futureReturnYears=defFutureYears, name1, name2) { 
+plotFutureReturnVsAlloc <- function(futureReturnYears=def$futureYears, name1, name2) { 
    futureReturnName <- paste0("futureReturn", futureReturnYears)
    if (!futureReturnName %in% colnames(dat)) calcFutureReturn(futureReturnYears)
    
@@ -187,9 +179,9 @@ plotFutureReturnVsAlloc <- function(futureReturnYears=defFutureYears, name1, nam
    par(mar=c(4, 4, 1.5, 1.5))
    par(mfrow = c(1, 1))
    
-   plot(strategy[, paste0(name1,"Alloc")], dat[, futureReturnName], col="red", xlab="stocks alloc.", ylab="total return", xlim=xRange)
+   plot(alloc[, name1], dat[, futureReturnName], col="red", xlab="stocks alloc.", ylab="total return", xlim=xRange)
    par(new=T)
-   plot(strategy[, paste0(name2,"Alloc")], dat[, futureReturnName], col="blue", xlab="", ylab="", xlim=xRange)
+   plot(alloc[, name2], dat[, futureReturnName], col="blue", xlab="", ylab="", xlim=xRange)
    par(new=F)
    
    mod <- lm( dat[, futureReturnName] ~ strategy[, paste0(name1,"Alloc")] )
@@ -201,7 +193,7 @@ plotFutureReturnVsAlloc <- function(futureReturnYears=defFutureYears, name1, nam
 }
 
 
-plotReturnVsAverageAllocWithLine <- function(tradingCost=defTradingCost) { 
+plotReturnVsAverageAllocWithLine <- function(tradingCost=def$tradingCost) { 
    
    xRange <- c(30, 100)
    yRange <- c(4, 10 - 100*tradingCost/2)

@@ -1,112 +1,125 @@
 #default values of parameters:
-defBollFactorLow <- 0.6
-defBollFactorHigh <- -0.5
-defBollAvgOver <- 21L
+setBollDefaultValues <- function() {
+   def$BollBearishThreshold  <<- 0.6
+   def$BollBullishThreshold <<- -0.5
+   def$BollAvgOver    <<- 21L
+}
 
 
+## Bollinger bands over 'avgOver' months
+# calcBollBands <- function(inputDF, inputName, avgOver=def$BollAvgOver, BollBandsName, force=F) {
+# #    BollBandsName <- paste0(inputName, avgOver)
+#    avgName <- paste0("avg_", BollBandsName)
+#    SDname <- paste0("SD_", BollBandsName)
+#    
+#    if (inputDF=="dat")             input <- dat[, inputName]
+#    else if (inputDF=="normalized") input <- normalized[, inputName]
+#    else if (inputDF=="alloc")      input <- alloc[, inputName]
+#    else if (inputDF=="TR")         input <- TR[, inputName]
+#    else if (inputDF=="next30yrs")  input <- next30yrs[, inputName]
+#    else stop("data frame ", inputDF, " not recognized")
+#    
+#    if ( !(avgName %in% colnames(dat)) | !(SDname %in% colnames(dat)) | force) {# if data do not exist yet or we force recalculation:
+#       dat[, avgName]  <<- numeric(numData)
+#       dat[, SDname] <<- numeric(numData)
+#       dat[1:(avgOver-1), avgName] <<- NA # not enough data to calculate average or SD
+#       dat[1:(avgOver-1), SDname]  <<- NA 
+#       for(i in avgOver:numData) {
+#          dat[i, avgName] <<- mean(input[(i-avgOver+1):i])  
+#          dat[i, SDname]  <<-   sd(input[(i-avgOver+1):i])
+#       }
+#    }
+# }
 
-## TR Bollinger bands over 'avgOver' months of CAPE
-calcBollAlloc <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, factorHigh=defBollFactorHigh, strategyName="", type, CAPEyears=defCAPEyears, force=F) {
-   if(type=="") stop("type is needed: either \'TR\' or \'CAPE\'")
-   else if(type=="TR") {
-      if (strategyName=="") strategyName <- paste0("BollTR", avgOver, "_", factorLow, "_", factorHigh)
-      typeName <- type
-      colName <- "totalReturn"
-   }
-   else if(type=="CAPE") {
-      if (strategyName=="") strategyName <- paste0("BollCAPE", CAPEyears, "_", avgOver, "_", factorLow, "_", factorHigh)
-      typeName <- paste0("CAPE", CAPEyears)
-      colName <- typeName
-   }
-   avgName <- paste0(typeName, "avg", avgOver)
-   SDname <- paste0(typeName, "SD", avgOver)
+normalizeBoll <- function(inputDF, inputName, avgOver=def$BollAvgOver, 
+                                bearishThreshold=def$BollBearishThreshold, bullishThreshold=def$BollBullishThreshold, strategyName="", force=F) {
+
+   BollBandsName <- paste0(inputName, avgOver)
+   avgName <- paste0("avg_", BollBandsName)
+   SDname <- paste0("SD_", BollBandsName)
    
-   UBallocName <- paste0(strategyName, "UnboundAlloc")
+   if (inputDF=="dat")             input <- dat[, inputName]
+   else if (inputDF=="normalized") input <- normalized[, inputName]
+   else if (inputDF=="alloc")      input <- alloc[, inputName]
+   else if (inputDF=="TR")         input <- TR[, inputName]
+   else if (inputDF=="next30yrs")  input <- next30yrs[, inputName]
+   else stop("data frame ", inputDF, " not recognized")
    
    if ( !(avgName %in% colnames(dat)) | !(SDname %in% colnames(dat)) | force) {# if data do not exist yet or we force recalculation:
       dat[, avgName]  <<- numeric(numData)
-      dat[, SDname] <<- numeric(numData)
-      for(i in 1:(avgOver-1)) {# not enough data to calculate average or SD
-         dat[i, avgName] <<- NA 
-         dat[i, SDname]  <<- NA 
-      }
+      dat[, SDname]   <<- numeric(numData)
+      dat[1:(avgOver-1), avgName] <<- NA # not enough data to calculate average or SD
+      dat[1:(avgOver-1), SDname]  <<- NA 
       for(i in avgOver:numData) {
-         dat[i, avgName] <<- mean(dat[(i-avgOver+1):i, colName])  
-         dat[i, SDname]  <<-   sd(dat[(i-avgOver+1):i, colName])
+         dat[i, avgName] <<- mean(input[(i-avgOver+1):i])  
+         dat[i, SDname]  <<-   sd(input[(i-avgOver+1):i])
       }
    }
    
-   if (!(strategyName %in% colnames(alloc)))  alloc[, strategyName] <<- numeric(numData)
-   if (!(UBallocName %in% colnames(strategy)))  strategy[, UBallocName] <<- numeric(numData)
-   
-   for(i in (1:avgOver-1) ) 
-      alloc[i, strategyName] <<- NA
-      
-   for(i in avgOver:numData) {
-      BollLow   <- dat[i, avgName] - factorLow * dat[i, SDname]
-      BollHigh  <- dat[i, avgName] + factorHigh * dat[i, SDname]
-      strategy[i, UBallocName] <<- 1 - (BollHigh - dat[i, colName]) / (BollHigh - BollLow)
-      strategy[i, UBallocName] <<- max(min(strategy[i, UBallocName], 1.5), -0.5)
-      alloc[i, strategyName] <<- max(min(strategy[i, UBallocName], 1), 0)   
+   if ( !(strategyName %in% colnames(normalized)) | !(SDname %in% colnames(dat)) | force) {# if data do not exist yet or we force recalculation:
+      addNumColToNormalized(strategyName)
+      normalized[(1:avgOver-1), strategyName] <<- NA
+      for(i in avgOver:numData) {
+         BollLow   <- dat[i, avgName] - bearishThreshold * dat[i, SDname]
+         BollHigh  <- dat[i, avgName] + bullishThreshold * dat[i, SDname]
+         normalized[i, strategyName] <<- 1 - 2*(BollHigh - input[i]) / (BollHigh - BollLow)
+      }
    }
 }
 
-calcBollCAPEalloc <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, factorHigh=defBollFactorHigh, strategyName="", CAPEyears=defCAPEyears, force=F) {
-   calcBollAlloc(avgOver, factorLow, factorHigh, strategyName, CAPEyears, type="CAPE", force=force)
-}
 
-calcBollTRalloc <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, factorHigh=defBollFactorHigh, strategyName="", force=F) {
-   calcBollAlloc(avgOver, factorLow, factorHigh, strategyName, type="TR", force=force)
-}
+# 
+# calcBollCAPEalloc <- function(avgOver=def$BollAvgOver, bearishThreshold=def$BollBearishThreshold, bullishThreshold=def$BollBullishThreshold, strategyName="", CAPEyears=def$CAPEyears, force=F) {
+#    calcBollAlloc(avgOver, bearishThreshold, bullishThreshold, strategyName, CAPEyears, type="CAPE", force=force)
+# }
+# 
+# calcBollTRalloc <- function(avgOver=def$BollAvgOver, bearishThreshold=def$BollBearishThreshold, bullishThreshold=def$BollBullishThreshold, strategyName="", force=F) {
+#    calcBollAlloc(avgOver, bearishThreshold, bullishThreshold, strategyName, type="TR", force=force)
+# }
 
 ## Calculating real total returns based on Bollinger band allocation from previous month
-calcBollStrategyReturn <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, factorHigh=defBollFactorHigh, strategyName, type, CAPEyears=defCAPEyears, force=F) {
-   if(type=="") stop("type is needed: either \'TR\' or \'CAPE\'")
-   
+# calcBollStrategyReturn <- function(avgOver=def$BollAvgOver, bearishThreshold=def$BollBearishThreshold, bullishThreshold=def$BollBullishThreshold, strategyName, type, CAPEyears=def$CAPEyears, force=F) {
+#    if(type=="") stop("type is needed: either \'TR\' or \'CAPE\'")
+#    
+#    if (!(strategyName %in% colnames(TR)) | force) { # if data do not exist yet or we force recalculation:   
+#       if(type=="TR")        
+#          calcBollTRalloc(avgOver, bearishThreshold, bullishThreshold, strategyName, force=force)
+#       else if(type=="CAPE") 
+#          calcBollCAPEalloc(avgOver, bearishThreshold, bullishThreshold, strategyName, CAPEyears=CAPEyears, force=force)
+#       
+#       if (!(strategyName %in% colnames(TR))) {TR[, strategyName] <<- numeric(numData)}
+#       
+#       #print( (def$CAPEavgOver-def$CAPEcheat)+12*CAPEyears )
+#       calcStrategyReturn( strategyName, (def$CAPEavgOver-def$CAPEcheat)+12*CAPEyears+1 )
+#       warning("Using \'(def$CAPEavgOver-def$CAPEcheat)+12*CAPEyears\' as parameter in calcStrategyReturn().")
+#    }
+# }
+
+# calcBollTRstrategyReturn <- function(avgOver=def$BollAvgOver, bearishThreshold=def$BollBearishThreshold, bullishThreshold=def$BollBullishThreshold, 
+#                                      strategyName="", force=F) {
+#    calcBollStrategyReturn(avgOver, bearishThreshold, bullishThreshold, strategyName, type="TR", force)
+# }
+# 
+# calcBollCAPEstrategyReturn <- function(avgOver=def$BollAvgOver, bearishThreshold=def$BollBearishThreshold, bullishThreshold=def$BollBullishThreshold, strategyName="", CAPEyears=def$CAPEyears, force=F) {
+#    calcBollStrategyReturn(avgOver, bearishThreshold, bullishThreshold, strategyName, type="CAPE", CAPEyears, force)
+# }
+
+
+createBollStrategy <- function(inputDF, inputName, avgOver=def$BollAvgOver, bearishThreshold=def$BollBearishThreshold, bullishThreshold=def$BollBullishThreshold, 
+                               strategyName="", futureYears=def$FutureYears, force=F) {
+   if(strategyName=="")  
+      strategyName <- paste0("Boll_", inputName, "_", avgOver, "_", bearishThreshold, "_", bullishThreshold)
+
    if (!(strategyName %in% colnames(TR)) | force) { # if data do not exist yet or we force recalculation:   
-      if(type=="TR")        
-         calcBollTRalloc(avgOver, factorLow, factorHigh, strategyName, force=force)
-      else if(type=="CAPE") 
-         calcBollCAPEalloc(avgOver, factorLow, factorHigh, strategyName, CAPEyears=CAPEyears, force=force)
-      
-      if (!(strategyName %in% colnames(TR))) {TR[, strategyName] <<- numeric(numData)}
-      
-      #print( (defCAPEavgOver-defCAPEcheat)+12*CAPEyears )
-      calcStrategyReturn( strategyName, (defCAPEavgOver-defCAPEcheat)+12*CAPEyears )
-   }
-}
-
-calcBollTRstrategyReturn <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, factorHigh=defBollFactorHigh, 
-                                     strategyName="", force=F) {
-   calcBollStrategyReturn(avgOver, factorLow, factorHigh, strategyName, type="TR", force)
-}
-
-calcBollCAPEstrategyReturn <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, factorHigh=defBollFactorHigh, strategyName="", CAPEyears=defCAPEyears, force=F) {
-   calcBollStrategyReturn(avgOver, factorLow, factorHigh, strategyName, type="CAPE", CAPEyears, force)
-}
-
-
-createBollStrategy <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, factorHigh=defBollFactorHigh, 
-                                    strategyName="", type, CAPEyears=defCAPEyears, futureYears=defFutureYears, force=F) {
-   
-   if(type=="") stop("parameter \'type\' is mandatory: either \'TR\' or \'CAPE\'")
-   else if(type=="TR") {
-      CAPEyears = 0
-      if(strategyName=="")  {
-         if (factorLow==factorHigh) strategyName <- paste0("BollTR", avgOver, "_", factorLow)
-         else strategyName <- paste0("BollTR", avgOver, "_", factorLow, "_", factorHigh)
-      }
-   }
-   else if(type=="CAPE") {
-      if(!is.numeric(CAPEyears)) stop("parameter \'CAPEyears\' is mandatory for CAPE Bollinger.")
-      if(strategyName=="")  {
-         if (factorLow==factorHigh) strategyName <- paste0("BollCAPE", CAPEyears, "_", avgOver, "_", factorLow)
-         else strategyName <- paste0("BollCAPE", CAPEyears, "_", avgOver, "_", factorLow, "_", factorHigh)
-      }
+      normalizeBoll(inputDF=inputDF, inputName=inputName, avgOver=avgOver, bearishThreshold=bearishThreshold, bullishThreshold=bullishThreshold, 
+                    strategyName=strategyName, force=force)
+      calcAllocFromNorm(strategyName)
+      addNumColToTR(strategyName)  
+      calcStrategyReturn(strategyName, avgOver+1)
    }
    
-   calcBollStrategyReturn(avgOver=avgOver, factorLow=factorLow, factorHigh=factorHigh, 
-                          strategyName=strategyName, type=type, CAPEyears=CAPEyears, force=force)
+#    calcBollStrategyReturn(avgOver=avgOver, bearishThreshold=bearishThreshold, bullishThreshold=bullishThreshold, 
+#                           strategyName=strategyName, type=type, CAPEyears=CAPEyears, force=force)
 
    if ( !(strategyName %in% parameters$strategy) | force) {
       if ( !(strategyName %in% parameters$strategy) ) {
@@ -116,30 +129,26 @@ createBollStrategy <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLo
       index <- which(parameters$strategy == strategyName)
       
       parameters$type[index] <<- "Bollinger"
-      parameters$subtype[index] <<- type
+      parameters$startIndex[index] <<- avgOver+1
+      parameters$inputDF[index]   <<- inputDF
+      parameters$inputName[index] <<- inputName
+      parameters$bearishThreshold[index] <<-  bearishThreshold
+      parameters$bullishThreshold[index] <<-  bullishThreshold
       parameters$name1[index]  <<- "avgOver"
       parameters$value1[index] <<-  avgOver
-      parameters$name2[index]  <<- "factorLow"
-      parameters$value2[index] <<-  factorLow
-      parameters$name3[index]  <<- "factorHigh"
-      parameters$value3[index] <<-  factorHigh
-      if (type=="CAPE") {
-         parameters$name4[index]  <<- "CAPEyears"
-         parameters$value4[index] <<-  CAPEyears
-      }
    }
    calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)
    stats$type[which(stats$strategy == strategyName)] <<- parameters$type[which(parameters$strategy == strategyName)]
 }
 
-createBollTRstrategy <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, factorHigh=defBollFactorHigh, 
-                                    strategyName="", futureYears=defFutureYears, force=F) {
-   createBollStrategy(avgOver=avgOver, factorLow=factorLow, factorHigh=factorHigh, 
-                           strategyName=strategyName, type="TR", futureYears=futureYears, force=force)
-}
-
-createBollCAPEstrategy <- function(avgOver=defBollAvgOver, factorLow=defBollFactorLow, factorHigh=defBollFactorHigh, 
-                                      strategyName="", CAPEyears=defCAPEyears, futureYears=defFutureYears, force=F) {
-   createBollStrategy(avgOver=avgOver, factorLow=factorLow, factorHigh=factorHigh, 
-                           strategyName=strategyName, type="CAPE", CAPEyears=CAPEyears, futureYears=futureYears, force=force)
-}
+# createBollTRstrategy <- function(avgOver=def$BollAvgOver, bearishThreshold=def$BollBearishThreshold, bullishThreshold=def$BollBullishThreshold, 
+#                                     strategyName="", futureYears=def$FutureYears, force=F) {
+#    createBollStrategy(avgOver=avgOver, bearishThreshold=bearishThreshold, bullishThreshold=bullishThreshold, 
+#                            strategyName=strategyName, type="TR", futureYears=futureYears, force=force)
+# }
+# 
+# createBollCAPEstrategy <- function(avgOver=def$BollAvgOver, bearishThreshold=def$BollBearishThreshold, bullishThreshold=def$BollBullishThreshold, 
+#                                       strategyName="", CAPEyears=def$CAPEyears, futureYears=def$FutureYears, force=F) {
+#    createBollStrategy(avgOver=avgOver, bearishThreshold=bearishThreshold, bullishThreshold=bullishThreshold, 
+#                            strategyName=strategyName, type="CAPE", CAPEyears=CAPEyears, futureYears=futureYears, force=force)
+# }

@@ -1,36 +1,29 @@
 ## Calculating average alloc between 2 strategies, and corresponding results
-calcMultiStrategyAlloc <- function(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
+calcMultiStrategyNorm <- function(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
                                     fraction1=25, fraction2=25, fraction3=25, fraction4="", 
                                     strategyName, numNA, delta="", force=F) {
    
-   UBallocName<- paste0(strategyName, "UnboundAlloc")
-
-   if (!(inputStrategyName1 %in% colnames(alloc))) stop(paste0("alloc$", inputStrategyName1, " does not exist."))
-   if (!(inputStrategyName2 %in% colnames(alloc))) stop(paste0("alloc$", inputStrategyName2, " does not exist."))
-   if (!(inputStrategyName3 %in% colnames(alloc))) stop(paste0("alloc$", inputStrategyName3, " does not exist."))
-   if (!(inputStrategyName4 %in% colnames(alloc)) & fraction4 != 0) stop(paste0("alloc$", inputStrategyName4, " does not exist."))
    
-   if (!(strategyName %in% colnames(alloc)) | force) { # if data do not exist yet or we force recalculation:   
-      if (!(strategyName %in% colnames(alloc))) alloc[, strategyName] <<- numeric(numData)
-      if (!(UBallocName %in% colnames(strategy))) strategy[, UBallocName] <<- numeric(numData)
+   requireColInNormalized(inputStrategyName1)
+   requireColInNormalized(inputStrategyName2)
+   requireColInNormalized(inputStrategyName3)
+   if (!(inputStrategyName4 %in% colnames(normalized)) & fraction4 != 0) stop(paste0("normalized$", inputStrategyName4, " does not exist."))
+   
+   if (!(strategyName %in% colnames(normalized)) | force) { # if data do not exist yet or we force recalculation:   
+      addNumColToNormalized(strategyName)
       
       if(fraction4==0)
-         strategy[, UBallocName] <<- fraction1*alloc[, inputStrategyName1] + fraction2*alloc[, inputStrategyName2] + fraction3*alloc[, inputStrategyName3]
-      else strategy[, UBallocName] <<- fraction1*alloc[, inputStrategyName1] + fraction2*alloc[, inputStrategyName2] + 
+         normalized[, strategyName] <<- fraction1*normalized[, inputStrategyName1] + fraction2*normalized[, inputStrategyName2] + 
+         fraction3*normalized[, inputStrategyName3]
+      else normalized[, strategyName] <<- fraction1*normalized[, inputStrategyName1] + fraction2*normalized[, inputStrategyName2] + 
          fraction3*alloc[, inputStrategyName3] + fraction4*alloc[, inputStrategyName4] 
-      for(i in 1:numData) alloc[i, strategyName] <<- max(min(strategy[i, UBallocName], 1), 0)
-      
-      if(is.numeric(delta)) 
-         for(i in (numNA+2):numData) 
-            if (abs(alloc[i, strategyName] - alloc[i-1, strategyName]) < delta) 
-               alloc[i, strategyName] <<- alloc[i-1, strategyName] 
    }
 }
 
    
 createMultiStrategy <- function(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
                                     fraction1=25, fraction2=25, fraction3=25, fraction4="", 
-                                    strategyName="", subtype, numNA, delta="", futureYears=defFutureYears, force=F) {
+                                    strategyName="", subtype, delta="", futureYears=def$futureYears, force=F) {
    
    if (!is.numeric(fraction1)) fraction1 <- 100 - fraction2 - fraction3 - fraction4
    if (!is.numeric(fraction2)) fraction2 <- 100 - fraction1 - fraction3 - fraction4
@@ -41,14 +34,20 @@ createMultiStrategy <- function(inputStrategyName1, inputStrategyName2, inputStr
    
    if(strategyName=="") strategyName <- paste0(subtype, fraction1, "_", fraction2, "_", fraction3, "_", fraction4)
    
-   calcMultiStrategyAlloc(inputStrategyName1=inputStrategyName1, inputStrategyName2=inputStrategyName2, 
+   calcMultiStrategyNorm(inputStrategyName1=inputStrategyName1, inputStrategyName2=inputStrategyName2, 
                            inputStrategyName3=inputStrategyName3, inputStrategyName4=inputStrategyName4, 
                            fraction1=fraction1, fraction2=fraction2, fraction3=fraction3, fraction4=fraction4, 
-                           strategyName=strategyName, numNA=numNA, delta=delta, force=force)
+                           strategyName=strategyName, delta=delta, force=force)
+   calcAllocFromNorm(strategyName)
+   
+   startIndex <- max( parameters$startIndex[ which(parameters$strategy == inputStrategyName1) ],
+                      parameters$startIndex[ which(parameters$strategy == inputStrategyName2) ],
+                      parameters$startIndex[ which(parameters$strategy == inputStrategyName3) ],
+                      parameters$startIndex[ which(parameters$strategy == inputStrategyName4) ] )
  
    if (!(strategyName %in% colnames(TR)) | force) { # if data do not exist yet or we force recalculation:   
-      if (!(strategyName %in% colnames(TR))) {TR[, strategyName] <<- numeric(numData)}
-      calcStrategyReturn(strategyName, numNA)
+      addNumColToTR(strategyName)
+      calcStrategyReturn(strategyName, startIndex)
    }
    
    if ( !(strategyName %in% parameters$strategy) | force) {
@@ -61,6 +60,8 @@ createMultiStrategy <- function(inputStrategyName1, inputStrategyName2, inputStr
       parameters$strategy[index] <<- strategyName
       parameters$type[index] <<- "multi"
       parameters$subtype[index] <<- subtype
+      parameters$startIndex[index] <<- startIndex
+      
       parameters$inputStrategyName1[index] <<- inputStrategyName1
       parameters$inputStrategyName2[index] <<- inputStrategyName2
       parameters$inputStrategyName3[index] <<- inputStrategyName3

@@ -1,74 +1,67 @@
 #default values of parameters:
-defMomentumLow       <- 15
-defMomentumHigh      <- 25
-defMomentumAllocLow  <- 1
-defMomentumAllocHigh <- 0
-defMomentumOffset    <- "mean"
-defMomentumMonths     <- 12L
-
-
-## calculating TR momentum
-calcMomentum <- function(months=defMomentumMonths, strategyName) {
-   addNumColToDat(strategyName)
-   for(i in 1:months) { dat[i, strategyName] <<- NA }
-   for(i in (months+1):numData) {
-      dat[i, strategyName] <<- dat$totalReturn[i-months+1] / dat$totalReturn[i] - 1
-   }
+setMomentumDefaultValues <- function() {
+   def$momentumBearishThreshold <<- 15
+   def$momentumBullishThreshold <<- 25
+   def$momentumOffset           <<- "mean"
+   def$momentumMonths           <<- 12L
 }
 
 
-## Calculating allocation from momentum
-calcMomentumAllocation <- function(months=defMomentumMonths, offset=defMomentumOffset, 
-                                   momentumLow=defMomentumLow, momentumHigh=defMomentumHigh, 
-                                   allocLow=defMomentumAllocLow, allocHigh=defMomentumAllocHigh, 
-                                   strategyName) {
-   momentumLow <- momentumLow/100
-   momentumHigh <- momentumHigh/100
+## calculating momentum
+calcMomentum <- function(inputDF, inputName, months=def$momentumMonths, momentumName) {
+   if (inputDF=="dat")             input <- dat[, inputName]
+   else if (inputDF=="normalized") input <- normalized[, inputName]
+   else if (inputDF=="alloc")      input <- alloc[, inputName]
+   else if (inputDF=="TR")         input <- TR[, inputName]
+   else if (inputDF=="next30yrs")  input <- next30yrs[, inputName]
+   else stop("data frame ", inputDF, " not recognized")
    
-   UBallocName <- paste0(strategyName, "UnboundAlloc")
+   addNumColToDat(momentumName)
+   for(i in 1:months) { dat[i, momentumName] <<- NA }
+   for(i in (months+1):numData) 
+      dat[i, momentumName] <<- input[i] / input[i-months] - 1
+}
+
+
+## Normalize momentum
+normalizeMomentum <- function(inputDF, inputName, months=def$momentumMonths, offset=def$momentumOffset,
+                          bearishThreshold=def$momentumBearishThreshold, bullishThreshold=def$momentumBullishThreshold, strategyName) {
    
-   if (!strategyName %in% colnames(dat)) calcMomentum(months, strategyName)
-   if (!(strategyName %in% colnames(alloc))) alloc[, strategyName] <<- numeric(numData)
-   if (!(UBallocName %in% colnames(strategy))) strategy[, UBallocName] <<- numeric(numData)
+   bearishThreshold <- bearishThreshold/100
+   bullishThreshold <- bullishThreshold/100
+
+   momentumName <- paste0("momentum_", inputName, "_", months)
+   if (!strategyName %in% colnames(dat)) calcMomentum(inputDF=inputDF, inputName=inputName, months, momentumName=momentumName)
+   addNumColToNormalized(strategyName)
    
    if(is.numeric(offset))
-      temp <- dat[, strategyName] - offset
+      temp <- dat[, momentumName] - offset
    else if(offset=="mean") {
-      temp <- dat[, strategyName]
+      temp <- dat[, momentumName]
       m <- mean(temp, na.rm=T)
       temp <- temp - m
    } else stop("offset must be either numerical or \'mean\'.")
    
-   for(i in 1:numData) 
-      if (is.na(temp[i])) {strategy[i, UBallocName] <<- NA}
-   strategy[, UBallocName] <<- (temp-momentumHigh) / (momentumLow-momentumHigh) * (allocLow-allocHigh) + allocHigh
-   for(i in 1:numData) {
-      strategy[i, UBallocName] <<- max(min(strategy[i, UBallocName], 1.5), -0.5)
-      alloc[i, strategyName] <<- max(min(strategy[i, UBallocName], allocLow), allocHigh)
-   }
+#   normalized[1:(startIndex-1), strategyName] <<- NA  
+#   dateRange <- startIndex:numData
+   normalized[, strategyName] <<- 2 * (temp-bullishThreshold) / (bearishThreshold-bullishThreshold) - 1
+   # at bullishThreshold, alloc will be 95% and at bearishThreshold, alloc will be 5%
 }
 
 
-
-createMomentumStrategy <- function(months=defMomentumMonths, offset=defMomentumOffset, 
-                                        momentumLow=defMomentumLow, momentumHigh=defMomentumHigh, 
-                                        allocLow=defMomentumAllocLow, allocHigh=defMomentumAllocHigh, 
-                                        strategyName="", futureYears=defFutureYears, force=F) {
+createMomentumStrategy <- function(inputDF, inputName, months=def$momentumMonths, offset=def$momentumOffset, 
+                                   bearishThreshold=def$momentumBearishThreshold, bullishThreshold=def$momentumBullishThreshold, 
+                                   strategyName="", futureYears=def$futureYears, force=F) {
    
-   if (strategyName=="") strategyName <- paste0("momentum", months, "_", momentumLow, "_", momentumHigh)
+   if (strategyName=="") strategyName <- paste0("momentum_", inputName, "_", months, "_", bearishThreshold, "_", bullishThreshold)
    
    if (!(strategyName %in% colnames(TR)) | force) { # if data do not exist yet or we force recalculation:   
-      #       time0 <- proc.time()
-      calcMomentumAllocation(months=months, offset=offset, momentumLow=momentumLow, momentumHigh=momentumHigh, allocLow=allocLow, allocHigh=allocHigh, strategyName=strategyName)
+      normalizeMomentum(inputDF=inputDF, inputName=inputName, months=months, offset=offset, 
+                        bearishThreshold=bearishThreshold, bullishThreshold=bullishThreshold, strategyName=strategyName)
+      calcAllocFromNorm(strategyName)
       if (!(strategyName %in% colnames(TR))) {TR[, strategyName] <<- numeric(numData)}  
-      #       print("calcMomentumAllocation:")
-      #       print(proc.time()-time0)
-      
-      #       time0 <- proc.time()
-      calcStrategyReturn(strategyName, months)
-      #       print("calcStrategyReturn:")
-      #       print(proc.time()-time0)
-   } 
+      calcStrategyReturn(strategyName, months+1)
+    } 
    
    if ( !(strategyName %in% parameters$strategy) | force) {
       if ( !(strategyName %in% parameters$strategy) ) {
@@ -79,23 +72,22 @@ createMomentumStrategy <- function(months=defMomentumMonths, offset=defMomentumO
       
       parameters$strategy[index] <<- strategyName
       parameters$type[index] <<- "momentum"
-      parameters$allocLow[index] <<-  allocLow
-      parameters$allocHigh[index] <<-  allocHigh
+      parameters$inputDF[index]   <<- inputDF
+      parameters$inputName[index] <<- inputName
+      parameters$startIndex[index] <<- months+1
+      parameters$bearishThreshold[index] <<-  bearishThreshold
+      parameters$bullishThreshold[index] <<-  bullishThreshold
       parameters$offset[index] <<-  offset
       
        parameters$name1[index] <<- "months"
       parameters$value1[index] <<-  months
-       parameters$name2[index] <<- "momentumLow"
-      parameters$value2[index] <<-  momentumLow
-       parameters$name3[index] <<- "momentumHigh"
-      parameters$value3[index] <<-   momentumHigh
    }
    calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)
    stats$type[which(stats$strategy == strategyName)] <<- parameters$type[which(parameters$strategy == strategyName)]
 }
 
 
-plotMomentum <- function(months=defMomentumMonths, offset=defMomentumOffset, futureYears=defFutureYears, startYear=1885L) {
+plotMomentum <- function(months=def$momentumMonths, offset=def$momentumOffset, futureYears=def$futureYears, startYear=1885L) {
    futureReturnName <- paste0("futureReturn", futureYears)
    if (!futureReturnName %in% colnames(dat)) calcFutureReturn(futureYears)
    strategyName <- paste0("momentum", months)
