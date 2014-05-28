@@ -1,12 +1,11 @@
 #default values of parameters:
 setBollDefaultValues <- function() {
-   def$BollBearishThreshold  <<- 0.6
-   def$BollBullishThreshold <<- -0.5
+#    def$BollBearishThreshold  <<- 0.6
+#    def$BollBullishThreshold <<- -0.5
    def$BollAvgOver    <<- 21L
 }
 
-normalizeBoll <- function(inputDF, inputName, avgOver=def$BollAvgOver, 
-                                bearishThreshold=def$BollBearishThreshold, bullishThreshold=def$BollBullishThreshold, strategyName="", force=F) {
+normalizeBoll <- function(inputDF, inputName, avgOver=def$BollAvgOver, strategyName="", force=F) {
 
    BollBandsName <- paste0(inputName, avgOver)
    avgName <- paste0("avg_", BollBandsName)
@@ -33,41 +32,44 @@ normalizeBoll <- function(inputDF, inputName, avgOver=def$BollAvgOver,
 #    print( c( "Bollinger - calc-avg-&SD time:", round(summary(proc.time())[[1]] - time1[[1]] , 2) ) )
    
 #    time1 <- proc.time()    
-   if ( !(strategyName %in% colnames(normalized)) | !(SDname %in% colnames(dat)) | force) {# if data do not exist yet or we force recalculation:
+   if ( !(strategyName %in% colnames(normalized)) | force) {# if data do not exist yet or we force recalculation:
       addNumColToNormalized(strategyName)
-      normalized[(1:avgOver-1), strategyName] <<- NA
-      for(i in avgOver:numData) {
-         normalized[i, strategyName] <<- 1 - 2*(dat[i, avgName] + bullishThreshold*dat[i, SDname] - input[i]) / 
-            dat[i, SDname] / (bullishThreshold + bearishThreshold)
+#       normalized[(1:avgOver-1), strategyName] <<- NA
+#       for(i in avgOver:numData) {
+         normalized[, strategyName] <<- (input[] - dat[, avgName]) / dat[, SDname]
+#          normalized[i, strategyName] <<- 1 - 2*(dat[i, avgName] + bullishThreshold*dat[i, SDname] - input[i]) / 
+#             dat[i, SDname] / (bullishThreshold + bearishThreshold)
+
          # equivalent to:
          #          BollLow   <- dat[i, avgName] - bearishThreshold * dat[i, SDname]
          #          BollHigh  <- dat[i, avgName] + bullishThreshold * dat[i, SDname]
          #          normalized[i, strategyName] <<- 1 - 2*(BollHigh - input[i]) / (BollHigh - BollLow)
-      }
+      
+bearish <- quantile(normalized[, strategyName], 0.75, na.rm=T)[[1]]
+bullish <- quantile(normalized[, strategyName], 0.25, na.rm=T)[[1]]
+normalized[, strategyName] <<- 2 * (normalized[, strategyName]-bullish) / (bearish-bullish) - 1
    }
 #    print( c( "Bollinger - compare-to-bands time:", round(summary(proc.time())[[1]] - time1[[1]] , 2) ) )
 }
 
 
-createBollStrategy <- function(inputDF, inputName, avgOver=def$BollAvgOver, bearishThreshold=def$BollBearishThreshold, bullishThreshold=def$BollBullishThreshold, 
+createBollStrategy <- function(inputDF, inputName, avgOver=def$BollAvgOver, 
+                               medianAlloc, interQuartileAlloc,
                                strategyName="", futureYears=def$FutureYears, force=F) {
 
    if(strategyName=="")  
-      strategyName <- paste0("Boll_", inputName, "_", avgOver, "_", bearishThreshold, "_", bullishThreshold)
+      strategyName <- paste0("Boll_", inputName, "_", avgOver, "_", medianAlloc, "_", interQuartileAlloc)
 
    if (!(strategyName %in% colnames(TR)) | force) { # if data do not exist yet or we force recalculation:   
 #       time0 <- proc.time()
-      normalizeBoll(inputDF=inputDF, inputName=inputName, avgOver=avgOver, bearishThreshold=bearishThreshold, bullishThreshold=bullishThreshold, 
-                    strategyName=strategyName, force=force)
+      normalizeBoll(inputDF=inputDF, inputName=inputName, avgOver=avgOver, strategyName=strategyName, force=force)
 #       print( c( "Bollinger - normalizeBoll() time:", round(summary(proc.time())[[1]] - time0[[1]] , 2) ) )
 
 #       time0 <- proc.time()
-      calcAllocFromNorm(strategyName)
+      calcAllocFromNorm(strategyName, medianAlloc=medianAlloc, interQuartileAlloc=interQuartileAlloc)
 #       print( c( "Bollinger - calcAllocFromNorm() time:", round(summary(proc.time())[[1]] - time0[[1]] , 2) ) )
       
-#       time0 <- proc.time()
       addNumColToTR(strategyName)  
-#       print( c( "Bollinger - addNumColToTR() time:", round(summary(proc.time())[[1]] - time0[[1]] , 2) ) )
       
 #       time0 <- proc.time()
       calcStrategyReturn(strategyName, avgOver+1)
@@ -91,12 +93,37 @@ createBollStrategy <- function(inputDF, inputName, avgOver=def$BollAvgOver, bear
       parameters$startIndex[index] <<- avgOver+1
       parameters$inputDF[index]   <<- inputDF
       parameters$inputName[index] <<- inputName
-      parameters$bearishThreshold[index] <<-  bearishThreshold
-      parameters$bullishThreshold[index] <<-  bullishThreshold
+      parameters$medianAlloc[index] <<-  medianAlloc
+      parameters$interQuartileAlloc[index] <<-  interQuartileAlloc
       parameters$name1[index]  <<- "avgOver"
       parameters$value1[index] <<-  avgOver
    }
-   calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)
+   calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, force=force)
    stats$type[which(stats$strategy == strategyName)] <<- parameters$type[which(parameters$strategy == strategyName)]
 # print( c( "Bollinger - stats time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
 }
+
+
+compareBoll <- function(inputDF="dat", inputName="TR", minAvgOver=21L, maxAvgOver=21L, byAvgOver=12L, 
+                       minMed=90, maxMed=95, byMed=5, minIQ=10, maxIQ=30, byIQ=5, 
+                       futureYears=def$futureYears, tradingCost=def$tradingCost, 
+                       minTR=6.7, maxVol=14.7, maxDD2=1.8, minTO=1.2, force=F) {
+   
+   print(paste0("strategy         |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
+   for ( avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver) ) {
+      for ( med in seq(minMed, maxMed, by=byMed) )       
+         for ( IQ in seq(minIQ, maxIQ, by=byIQ) ) {
+            strategyName <- paste0("Boll_", inputName, "_", avgOver, "_", med, "_", IQ)
+            
+            createBollStrategy(inputDF, inputName, avgOver=avgOver, 
+                               medianAlloc=med, interQuartileAlloc=IQ,
+                               strategyName=strategyName, futureYears=futureYears, force=force)
+            
+            showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
+                                   minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, force=F)
+         }
+      plotReturnVsBothBadWithLine()
+   }
+   #    showSummaries(futureYears=futureYears, tradingCost=tradingCost, detailed=F, force=F)
+}
+

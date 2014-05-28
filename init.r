@@ -27,8 +27,8 @@ start <- function(constAlloc=F, thoroughCheck=F, force=F) {
    if (!exists("next20yrs") | force) next20yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
    if (!exists("next30yrs") | force) next30yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
    
-   if (!exists("strategy") | force) 
-      strategy <<- data.frame(date = dat$date, numericDate = dat$numericDate) #, stocksTR = dat$TR)
+#    if (!exists("strategy") | force) 
+#       strategy <<- data.frame(date = dat$date, numericDate = dat$numericDate) #, stocksTR = dat$TR)
    #   calcStocksFutureReturn(def$futureYears)
    calcCAPE(10, cheat=2)
    
@@ -59,7 +59,7 @@ start <- function(constAlloc=F, thoroughCheck=F, force=F) {
       message("Creating constant-allocation stock-bond strategies.") 
       step <- -10
    }
-   else step <- -100 # 0 to 100 by steps of 100 means we do only 0 and 100, i.e. bonds and stocks
+   else step <- -50 # 0 to 100 by steps of 50 means we do only 0, 50 and 100, i.e. bonds, 50-50 and stocks
    
    invisible ( 
       lapply(seq(100, 0, by=step), 
@@ -69,17 +69,30 @@ start <- function(constAlloc=F, thoroughCheck=F, force=F) {
    print( c( "constant allocation time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
 
    createTypicalStrategies(force=force)
+   
+   plotReturn()
+   showSummaries()
+   
    print(proc.time() - totTime)
 }
 
 
 setDefaultValues <- function(force=F) {
    if (!exists("def") | force) def <<- list()
-   def$futureYears <<- 30L    # default value for the number of years over which future returns are calculated
-   def$tradingCost <<- 4/100 # default value for the trading costs
-   def$typicalStrategies <<- c("technical60_20_20", "CAPE10_2avg24_16_20", "balanced40_25_10_25", "stocks")
-   def$startIndex <<- 10*12+1
-   def$startYear <<- (def$startIndex-1)/12+1871 
+   def$futureYears       <<- 30L    # default value for the number of years over which future returns are calculated
+   def$tradingCost       <<- 2/100 # default value for the trading costs
+   def$startIndex        <<- 10*12+1
+   def$startYear         <<- (def$startIndex-1)/12+1871
+   def$medianAlloc       <<- 70
+   def$interQuartileAlloc<<- 50
+
+   def$typicalCAPE       <<- "CAPE10_2avg24_50_90"
+   def$typicalSMA        <<- "SMA_TR12_TR1_90_50"
+   def$typicalBoll       <<- "Boll_TR_21_95_20"
+   def$typicalMomentum   <<- "momentum_TR_12_95_15"
+   def$typicalTechnical  <<- "technical50_25_25_95_60"
+   def$typicalBalanced   <<- "balanced15_15_70_95_80"
+   def$typicalStrategies <<- c(def$typicalTechnical, def$typicalCAPE, def$typicalBalanced, "stocks")
    
    setCAPEdefaultValues()  
    setBollDefaultValues()
@@ -90,6 +103,7 @@ setDefaultValues <- function(force=F) {
 createStatsDF <- function() {
    stats <<- data.frame(strategy = character(), 
                         type = character(), # type: constant allocation, CAPE, SMA, mixed, etc.
+                        subtype = character(), # especially for Bollinger and mixed
                         TR = numeric(),  # average real total return (exponential regression)
                         volatility = numeric(), 
                         avgStockAlloc = numeric(), # average allocation to stocks
@@ -107,9 +121,9 @@ createParametersDF <- function() {
                              startIndex = numeric(), # the first index that is not NA
                              inputDF = character(),
                              inputName = character(),
-                             bearishThreshold = numeric(),
-                             bullishThreshold = numeric(),
-                             offset = numeric(),
+                             medianAlloc = numeric(),
+                             interQuartileAlloc = numeric(),
+#                              offset = numeric(),
                              inputStrategyName1 = character(), # for multi strategies: name of strategy used as input
                              inputStrategyName2 = character(),
                              inputStrategyName3 = character(),
@@ -226,36 +240,40 @@ createTypicalStrategies <- function(force=F) {
    message("Creating entries for the typical strategies")
 
    time0 <- proc.time()
-   createCAPEstrategy(years=10, cheat=2, avgOver=24, 
-                      bearishThreshold=def$CAPEbearishThreshold, bullishThreshold=def$CAPEbullishThreshold,
-                      futureYears=def$futureYears, force=force)
+   createCAPEstrategy(years=10, cheat=2, avgOver=24, medianAlloc=50, 
+                      interQuartileAlloc=90, futureYears=def$futureYears, force=force)
    print( c( "CAPE time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
-   createBollStrategy("dat", "TR", avgOver=21, bearishThreshold=0.6, bullishThreshold=-0.5, futureYears=def$futureYears, force=force)   
+   createBollStrategy("dat", "TR", avgOver=21,  medianAlloc=95, interQuartileAlloc=20, 
+                      futureYears=def$futureYears, force=force)   
    print( c( "Bollinger time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
-   createSMAstrategy("dat", "TR", SMA1=12, "dat", "TR", SMA2=1, offset="mean", bearishThreshold=5, bullishThreshold=5.5, 
+   createSMAstrategy("dat", "TR", SMA1=12, "dat", "TR", SMA2=1, 
+                     medianAlloc=90, interQuartileAlloc=50, 
                      futureYears=def$futureYears, force=force)   
    print( c( "SMA time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
-   createMomentumStrategy("dat", "TR", 12, offset="mean", bearishThreshold=15, bullishThreshold=25,
+   createMomentumStrategy("dat", "TR", 12, medianAlloc=95, interQuartileAlloc=15, 
                           futureYears=def$futureYears, force=force) 
    print( c( "momentum time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
-   createMultiStrategy("SMA_TR12_TR1_5_5.5", "Boll_TR_21_0.6_-0.5", "momentum_TR_12_15_25", "", 60, 20, 20, 0, 
-                       strategyName="technical60_20_20", delta="", subtype="technical", force=force)
-   print( c( "technical60_20_20 time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
+   createMultiStrategy(def$typicalSMA, def$typicalBoll, def$typicalMomentum, "", 50, 25, 25, 0, 
+                       medianAlloc=95, interQuartileAlloc=60,
+                       strategyName="technical50_25_25_95_60", delta="", subtype="technical", force=force)
+   print( c( "technical50_25_25_95_60 time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
-   calcSMAofStrategy("technical60_20_20", 4, strategyName="technical_SMA4", force=force)
+   calcSMAofStrategy(def$typicalTechnical, 4, medianAlloc=def$medianAlloc, 
+                     interQuartileAlloc=def$interQuartileAlloc, strategyName="technical_SMA4", force=force)
    print( c( "technical_SMA4 time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
-   createMultiStrategy("technical60_20_20", "technical_SMA4", "CAPE10_2avg24_12.6_18.7", "CAPE10_2avg24_12.6_18.7", #"CAPE10avg24_14.6_16.7Unbound", 
-                       40, 25, 10, 25, strategyName="balanced40_25_10_25", delta="", subtype="balanced", force=force)
-   print( c( "balanced40_25_10_25 time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
+   createMultiStrategy(def$typicalTechnical, "technical_SMA4", def$typicalCAPE, "",
+                       medianAlloc=95, interQuartileAlloc=80,
+                       15, 15, 70, 0, strategyName="balanced15_15_70_95_80", delta="", subtype="balanced", force=force)
+   print( c( "balanced15_15_70_95_80 time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
 }

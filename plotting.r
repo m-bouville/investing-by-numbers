@@ -113,8 +113,8 @@ plotReturnVsBothBad <- function(futureReturnYears=def$futureYears, tradingCost=d
 
 plotReturnVsVolatility <- function(futureReturnYears=def$futureYears, tradingCost=def$tradingCost) { 
    
-   medianName <- paste0("median", years)
-   fiveName <- paste0("five", years)
+   medianName <- paste0("median", futureReturnYears)
+   fiveName <- paste0("five", futureReturnYears)
    
    xRange <- c(12, 20)
    yRange <- c(4, 10 - 100*tradingCost/2)
@@ -177,25 +177,45 @@ plotFutureReturnVsAlloc <- function(futureReturnYears=def$futureYears, name1, na
 
 plotReturnVsAverageAllocWithLine <- function(tradingCost=def$tradingCost) { 
    
-   xRange <- c(20, 100)
-   yRange <- c(3, 10 - 100*tradingCost/2)
+   xRange <- c(40, 100)
+   yRange <- c(5.5, 9 - 100*tradingCost/2)
    par( mar=c(4, 4, 1.5, 1.5) )
    
-   plot(100*subset(stats$avgStockAlloc, stats$type!="constantAlloc"), 
-        100*(subset(stats$TR, stats$type!="constantAlloc") - 
-                tradingCost/subset(stats$turnover, stats$type!="constantAlloc")), 
-        pch=15, col="black", xlab="avg. stock alloc. (%)", ylab="total return (%)", xlim=xRange, ylim=yRange)
-   par(new=T)
+   #    plot(100*subset(stats$avgStockAlloc, stats$type!="constantAlloc"), 
+   #         100*(subset(stats$TR, stats$type!="constantAlloc") - 
+   #                 tradingCost/subset(stats$turnover, stats$type!="constantAlloc")), 
+   #         pch=15, col="black", xlab="avg. stock alloc.", ylab="total return (%) net of trading cost", xlim=xRange, ylim=yRange)
+   #    par(new=T)
    plot(100*subset(stats$avgStockAlloc, stats$type=="CAPE"), 
         100*(subset(stats$TR, stats$type=="CAPE") - 
                 tradingCost/subset(stats$turnover, stats$type=="CAPE")), 
-        pch=15, col="blue", xlab="avg. stock alloc. (%)", ylab="total return (%)", xlim=xRange, ylim=yRange)
+        pch=15, col="blue", xlab="", ylab="", xlim=xRange, ylim=yRange)
    par(new=T)
    plot(100*subset(stats$avgStockAlloc, stats$type=="momentum"), 
         100*(subset(stats$TR, stats$type=="momentum") - 
                 tradingCost/subset(stats$turnover, stats$type=="momentum")), 
-        pch=15, col="red", xlab="avg. stock alloc. (%)", ylab="total return (%)", xlim=xRange, ylim=yRange)
+        pch=15, col="orange", xlab="", ylab="", xlim=xRange, ylim=yRange)
    par(new=T)
+   plot(100*subset(stats$avgStockAlloc, stats$type=="SMA"), 
+        100*(subset(stats$TR, stats$type=="SMA") - 
+                tradingCost/subset(stats$turnover, stats$type=="SMA")), 
+        pch=15, col="yellow", xlab="", ylab="", xlim=xRange, ylim=yRange)
+   par(new=T)
+   plot(100*subset(stats$avgStockAlloc, stats$type=="Bollinger"), 
+        100*(subset(stats$TR, stats$type=="Bollinger") - 
+                tradingCost/subset(stats$turnover, stats$type=="Bollinger")), 
+        pch=15, col="magenta", xlab="", ylab="", xlim=xRange, ylim=yRange)
+   par(new=T)   
+   plot(100*subset(stats$avgStockAlloc, stats$subtype=="balanced"), 
+        100*(subset(stats$TR, stats$subtype=="balanced") - 
+                tradingCost/subset(stats$turnover, stats$subtype=="balanced")), 
+        pch=1, col="black", xlab="", ylab="avg. stock alloc. (%), net of trading cost", xlim=xRange, ylim=yRange)
+   par(new=T)   
+   plot(100*subset(stats$avgStockAlloc, stats$subtype=="technical"), 
+        100*(subset(stats$TR, stats$subtype=="technical") - 
+                tradingCost/subset(stats$turnover, stats$subtype=="technical")), 
+        pch=1, col="red", xlab="", ylab="", xlim=xRange, ylim=yRange)
+   par(new=T)   
    plot(100*subset(stats$avgStockAlloc, stats$type=="constantAlloc"), 
         100*(subset(stats$TR, stats$type=="constantAlloc") - 
                 tradingCost/subset(stats$turnover, stats$type=="constantAlloc")), 
@@ -205,24 +225,44 @@ plotReturnVsAverageAllocWithLine <- function(tradingCost=def$tradingCost) {
 
 plotReturnVsVolatilityWithLine <- function(futureReturnYears=def$futureYears, tradingCost=def$tradingCost) { 
    
-   xRange <- c(10, 20)
-   yRange <- c(3, 10 - 100*tradingCost/2)
+   xRange <- c(12, 16)
+   yRange <- c(5.5, 9 - 100*tradingCost/2)
    par( mar=c(4, 4, 1.5, 1.5) )
    
-   plot(100*subset(stats$volatility, stats$type!="constantAlloc"), 
-        100*(subset(stats$TR, stats$type!="constantAlloc") - 
-                tradingCost/subset(stats$turnover, stats$type!="constantAlloc")), 
-        pch=15, col="black", xlab="volatility (%)", ylab="total return (%)", xlim=xRange, ylim=yRange)
-   par(new=T)
+   #    plot(100*subset(stats$volatility, stats$type!="constantAlloc"), 
+   #         100*(subset(stats$TR, stats$type!="constantAlloc") - 
+   #                 tradingCost/subset(stats$turnover, stats$type!="constantAlloc")), 
+   #         pch=15, col="black", xlab="", ylab="", xlim=xRange, ylim=yRange)
+   #    par(new=T)
    plot(100*subset(stats$volatility, stats$type=="CAPE"), 
         100*(subset(stats$TR, stats$type=="CAPE") - 
                 tradingCost/subset(stats$turnover, stats$type=="CAPE")), 
-        pch=15, col="blue", xlab="volatility (%)", ylab="total return (%)", xlim=xRange, ylim=yRange)
+        pch=15, col="blue", xlab="", ylab="", xlim=xRange, ylim=yRange)
    par(new=T)
    plot(100*subset(stats$volatility, stats$type=="momentum"), 
         100*(subset(stats$TR, stats$type=="momentum") - 
                 tradingCost/subset(stats$turnover, stats$type=="momentum")), 
-        pch=15, col="red", xlab="volatility (%)", ylab="total return (%)", xlim=xRange, ylim=yRange)
+        pch=15, col="orange", xlab="", ylab="", xlim=xRange, ylim=yRange)
+   par(new=T)
+   plot(100*subset(stats$volatility, stats$type=="SMA"), 
+        100*(subset(stats$TR, stats$type=="SMA") - 
+                tradingCost/subset(stats$turnover, stats$type=="SMA")), 
+        pch=15, col="yellow", xlab="", ylab="", xlim=xRange, ylim=yRange)
+   par(new=T)
+   plot(100*subset(stats$volatility, stats$type=="Bollinger"), 
+        100*(subset(stats$TR, stats$type=="Bollinger") - 
+                tradingCost/subset(stats$turnover, stats$type=="Bollinger")), 
+        pch=15, col="magenta", xlab="", ylab="", xlim=xRange, ylim=yRange)
+   par(new=T)
+   plot(100*subset(stats$volatility, stats$subtype=="balanced"), 
+        100*(subset(stats$TR, stats$subtype=="balanced") - 
+                tradingCost/subset(stats$turnover, stats$subtype=="balanced")), 
+        pch=1, col="black", xlab="volatility (%)", ylab="total return (%), net of trading cost", xlim=xRange, ylim=yRange)
+   par(new=T)
+   plot(100*subset(stats$volatility, stats$subtype=="technical"), 
+        100*(subset(stats$TR, stats$subtype=="technical") - 
+                tradingCost/subset(stats$turnover, stats$subtype=="technical")), 
+        pch=1, col="red", xlab="", ylab="", xlim=xRange, ylim=yRange)
    par(new=T)
    plot(100*subset(stats$volatility, stats$type=="constantAlloc"), 
         100*(subset(stats$TR, stats$type=="constantAlloc") - 
@@ -233,15 +273,15 @@ plotReturnVsVolatilityWithLine <- function(futureReturnYears=def$futureYears, tr
 
 plotReturnVsDrawdownWithLine <- function(futureReturnYears=def$futureYears, tradingCost=def$tradingCost) { 
    
-   xRange <- c(0.5, 4.5)
-   yRange <- c(3, 10 - 50*tradingCost)
-   par(mar=c(4, 4, 1.5, 4))
+   xRange <- c(1, 2.5)
+   yRange <- c(5.5, 9 - 50*tradingCost)
+   par(mar=c(4, 4, 1.5, 1.5))
    
-   plot(subset(stats$DD2, stats$type!="constantAlloc"), 
-        100*(subset(stats$TR, stats$type!="constantAlloc") - 
-                tradingCost/subset(stats$turnover, stats$type!="constantAlloc")), 
-        pch=15, col="black", xlab="drawdown", ylab="total return (%)", xlim=xRange, ylim=yRange)
-   par(new=T)
+   #    plot(subset(stats$DD2, stats$type!="constantAlloc"), 
+   #         100*(subset(stats$TR, stats$type!="constantAlloc") - 
+   #                 tradingCost/subset(stats$turnover, stats$type!="constantAlloc")), 
+   #         pch=15, col="black", xlab="", ylab="", xlim=xRange, ylim=yRange)
+   #    par(new=T)
    plot(subset(stats$DD2, stats$type=="CAPE"), 
         100*(subset(stats$TR, stats$type=="CAPE") - 
                 tradingCost/subset(stats$turnover, stats$type=="CAPE")), 
@@ -250,7 +290,27 @@ plotReturnVsDrawdownWithLine <- function(futureReturnYears=def$futureYears, trad
    plot(subset(stats$DD2, stats$type=="momentum"), 
         100*(subset(stats$TR, stats$type=="momentum") - 
                 tradingCost/subset(stats$turnover, stats$type=="momentum")), 
-        pch=15, col="red", xlab="", ylab="", xlim=xRange, ylim=yRange)
+        pch=15, col="orange", xlab="", ylab="", xlim=xRange, ylim=yRange)
+   par(new=T)
+   plot(subset(stats$DD2, stats$type=="SMA"), 
+        100*(subset(stats$TR, stats$type=="SMA") - 
+                tradingCost/subset(stats$turnover, stats$type=="SMA")), 
+        pch=15, col="yellow", xlab="", ylab="", xlim=xRange, ylim=yRange)
+   par(new=T)
+   plot(subset(stats$DD2, stats$type=="Bollinger"), 
+        100*(subset(stats$TR, stats$type=="Bollinger") - 
+                tradingCost/subset(stats$turnover, stats$type=="Bollinger")), 
+        pch=15, col="magenta", xlab="", ylab="", xlim=xRange, ylim=yRange)
+   par(new=T)
+   plot(subset(stats$DD2, stats$subtype=="balanced"), 
+        100*(subset(stats$TR, stats$subtype=="balanced") - 
+                tradingCost/subset(stats$turnover, stats$subtype=="balanced")), 
+        pch=1, col="black", xlab="drawdown", ylab="total return (%), net of trading cost", xlim=xRange, ylim=yRange)
+   par(new=T)
+   plot(subset(stats$DD2, stats$subtype=="technical"), 
+        100*(subset(stats$TR, stats$subtype=="technical") - 
+                tradingCost/subset(stats$turnover, stats$subtype=="technical")), 
+        pch=1, col="red", xlab="", ylab="", xlim=xRange, ylim=yRange)
    par(new=T)
    plot(subset(stats$DD2, stats$type=="constantAlloc"), 
         100*(subset(stats$TR, stats$type=="constantAlloc") - 

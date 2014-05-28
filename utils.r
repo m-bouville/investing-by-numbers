@@ -42,7 +42,7 @@ calcNext20YrsReturn <- function(strategyName, force=F) {
       next20yrs[(numData-months+1):numData, strategyName] <<- NA
    }
    median20 <- median(next20yrs[, strategyName], na.rm=T)
-   five20 <- quantile(next20yrs[, strategyName], .05, na.rm=T)
+   five20 <- quantile(next20yrs[, strategyName], .05, na.rm=T)[[1]]
    return( c(median=median20, five=five20) )
 }
 
@@ -58,7 +58,7 @@ calcNext30YrsReturn <- function(strategyName, force=F) {
       next30yrs[(numData-months+1):numData, strategyName] <<- NA
    }
    median30 <- median(next30yrs[, strategyName], na.rm=T)
-   five30 <- quantile(next30yrs[, strategyName], .05, na.rm=T)
+   five30 <- quantile(next30yrs[, strategyName], .05, na.rm=T)[[1]]
    return( c(median=median30, five=five30) )
 }
 
@@ -156,7 +156,7 @@ createConstAllocStrategy <- function(stockAllocation = 70L, strategyName="",
       stats$turnover[index] <<- Inf
    }
    
-   calcStatisticsForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)
+   calcStatisticsForStrategy(strategyName, futureYears=futureYears, force=force)
    stats$type[which(stats$strategy == strategyName)] <<- "constantAlloc"
 }
 
@@ -170,15 +170,23 @@ calcStrategyReturn <- function(strategyName, startIndex) {
 }
 
 
-## Calculating allocation from CAPE
-calcAllocFromNorm <- function(strategyName) {
+## Calculating allocation from normalized
+calcAllocFromNorm <- function(strategyName, medianAlloc, interQuartileAlloc) {
+   ## creates an allocation with median (close to) medianAlloc and 
+   ## with a difference between the 2 quartiles of (exactly) interQuartileAlloc
+   b <- tan(pi*(medianAlloc/100-.5))
+   tan2A <- tan(pi*interQuartileAlloc/100)
+   a <- sqrt(1/tan2A^2 + 1 + b^2) - 1/tan2A
+   #a <- tan(pi*(interQuartileAlloc*2/100-.5)) - b
+#   print(c(a, b))
    requireColInNormalized(strategyName)
    addNumColToAlloc(strategyName)
-   alloc[, strategyName] <<- atan(normalized[, strategyName]*6.3) /pi + .5 
+   alloc[, strategyName] <<- atan(normalized[, strategyName]*a + b) /pi + .5 
 }
 
 
-calcSMAofStrategy <- function(inputStrategyName, avgOver=3L, strategyName="", force=F) {
+calcSMAofStrategy <- function(inputStrategyName, avgOver=3L, medianAlloc=def$medianAlloc, 
+                              interQuartileAlloc=def$interQuartileAlloc, strategyName="", force=F) {
    if (strategyName=="") strategyName <- paste0(name, "_SMA", avgOver)
 
    if (!(inputStrategyName %in% colnames(alloc)))  stop(paste0("alloc$", inputStrategyName, " does not exist."))
@@ -190,7 +198,7 @@ calcSMAofStrategy <- function(inputStrategyName, avgOver=3L, strategyName="", fo
       normalized[1:(avgOver-1), strategyName] <<- NA
       for (i in avgOver:numData) 
          normalized[i, strategyName] <<- mean( normalized[(i-avgOver+1):i, inputStrategyName], na.rm=F )
-      calcAllocFromNorm(strategyName)
+      calcAllocFromNorm(strategyName, medianAlloc, interQuartileAlloc)
       calcStrategyReturn(strategyName, sum(is.na( alloc[, strategyName])))
    }
    warning("Strategy ", strategyName, ", created by calcSMAofStrategy(), has no entry in either \'parameters\' or \'stats\'.")
@@ -235,7 +243,7 @@ calcAllForStrategy <- function(strategyName, futureYears=def$futureYears, tradin
 }
 
 
-calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
+calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears, force=F) {
    
    if ( !(strategyName %in% stats$strategy) ) {
       stats[nrow(stats)+1, ] <<- NA
@@ -307,7 +315,7 @@ showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def
                                    minTR=0, maxVol=20, maxDD2=5, minTO=0, force=F) {
    
    if ( !(strategyName %in% stats$strategy) | force) 
-      calcStatisticsForStrategy(strategyName, years=years, tradingCost=tradingCost, force=force) 
+      calcStatisticsForStrategy(strategyName, futureYears=futureYears, force=force) 
    index <- which(stats$strategy == strategyName)
    medianName <- paste0("median", futureYears)
    fiveName <- paste0("five", futureYears)
@@ -324,7 +332,7 @@ showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def
    med  <- 100*(stats[index, medianName] - TOcost) 
    five <- 100*(stats[index, fiveName] - TOcost) 
    DD2  <- stats$DD2[index]
-   score<- stats$score[index] - 3*100*TOcost + 1.5*tradingCost*100
+   score<- stats$score[index] + 1.5*tradingCost*100
                              
    if (round(ret,1)%%1 == 0) retPad = "  "
       else retPad = ""
@@ -335,7 +343,7 @@ showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def
    if (round(five,1)%%1 == 0) fivePad = "  "
       else fivePad = ""
    if ( is.na(latestAlloc) ) latestAllocPad = " "
-      else if (latestAlloc < 1e-6) latestAllocPad = "  "
+      else if (latestAlloc < 10-1e-6) latestAllocPad = "  "
       else if (latestAlloc == 100) latestAllocPad = ""
       else latestAllocPad = " "
    if (TO>=10) TOpad = ""
@@ -343,54 +351,62 @@ showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def
    if ((10*round(DD2,2))%%1 == 0) DD2Pad = " "
       else DD2Pad = ""
      
-   if(ret>minTR & vol<maxVol & DD2<maxDD2 & TO>minTO)
-      print(paste0(displayName, ": TR: ", round(ret,1), retPad, "% ", 
-                   "(", futureYears, " yrs, med: ", round(med,1), medPad, "%, 5%: ", round(five,1), fivePad, "%), ",
-                   "vol.: ", round(vol,1), volPad, "%, ",
-                   "avg. stock: ", round(avgAlloc), "% ",
-                   "(now: ", round(latestAlloc), latestAllocPad, "%), ",
-                   "TO: ", TOpad, round(TO, 1), " yrs, ",
-                   "DD^2: ", round(DD2,2), ", ", DD2Pad,
-                   "score: ", round(score,1) ) )
+   if(ret>minTR & vol<maxVol & DD2<maxDD2 & TO>minTO) {
+      print(paste0(displayName, " | ", round(ret,1), retPad, "% |   ", 
+                   round(med,1), medPad, "%,  ", round(five,1), fivePad, "% | ",
+                   round(vol,1), volPad, "% |     ",
+                   round(avgAlloc), "%, ", latestAllocPad, round(latestAlloc), "% | ",
+                   TOpad, round(TO, 1), " | ",
+                   round(DD2,2), DD2Pad, " | ", 
+                   round(score,1) ) )
+   }
+#    print(paste0(displayName, ": TR: ", round(ret,1), retPad, "% ", 
+#                 "(", futureYears, " yrs, med: ", round(med,1), medPad, "%, 5%: ", round(five,1), fivePad, "%), ",
+#                 "vol.: ", round(vol,1), volPad, "%, ",
+#                 "avg. stock: ", round(avgAlloc), "% ",
+#                 "(now: ", round(latestAlloc), latestAllocPad, "%), ",
+#                 "TO: ", TOpad, round(TO, 1), " yrs, ",
+#                 "DD^2: ", round(DD2,2), ", ", DD2Pad,
+#                 "score: ", round(score,1) ) )
 }
 
 showSummaries <- function(futureYears=def$futureYears, tradingCost=def$tradingCost, detailed=T, force=F) {
    # force pertains only to showSummaryForStrategy, not to calc...StrategyReturn (these are all set to F)
 
    print(paste0("* Statistics of the strategies (trading costs = ", round(100*tradingCost,2), "% per year of turnover):"))
+   print(paste0("strategy  |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
+
    showSummaryForStrategy("stocks", displayName="stocks   ", futureYears=futureYears, tradingCost=0, force=force)
-   #       calcTRconstAlloc(70)
-   #       strategy$alloc70_30TR <<- dat$TR70stock
-   showSummaryForStrategy("alloc70_30", displayName="70 - 30  ", futureYears=futureYears, tradingCost=0, force=F)
    
    if(detailed) {
-# calcTRconstAlloc(0)
-# strategy$bondsTR <<- dat$TR0stock
-# showSummaryForStrategy("bonds", displayName="bonds    ", futureYears=futureYears, tradingCost=0, force=force)
-#showSummaryConstAlloc("bonds", displayName="bonds    ")
+      #       calcTRconstAlloc(70)
+      #       strategy$alloc70_30TR <<- dat$TR70stock
+      #       showSummaryForStrategy("alloc70_30", displayName="70 - 30  ", futureYears=futureYears, tradingCost=0, force=F)
+      # calcTRconstAlloc(0)
+      # strategy$bondsTR <<- dat$TR0stock
+      # showSummaryForStrategy("bonds", displayName="bonds    ", futureYears=futureYears, tradingCost=0, force=force)
+      #showSummaryConstAlloc("bonds", displayName="bonds    ")
    }  
-   calcAvgCAPE(CAPEname="CAPE10", avgOver=24)
-     showSummaryForStrategy("CAPE10avg24", displayName="CAPE10   ", futureYears=futureYears, tradingCost=tradingCost, force=force)
-
-   calcCAPEstrategyReturn(CAPEname="CAPE10avg24", offset=defInitialOffset, CAPElow=14.6, CAPEhigh=16.7, allocLow=1, allocHigh=0, force = F)
-   calcBollTRstrategyReturn(avgOver=21, factorLow=0.6, factorHigh=-0.5, "BollTR21_0.6_-0.5", force = F)
-   calcSMAstrategyReturn(SMA1=12, SMA2=1, offset="mean", ratioLow=.05, ratioHigh=.055, allocLow=1, allocHigh=0, force = F)
-   calcMomentumStrategyReturn(12, offset="mean", momentumLow=.15, momentumHigh=.25, allocLow=1, allocHigh=0, 
-                              strategyName="momentum12_15_25", force = F) 
+   #createCAPEstrategy(years=10, cheat=2, avgOver=24, futureYears=futureYears, force=force)
+   showSummaryForStrategy(def$typicalCAPE, displayName="CAPE10   ", futureYears=futureYears, tradingCost=tradingCost, force=force)
+   
+#    createBollStrategy("dat", "TR", avgOver=21, futureYears=def$futureYears, force=F)   
+#    createSMAstrategy("dat", "TR", SMA1=12, "dat", "TR", SMA2=1, offset="mean", futureYears=def$futureYears, force=F)   
+#    createMomentumStrategy("dat", "TR", 12, offset="mean", futureYears=def$futureYears, force=F) 
    if(detailed) {
-      showSummaryForStrategy("BollTR21_0.6_-0.5", displayName="Bollinger", futureYears=futureYears, tradingCost=tradingCost, force=force)
-      showSummaryForStrategy("SMA12_1", displayName="SMA 12-1 ", futureYears=futureYears, tradingCost=tradingCost, force=force)   
-      showSummaryForStrategy("momentum12_15_25", displayName="momentum ", futureYears=futureYears, tradingCost=tradingCost, force=force)
+      showSummaryForStrategy(def$typicalBoll, displayName="Bollinger", futureYears=futureYears, tradingCost=tradingCost, force=force)
+      showSummaryForStrategy(def$typicalSMA, displayName="SMA 12-1 ", futureYears=futureYears, tradingCost=tradingCost, force=force)   
+      showSummaryForStrategy(def$typicalMomentum, displayName="momentum ", futureYears=futureYears, tradingCost=tradingCost, force=force)
    }
    
-     calcMultiStrategyReturn("SMA12_1", "BollTR21_0.6_-0.5", "momentum12_15_25", "", 0.6, 0.2, 0.2, 0, 
-                           strategyName="hiFreq60_20_20", 12, delta="", force=F)
-     showSummaryForStrategy("hiFreq60_20_20", displayName="hi freq. ", futureYears=futureYears, tradingCost=tradingCost, force=force)
-
-   calcSMAofStrategy("hiFreq60_20_20", 4, strategyName="hiFreq_SMA4", force=F)
-   calcMultiStrategyReturn("hiFreq60_20_20", "hiFreq_SMA4", "CAPE10avg24", "CAPE10avg24Unbound", .4, .25, .1, .25,
-                           strategyName="balanced40_25_10_25", defInitialOffset, delta="", force=F)
-     showSummaryForStrategy("balanced40_25_10_25", displayName="balanced ", futureYears=futureYears, tradingCost=tradingCost, force=force)
+#    createMultiStrategy("SMA_TR12_TR1", "Boll_TR_21", "momentum_TR_12", "", 60, 20, 20, 0, 
+#                        strategyName="technical60_20_20", delta="", subtype="technical", force=force)
+   showSummaryForStrategy(def$typicalTechnical, displayName="technical", futureYears=futureYears, tradingCost=tradingCost, force=force)
+   
+#    calcSMAofStrategy("technical60_20_20", 4, strategyName="technical_SMA4", force=force)
+#    createMultiStrategy("technical60_20_20", "technical_SMA4", "CAPE10_2avg24", "CAPE10_2avg24", #"CAPE10avg24_14.6_16.7Unbound", 
+#                        40, 25, 10, 25, strategyName="balanced40_25_10_25", delta="", subtype="balanced", force=force)
+   showSummaryForStrategy(def$typicalBalanced, displayName="balanced ", futureYears=futureYears, tradingCost=tradingCost, force=force)
    
    print("")
 }

@@ -2,9 +2,9 @@
 setSMAdefaultValues <- function() {
    def$SMA1                <<- 12L
    def$SMA2                <<- 1L
-   def$SMAbearishThreshold <<- 5
-   def$SMAbullishThreshold <<- 5.5 
-   def$SMAoffset           <<- "mean"
+#    def$SMAbearishThreshold <<- 5
+#    def$SMAbullishThreshold <<- 5.5 
+#    def$SMAoffset           <<- "mean"
 }
 
 ## calculating simple moving average (SMA)
@@ -25,45 +25,46 @@ calcSMA <- function(inputDF, inputName, avgOver, SMAname) {
 
 
 ## Normalize SMA
-normalizeSMA <- function(SMAname1, SMAname2, offset=def$SMAoffset, 
-                          bearishThreshold=def$SMAbearishThreshold, bullishThreshold=def$SMAbullishThreshold, strategyName) {
+normalizeSMA <- function(SMAname1, SMAname2, strategyName) {
    
    requireColInDat(SMAname1)
    requireColInDat(SMAname2)
    addNumColToNormalized(strategyName)
    
-   if(is.numeric(offset))
-      temp <- dat[, SMAname1] / dat[, SMAname2] - 1 - offset
-   else if(offset=="mean") {
-      temp <- dat[, SMAname1] / dat[, SMAname2] - 1
-      m <- mean(temp, na.rm=T)
-      temp <- temp - m
-   } else stop("offset must be either numerical or \'mean\'.")
+   #    if(is.numeric(offset))
+   #       temp <- dat[, SMAname1] / dat[, SMAname2] - 1 - offset
+   #    else if(offset=="mean") {
+   #       temp <- dat[, SMAname1] / dat[, SMAname2] - 1
+   #       m <- mean(temp, na.rm=T)
+   #       temp <- temp - m
+   #    } else stop("offset must be either numerical or \'mean\'.")
+   temp <- dat[, SMAname1] / dat[, SMAname2] - 1
 
-   bearishThreshold <- bearishThreshold/100
-   bullishThreshold <- bullishThreshold/100
+   bearish <- quantile(temp, 0.25, na.rm=T)[[1]]
+   bullish <- quantile(temp, 0.75, na.rm=T)[[1]]
    
-   normalized[, strategyName] <<- 2 * (temp-bullishThreshold) / (bearishThreshold-bullishThreshold) - 1
-   # at bullishThreshold, alloc will be 95% and at bearishThreshold, alloc will be 5%
+   normalized[, strategyName] <<- 2 * (temp-bullish) / (bearish-bullish) - 1
 }
 
 
-createSMAstrategy <- function(inputDF1, inputName1, SMA1=def$SMA1, inputDF2, inputName2, SMA2=def$SMA2, offset=def$SMAoffset, 
-                              bearishThreshold=def$SMAbearishThreshold, bullishThreshold=def$SMAbullishThreshold, 
-                              strategyName="", futureYears=def$FutureYears, force=F) {
+createSMAstrategy <- function(inputDF1, inputName1, SMA1=def$SMA1, inputDF2, inputName2, SMA2=def$SMA2, 
+                              medianAlloc, interQuartileAlloc,
+                              strategyName="", futureYears=def$futureYears, force=F) {
    
-   if (strategyName=="") strategyName <- paste0("SMA_", inputName1, SMA1, "_", inputName2, SMA2, 
-                                                "_", bearishThreshold, "_", bullishThreshold)
+   if (strategyName=="") 
+      strategyName <- paste0("SMA_", inputName1, SMA1, "_", inputName2, SMA2, "_", medianAlloc, "_", interQuartileAlloc)
    SMAname1 <- paste0("SMA_", inputName1, "_", SMA1)
-   calcSMA(inputDF1, inputName1, SMA1, SMAname1)      
+   if (!(SMAname1 %in% colnames(dat)) | force)
+      calcSMA(inputDF1, inputName1, SMA1, SMAname1)      
    SMAname2 <- paste0("SMA_", inputName2, "_", SMA2)
-   calcSMA(inputDF2, inputName2, SMA2, SMAname2)      
+   if (!(SMAname2 %in% colnames(dat)) | force)
+      calcSMA(inputDF2, inputName2, SMA2, SMAname2)      
    
    if (!(strategyName %in% colnames(TR)) | force) { # if data do not exist yet or we force recalculation:   
-      normalizeSMA(SMAname1, SMAname2, offset, bearishThreshold=bearishThreshold, bullishThreshold=bullishThreshold, strategyName=strategyName)
-      calcAllocFromNorm(strategyName)
+      normalizeSMA(SMAname1, SMAname2, strategyName=strategyName)
+      calcAllocFromNorm(strategyName, medianAlloc=medianAlloc, interQuartileAlloc=interQuartileAlloc)
 #       calcSMAallocation(SMA1, SMA2, offset, ratioLow, ratioHigh, allocLow, allocHigh, strategyName=strategyName)
-      if (!(strategyName %in% colnames(TR))) TR[, strategyName] <<- numeric(numData)
+      addNumColToTR(strategyName)
       calcStrategyReturn(strategyName, max(SMA1,SMA2)+1)
    }
    
@@ -80,9 +81,9 @@ createSMAstrategy <- function(inputDF1, inputName1, SMA1=def$SMA1, inputDF2, inp
       parameters$inputDF[index]    <<- inputDF1
       parameters$inputName[index]  <<- inputName1
       
-      parameters$bearishThreshold[index] <<-  bearishThreshold
-      parameters$bullishThreshold[index] <<-  bullishThreshold
-      parameters$offset[index] <<-  offset
+      parameters$medianAlloc[index] <<-  medianAlloc
+      parameters$interQuartileAlloc[index] <<-  interQuartileAlloc
+#       parameters$offset[index] <<-  offset
       
        parameters$name1[index] <<- "SMA1"
       parameters$value1[index] <<-  SMA1
@@ -93,13 +94,36 @@ createSMAstrategy <- function(inputDF1, inputName1, SMA1=def$SMA1, inputDF2, inp
        parameters$name4[index] <<- "inputName2"
       parameters$value4[index] <<-  inputName2
    }
-   calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)
+   calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, force=force)
    stats$type[which(stats$strategy == strategyName)] <<- parameters$type[which(parameters$strategy == strategyName)]
 }
 
 
+compareSMA <-function(inputDF1="dat", inputName1="TR", inputDF2="dat", inputName2="TR", 
+                      minSMA1=12L, maxSMA1=12L, bySMA1=3L, minSMA2=1L, maxSMA2=1L, bySMA2=1L, 
+                      minMed=10, maxMed=90, byMed=10, minIQ=10, maxIQ=90, byIQ=10, 
+                      futureYears=def$futureYears, tradingCost=def$tradingCost, 
+                      minTR=5.2, maxVol=14.5, maxDD2=2.2, minTO=1., force=F) {
+   
+   print(paste0("strategy           |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
+   for ( SMA1 in seq(minSMA1, maxSMA1, by=bySMA1) ) 
+      for ( SMA2 in seq(minSMA2, maxSMA2, by=bySMA2) )       
+         for ( med in seq(minMed, maxMed, by=byMed) )       
+            for ( IQ in seq(minIQ, maxIQ, by=byIQ) ) {
+               strategyName <- paste0("SMA_", inputName1, SMA1, "_", inputName2, SMA2, "_", med, "_", IQ)
+               
+               createSMAstrategy(inputDF1=inputDF1, inputName1=inputName1, SMA1=SMA1,
+                                 inputDF2=inputDF2, inputName2=inputName2, SMA2=SMA2,
+                                 medianAlloc=med, interQuartileAlloc=IQ, strategyName=strategyName, force=force)                  
+               showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
+                                      minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, force=F)
+            }
+   #    showSummaries(futureYears=futureYears, tradingCost=tradingCost, detailed=F, force=F)
+   plotReturnVsBothBadWithLine()
+}
 
-plotSMA <- function(SMA1=def$SMA1, SMA2=def$SMA2, offset=def$SMAoffset, futureYears=def$FutureYears, startYear=1885) {
+
+plotSMA <- function(SMA1=def$SMA1, SMA2=def$SMA2, futureYears=def$FutureYears, startYear=1885) {
    futureReturnName <- paste0("future", futureYears)
    if (!futureReturnName %in% colnames(dat)) calcStocksFutureReturn(futureYears)
    SMAname1 <- paste0("SMA", SMA1)
@@ -110,12 +134,12 @@ plotSMA <- function(SMA1=def$SMA1, SMA2=def$SMA2, offset=def$SMAoffset, futureYe
    temp <- numeric(numData)
    
    temp <- dat[, SMAname1] / dat[, SMAname2] - 1
-   if(is.numeric(offset))
-      m <- offset
-   else if(offset=="mean") {
-      m <- mean(temp, na.rm=T)
-   } else stop("offset must be either numerical or \'mean\'.")
-   temp <- temp - m
+#    if(is.numeric(offset))
+#       m <- offset
+#    else if(offset=="mean") {
+#       m <- mean(temp, na.rm=T)
+#    } else stop("offset must be either numerical or \'mean\'.")
+#    temp <- temp - m
    
    plot(dat$date, temp, type="l", xlim=c(dat$date[(startYear-1871)*12], dat$date[numData]), xlab="SMA ratio", 
         ylab=paste0(SMAname1," / ",SMAname2," - ", 1+round(m,2)), ylim=c(-.5,.5))
