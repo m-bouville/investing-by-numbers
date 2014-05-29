@@ -2,9 +2,8 @@
 setSMAdefaultValues <- function() {
    def$SMA1                <<- 12L
    def$SMA2                <<- 1L
-#    def$SMAbearishThreshold <<- 5
-#    def$SMAbullishThreshold <<- 5.5 
-#    def$SMAoffset           <<- "mean"
+   def$SMAmedianAlloc      <<- 90
+   def$SMAinterQuartileAlloc <<- 50
 }
 
 ## calculating simple moving average (SMA)
@@ -31,13 +30,6 @@ normalizeSMA <- function(SMAname1, SMAname2, strategyName) {
    requireColInDat(SMAname2)
    addNumColToNormalized(strategyName)
    
-   #    if(is.numeric(offset))
-   #       temp <- dat[, SMAname1] / dat[, SMAname2] - 1 - offset
-   #    else if(offset=="mean") {
-   #       temp <- dat[, SMAname1] / dat[, SMAname2] - 1
-   #       m <- mean(temp, na.rm=T)
-   #       temp <- temp - m
-   #    } else stop("offset must be either numerical or \'mean\'.")
    temp <- dat[, SMAname1] / dat[, SMAname2] - 1
 
    bearish <- quantile(temp, 0.25, na.rm=T)[[1]]
@@ -47,8 +39,9 @@ normalizeSMA <- function(SMAname1, SMAname2, strategyName) {
 }
 
 
-createSMAstrategy <- function(inputDF1, inputName1, SMA1=def$SMA1, inputDF2, inputName2, SMA2=def$SMA2, 
-                              medianAlloc, interQuartileAlloc,
+createSMAstrategy <- function(inputDF1="dat", inputName1="TR", SMA1=def$SMA1, 
+                              inputDF2="dat", inputName2="TR", SMA2=def$SMA2, 
+                              medianAlloc=def$SMAmedianAlloc, interQuartileAlloc=def$SMAinterQuartileAlloc,
                               strategyName="", futureYears=def$futureYears, force=F) {
    
    if (strategyName=="") 
@@ -83,7 +76,6 @@ createSMAstrategy <- function(inputDF1, inputName1, SMA1=def$SMA1, inputDF2, inp
       
       parameters$medianAlloc[index] <<-  medianAlloc
       parameters$interQuartileAlloc[index] <<-  interQuartileAlloc
-#       parameters$offset[index] <<-  offset
       
        parameters$name1[index] <<- "SMA1"
       parameters$value1[index] <<-  SMA1
@@ -99,7 +91,7 @@ createSMAstrategy <- function(inputDF1, inputName1, SMA1=def$SMA1, inputDF2, inp
 }
 
 
-compareSMA <-function(inputDF1="dat", inputName1="TR", inputDF2="dat", inputName2="TR", 
+searchForOptimalSMA <-function(inputDF1="dat", inputName1="TR", inputDF2="dat", inputName2="TR", 
                       minSMA1=12L, maxSMA1=12L, bySMA1=3L, minSMA2=1L, maxSMA2=1L, bySMA2=1L, 
                       minMed=10, maxMed=90, byMed=10, minIQ=10, maxIQ=90, byIQ=10, 
                       futureYears=def$futureYears, tradingCost=def$tradingCost, 
@@ -134,12 +126,6 @@ plotSMA <- function(SMA1=def$SMA1, SMA2=def$SMA2, futureYears=def$FutureYears, s
    temp <- numeric(numData)
    
    temp <- dat[, SMAname1] / dat[, SMAname2] - 1
-#    if(is.numeric(offset))
-#       m <- offset
-#    else if(offset=="mean") {
-#       m <- mean(temp, na.rm=T)
-#    } else stop("offset must be either numerical or \'mean\'.")
-#    temp <- temp - m
    
    plot(dat$date, temp, type="l", xlim=c(dat$date[(startYear-1871)*12], dat$date[numData]), xlab="SMA ratio", 
         ylab=paste0(SMAname1," / ",SMAname2," - ", 1+round(m,2)), ylim=c(-.5,.5))

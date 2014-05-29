@@ -7,6 +7,7 @@ source("plotting.r") # various functions that generate plots
 
 # Strategies:
 source("CAPE.r")
+source("detrended.r")
 source("Bollinger.r")
 source("SMA.r")
 source("momentum.r")
@@ -18,7 +19,7 @@ source("multiStrategies.r")
 ## thorough: calculates stock-bond constant allocations in increments of 10% (stocks and bonds are always done)
 
 # plotReturn(showAlloc=T)
-plotReturnVsBothBadWithLine()
+plotReturnVsFour()
 
 
 

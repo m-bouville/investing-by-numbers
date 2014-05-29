@@ -3,11 +3,11 @@
 setCAPEdefaultValues <- function() {
    def$CAPEyears     <<- 10
    def$CAPEcheat     <<- 2
-   def$CAPEavgOver   <<- 24
+   def$CAPEavgOver   <<- 30
    def$initialOffset <<- (def$CAPEyears-def$CAPEcheat)*12 + def$CAPEavgOver
    
-#    def$CAPEbearishThreshold <<- 12.6
-#    def$CAPEbullishThreshold <<- 18.7
+   def$CAPEmedianAlloc <<- 90
+   def$CAPEinterQuartileAlloc <<- 98
    
    def$CAPEstrategies <<- c("CAPE10_2avg24_15_15", "CAPE10_2avg24_16_20", "CAPE10_2avg24_15_15", "CAPE10_16_24")
 }
@@ -58,7 +58,7 @@ normalizeCAPE <- function(CAPEname="CAPE10_2avg24", startIndex=def$startIndex, s
 
 
 createCAPEstrategy <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver=def$CAPEavgOver, 
-                               medianAlloc=def$medianAlloc, interQuartileAlloc=def$interQuartileAlloc,
+                               medianAlloc=def$CAPEmedianAlloc, interQuartileAlloc=def$CAPEinterQuartileAlloc,
                                futureYears=def$futureYears, strategyName="", force=F) {
 
    CAPEname <- paste0("CAPE", years, "_", cheat, "avg", avgOver)
@@ -83,28 +83,29 @@ createCAPEstrategy <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver
       }
       index <- which(parameters$strategy == strategyName)
       
-      parameters$strategy[index] <<- strategyName
-      parameters$type[index] <<- "CAPE"
+      parameters$strategy[index]   <<- strategyName
+      parameters$type[index]       <<- "CAPE"
       parameters$startIndex[index] <<- startIndex
-      parameters$medianAlloc[index] <<-  medianAlloc
+      parameters$medianAlloc[index]<<-  medianAlloc
       parameters$interQuartileAlloc[index] <<-  interQuartileAlloc
+      parameters$avgOver[index]    <<-  avgOver   
    }
    calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, force=force)
    stats$type[which(stats$strategy == strategyName)] <<- parameters$type[which(parameters$strategy == strategyName)]
 }
 
 
-compareCAPE <-function(minCheat=2, maxCheat=2, byCheat=0, minAvgOver=24, maxAvgOver=24, byAvgOver=0, 
+searchForOptimalCAPE <-function(minCheat=2, maxCheat=2, byCheat=0, minAvgOver=30, maxAvgOver=30, byAvgOver=0, 
                        minMed=40, maxMed=90, byMed=10, minIQ=10, maxIQ=90, byIQ=10, 
                        futureYears=def$futureYears, tradingCost=def$tradingCost, 
-                       minTR=6.5, maxVol=14.5, maxDD2=2.2, minTO=8, force=F) {
-
+                       minTR=6.5, maxVol=14.5, maxDD2=1.8, minTO=8, force=F) {
+   
    print(paste0("strategy            |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
    for (cheat in seq(minCheat, maxCheat, by=byCheat)) {
       calcCAPE(years=def$CAPEyears, cheat=cheat)
       for (avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver)) {
          calcAvgCAPE(years=def$CAPEyears, cheat=cheat, avgOver=avgOver)
-         for ( med in seq(minMed, maxMed, by=byMed) )       
+         for ( med in seq(minMed, maxMed, by=byMed) ) {      
             for ( IQ in seq(minIQ, maxIQ, by=byIQ) ) {
                strategyName <- paste0("CAPE10_", cheat, "avg", avgOver, "_", med, "_", IQ)
                
@@ -113,13 +114,14 @@ compareCAPE <-function(minCheat=2, maxCheat=2, byCheat=0, minAvgOver=24, maxAvgO
                showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
                                       minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, force=F)
             }
+         plotReturnVsFour()
+         }
       }
    }
-#    showSummaries(futureYears=futureYears, tradingCost=tradingCost, detailed=F, force=F)
-plotReturnVsBothBadWithLine()
+   #    showSummaries(futureYears=futureYears, tradingCost=tradingCost, detailed=F, force=F)
 }
 
-optimizeMetaCAPE <-function(stratName1=def$CAPEstrategies[[1]], stratName2=def$CAPEstrategies[[2]], stratName3=def$CAPEstrategies[[3]], stratName4="",
+searchForOptimalMetaCAPE <-function(stratName1=def$CAPEstrategies[[1]], stratName2=def$CAPEstrategies[[2]], stratName3=def$CAPEstrategies[[3]], stratName4="",
                             minF1=20, maxF1=80, dF1=20, minF2=minF1, maxF2=maxF1, dF2=dF1, minF3=minF1, maxF3=maxF1, 
                             futureYears=def$FutureYears, tradingCost=def$TradingCost, cutoffScore=17, force=F) {
 
