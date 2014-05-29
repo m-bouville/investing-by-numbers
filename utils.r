@@ -27,9 +27,6 @@ requireColInTR <- function(colName) {
 }
 
 
-futureDFelement <- function(strategyName, futureYears, index) {
-  return ( eval(parse(text=paste0("future",futureYears,"[",i,",\"",strategyName,"\"]") ) ) )
-}
 
 calcNext20YrsReturn <- function(strategyName, force=F) {
    if (!strategyName %in% colnames(next20yrs) | force) {
@@ -46,7 +43,6 @@ calcNext20YrsReturn <- function(strategyName, force=F) {
    return( c(median=median20, five=five20) )
 }
 
-
 calcNext30YrsReturn <- function(strategyName, force=F) {
    if (!strategyName %in% colnames(next30yrs) | force) {
       next30yrs[, strategyName] <<- numeric(numData)
@@ -61,7 +57,6 @@ calcNext30YrsReturn <- function(strategyName, force=F) {
    five30 <- quantile(next30yrs[, strategyName], .05, na.rm=T)[[1]]
    return( c(median=median30, five=five30) )
 }
-
 
 ## calculating future annualized return of strategies
 calcStrategyFutureReturn <- function(strategyName, futureYears = numeric(), force=F) {
@@ -85,10 +80,6 @@ createGoldStrategy <- function(strategyName="", futureYears=def$futureYears, tra
    for(i in (index1968+1):numData) 
       TR[i, strategyName] <<- TR[i-1, strategyName] * dat$gold[i] / dat$gold[i-1] 
    
-#    if ( !(strategyName %in% parameters$strategy) ) {
-#       parameters$type[index] <<- "gold"
-#    }
-   
    if ( !(strategyName %in% stats$strategy) ) {
       index <- nrow(stats)+1 # row where the info will be added
       stats[index, ] <<- NA
@@ -101,6 +92,30 @@ createGoldStrategy <- function(strategyName="", futureYears=def$futureYears, tra
 
 #    calcStatisticsForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)
 ## since gold data start in 1968 gold statistics cannot be relevantly compared with other assets or strategies
+}
+
+createUKhousePriceStrategy <- function(strategyName="", futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
+   if (strategyName == "") strategyName <- "UKhousePrice" 
+   addNumColToTR(strategyName)
+   
+   index1975 <- (1975-1871)*12+1
+   TR[, strategyName] <<- NA
+   TR[index1975+1, strategyName] <<- 1
+   for(i in (index1975+2):numData) 
+      TR[i, strategyName] <<- TR[i-1, strategyName] * dat$UKhousePrice[i] / dat$UKhousePrice[i-1] 
+   
+   if ( !(strategyName %in% stats$strategy) ) {
+      index <- nrow(stats)+1 # row where the info will be added
+      stats[index, ] <<- NA
+      stats$strategy[index] <<- strategyName
+      stats$avgStockAlloc[index] <<- NA
+      stats$latestStockAlloc[index] <<- NA
+      stats$turnover[index] <<- Inf
+   }
+   stats$type[which(stats$strategy == strategyName)] <<- "UKhousePrice"
+   
+   #    calcStatisticsForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)
+   ## since real UKhousePrice data are only available since 1975 UKhousePrice statistics cannot be relevantly compared with other assets or strategies
 }
 
 
@@ -143,10 +158,6 @@ createConstAllocStrategy <- function(stockAllocation = 70L, strategyName="",
 
    TRconstAllocName <- calcTRconstAlloc(stockAllocation=stockAllocation, strategyName=strategyName, force=force) 
    
-#    if ( !(strategyName %in% parameters$strategy) ) {
-#       parameters$type[index] <<- "constantAlloc"
-#    }
-   
    if ( !(strategyName %in% stats$strategy) ) {
       index <- nrow(stats)+1 # row where the info will be added
       stats[index, ] <<- NA
@@ -173,7 +184,7 @@ calcStrategyReturn <- function(strategyName, startIndex) {
 ## Calculating allocation from normalized
 calcAllocFromNorm <- function(strategyName, medianAlloc, interQuartileAlloc) {
    ## creates an allocation with median (close to) medianAlloc and 
-   ## with a difference between the 2 quartiles of (exactly) interQuartileAlloc
+   ## with a difference between the 2 quartiles of interQuartileAlloc
    b <- tan(pi*(medianAlloc/100-.5))
    tan2A <- tan(pi*interQuartileAlloc/100)
    a <- sqrt(1/tan2A^2 + 1 + b^2) - 1/tan2A
@@ -230,6 +241,11 @@ calcSMAofStrategy <- function(inputStrategyName, avgOver=3L, futureYears=def$fut
 #    warning("Strategy ", strategyName, ", created by calcSMAofStrategy(), has no entry in either \'parameters\' or \'stats\'.")
 }
 
+## Modern portfolio theory (Markowitz)
+# MPT <- function(x, y) { 
+#    a <- var(x)+2*cov(x,y) / (var(x)+var(y)-2*cov(x,y)
+#    return( a )
+# }
 
 regression <- function(x, y) { # y = a + b x
    b <- cov(x,y) / var(x)
@@ -321,8 +337,6 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
          turnover[(def$startIndex+1):numData] <- abs(alloc[(def$startIndex+1):numData, strategyName] - 
                                                         alloc[def$startIndex:(numData-1), strategyName])
          stats$turnover[index] <<- 1/12/mean(turnover[dateRange], na.rm=F)
-         #       TOcost <- tradingCost / TO
-         #       invTO <- 1/TO     
          stats$avgStockAlloc[index]    <<- mean(alloc[dateRange, strategyName], na.rm=T)
          stats$latestStockAlloc[index] <<- alloc[numData, strategyName]     
       }
@@ -334,7 +348,7 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
       stats[index, fiveName]  <<- median_five[[2]]
       stats$DD2[index]        <<- sum(DD[, strategyName]^2)
       stats$score[index]      <<- 100*stats$TR[index] - 100*stats$volatility[index]/5 + 100*stats[index, medianName] + 
-         100*stats[index, fiveName] - stats$DD2[index] - 1/stats$turnover[index] # + 1.5*tradingCost*100   
+         100*stats[index, fiveName] - stats$DD2[index] - 1/stats$turnover[index]   
    }
 }
 
