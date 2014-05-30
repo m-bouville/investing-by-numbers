@@ -1,9 +1,9 @@
 
 plotAssetReturn <- function(stratName1="gold", stratName2="bonds", 
                             stratName3="UKhousePrice", stratName4="stocks", 
-                       startYear=1975.25, endYear=2014, minTR=.5, maxTR=15) {
+                            startYear=1975.25, endYear=2014, net=F, minTR=.5, maxTR=15) {
    plotReturn(stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4, 
-              startYear=startYear, endYear=endYear, minTR=minTR, maxTR=maxTR) 
+              startYear=startYear, endYear=endYear, net=net, minTR=minTR, maxTR=maxTR) 
 }
 
 
@@ -118,237 +118,251 @@ plotReturnAndAlloc <- function(stratName1=def$typicalStrategies[[1]], stratName2
 }
 
 
-plotReturnVsVolatility <- function(tradingCost=def$tradingCost) { 
+#default values of plotting parameters
+setPlottingDefaultValues <- function() {
+   def$yTRmin<<- 5.5
    
-   xRange <- c(12, 16)
-   yRange <- c(5.5, 9.5 - 100*tradingCost/2)
+   def$type1 <<- "CAPE"
+   def$col1  <<- "cyan"
+   def$pch1  <<- 18L
+   
+   def$type2 <<- "detrended"
+   def$col2  <<- "skyblue"
+   def$pch2  <<- 18L
+   
+   def$type3 <<- "momentum"
+   def$col3  <<- "orange"
+   def$pch3  <<- 18L
+   
+   def$type4 <<- "SMA"
+   def$col4  <<- "orangered1"
+   def$pch4  <<- 18L
+   
+   def$type5 <<- "Bollinger"
+   def$col5  <<- "magenta"
+   def$pch5  <<- 18L
+   
+   # multistrategies
+   def$Msubtype1 <<- "value"
+   def$Mcol1     <<- "blue"
+   def$Mpch1     <<- 15L
+   
+   def$Msubtype2 <<- "technical"
+   def$Mcol2     <<- "red"
+   def$Mpch2     <<- 15L
+   
+   def$Msubtype3 <<- "balanced"
+   def$Mcol3     <<- "black"
+   def$Mpch3     <<- 15L
+   
+   def$lineCol   <<- "green"
+}
+
+
+plotAllReturnsVsSomeParameter <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, type2=def$type2, col2=def$col2, pch2=def$pch2,
+                                          type3=def$type3, col3=def$col3, pch3=def$pch3, type4=def$type4, col4=def$col4, pch4=def$pch4,
+                                          type5=def$type5, col5=def$col5, pch5=def$pch5, 
+                                          Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
+                                          Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
+                                          Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
+                                          lineCol=def$lineCol,
+                                          xStatsName, xFactor=100, xLabel="volatility (%)",
+                                          yStatsName="netTR2", yFactor=100,
+                                          xMin, xMax, yMin=def$yTRmin, tradingCost=def$tradingCost) { 
+   
+   xRange <- c(xMin, xMax)
+   yRange <- c(yMin, 9.5 - 100*tradingCost/2)
    par( mar=c(4, 4, 1.5, 1.5) )
-   
-   #    plot(100*subset(stats$volatility, stats$type!="constantAlloc"), 
-   #         100*(subset(stats$TR, stats$type!="constantAlloc") - 
-   #                 tradingCost/subset(stats$turnover, stats$type!="constantAlloc")), 
-   #         pch=15, col="black", xlab="", ylab="", xlim=xRange, ylim=yRange)
-   #    par(new=T)
-   plot(100*subset(stats$volatility, stats$type=="CAPE"), 
-        100*(subset(stats$TR, stats$type=="CAPE") - 
-                tradingCost/subset(stats$turnover, stats$type=="CAPE")), 
-        pch=18, col="cyan", xlab="", ylab="", xlim=xRange, ylim=yRange)
+      
+   plot(xFactor*subset(stats[, xStatsName], stats$type==type1), 
+        yFactor*subset(stats[, yStatsName], stats$type==type1), 
+        pch=pch1, col=col1, xlab="", ylab="", xlim=xRange, ylim=yRange)
    par(new=T)
-   plot(100*subset(stats$volatility, stats$type=="detrended"), 
-        100*(subset(stats$TR, stats$type=="detrended") - 
-                tradingCost/subset(stats$turnover, stats$type=="detrended")), 
-        pch=18, col="skyblue", xlab="", ylab="", xlim=xRange, ylim=yRange)
+   plot(xFactor*subset(stats[, xStatsName], stats$type==type2), 
+        yFactor*subset(stats[, yStatsName], stats$type==type2), 
+        pch=pch2, col=col2, xlab="", ylab="", xlim=xRange, ylim=yRange)
    par(new=T)
-   plot(100*subset(stats$volatility, stats$type=="momentum"), 
-        100*(subset(stats$TR, stats$type=="momentum") - 
-                tradingCost/subset(stats$turnover, stats$type=="momentum")), 
-        pch=18, col="orange", xlab="", ylab="", xlim=xRange, ylim=yRange)
+   plot(xFactor*subset(stats[, xStatsName], stats$type==type3), 
+        yFactor*subset(stats[, yStatsName], stats$type==type3), 
+        pch=pch3, col=col3, xlab="", ylab="", xlim=xRange, ylim=yRange)
    par(new=T)
-   plot(100*subset(stats$volatility, stats$type=="SMA"), 
-        100*(subset(stats$TR, stats$type=="SMA") - 
-                tradingCost/subset(stats$turnover, stats$type=="SMA")), 
-        pch=18, col="orangered1", xlab="", ylab="", xlim=xRange, ylim=yRange)
+   plot(xFactor*subset(stats[, xStatsName], stats$type==type4), 
+        yFactor*subset(stats[, yStatsName], stats$type==type4), 
+        pch=pch4, col=col4, xlab="", ylab="", xlim=xRange, ylim=yRange)
    par(new=T)
-   plot(100*subset(stats$volatility, stats$type=="Bollinger"), 
-        100*(subset(stats$TR, stats$type=="Bollinger") - 
-                tradingCost/subset(stats$turnover, stats$type=="Bollinger")), 
-        pch=18, col="magenta", xlab="", ylab="", xlim=xRange, ylim=yRange)
+   plot(xFactor*subset(stats[, xStatsName], stats$type==type5), 
+        yFactor*subset(stats[, yStatsName], stats$type==type5), 
+        pch=pch5, col=col5, xlab="", ylab="", xlim=xRange, ylim=yRange)
    par(new=T)
-   plot(100*subset(stats$volatility, stats$subtype=="balanced"), 
-        100*(subset(stats$TR, stats$subtype=="balanced") - 
-                tradingCost/subset(stats$turnover, stats$subtype=="balanced")), 
-        pch=15, col="black", xlim=xRange, ylim=yRange,
-        xlab="volatility (%)", ylab=paste0("total return (%), net of trading cost of ", round(tradingCost*100), "%") )
+   plot(xFactor*subset(stats[, xStatsName], stats$subtype==Msubtype1), 
+        yFactor*subset(stats[, yStatsName], stats$subtype==Msubtype1), 
+        pch=Mpch1, col=Mcol1, xlim=xRange, ylim=yRange,
+        xlab=xLabel, ylab=paste0("total return (%), net of trading cost of ", round(tradingCost*100), "%") )
    par(new=T)
-   plot(100*subset(stats$volatility, stats$type=="constantAlloc"), 
-        100*(subset(stats$TR, stats$type=="constantAlloc") - 
-                tradingCost/subset(stats$turnover, stats$type=="constantAlloc")), 
-        type="l", col="black", xlab="", ylab="", xlim=xRange, ylim=yRange)
+   plot(xFactor*subset(stats[, xStatsName], stats$subtype==Msubtype2), 
+        yFactor*subset(stats[, yStatsName], stats$subtype==Msubtype2), 
+        pch=Mpch2, col=Mcol2, xlab="", ylab="", xlim=xRange, ylim=yRange)
    par(new=T)
-   plot(100*subset(stats$volatility, stats$subtype=="technical"), 
-        100*(subset(stats$TR, stats$subtype=="technical") - 
-                tradingCost/subset(stats$turnover, stats$subtype=="technical")), 
-        pch=15, col="red", xlab="", ylab="", xlim=xRange, ylim=yRange)
+   plot(xFactor*subset(stats[, xStatsName], stats$subtype==Msubtype3), 
+        yFactor*subset(stats[, yStatsName], stats$subtype==Msubtype3), 
+        pch=Mpch3, col=Mcol3, xlab="", ylab="", xlim=xRange, ylim=yRange)
    par(new=T)
-   plot(100*subset(stats$volatility, stats$subtype=="value"), 
-        100*(subset(stats$TR, stats$subtype=="value") - 
-                tradingCost/subset(stats$turnover, stats$subtype=="value")), 
-        pch=15, col="blue", xlab="", ylab="", xlim=xRange, ylim=yRange)
+   plot(xFactor*subset(stats[, xStatsName], stats$type=="constantAlloc"), 
+        yFactor*subset(stats[, yStatsName], stats$type=="constantAlloc"), 
+        type="l", col=lineCol, xlab="", ylab="", xlim=xRange, ylim=yRange)
    par(new=F)
 }
 
-plotReturnVsDrawdown <- function(tradingCost=def$tradingCost) { 
+
+
+plotAllReturnsVsVolatility <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, type2=def$type2, col2=def$col2, pch2=def$pch2,
+                                       type3=def$type3, col3=def$col3, pch3=def$pch3, type4=def$type4, col4=def$col4, pch4=def$pch4,
+                                       type5=def$type5, col5=def$col5, pch5=def$pch5, 
+                                       Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
+                                       Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
+                                       Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
+                                       lineCol=def$lineCol,
+                                       xFactor=100, xLabel="volatility (%)",
+                                       yStatsName="netTR2", yFactor=100,
+                                       xMin=12, xMax=16, yMin=def$yTRmin, tradingCost=def$tradingCost) { 
    
-   xRange <- c(1, 2.5)
-   yRange <- c(5.5, 9.5 - 50*tradingCost)
-   par(mar=c(4, 4, 1.5, 1.5))
-   
-   #    plot(subset(stats$DD2, stats$type!="constantAlloc"), 
-   #         100*(subset(stats$TR, stats$type!="constantAlloc") - 
-   #                 tradingCost/subset(stats$turnover, stats$type!="constantAlloc")), 
-   #         pch=15, col="black", xlab="", ylab="", xlim=xRange, ylim=yRange)
-   #    par(new=T)
-   plot(subset(stats$DD2, stats$type=="CAPE"), 
-        100*(subset(stats$TR, stats$type=="CAPE") - 
-                tradingCost/subset(stats$turnover, stats$type=="CAPE")), 
-        pch=18, col="cyan", xlab="", ylab="", xlim=xRange, ylim=yRange)
-   par(new=T)
-   plot(subset(stats$DD2, stats$type=="detrended"), 
-        100*(subset(stats$TR, stats$type=="detrended") - 
-                tradingCost/subset(stats$turnover, stats$type=="detrended")), 
-        pch=18, col="skyblue", xlab="", ylab="", xlim=xRange, ylim=yRange)
-   par(new=T)
-   plot(subset(stats$DD2, stats$type=="momentum"), 
-        100*(subset(stats$TR, stats$type=="momentum") - 
-                tradingCost/subset(stats$turnover, stats$type=="momentum")), 
-        pch=18, col="orange", xlab="", ylab="", xlim=xRange, ylim=yRange)
-   par(new=T)
-   plot(subset(stats$DD2, stats$type=="SMA"), 
-        100*(subset(stats$TR, stats$type=="SMA") - 
-                tradingCost/subset(stats$turnover, stats$type=="SMA")), 
-        pch=18, col="orangered1", xlab="", ylab="", xlim=xRange, ylim=yRange)
-   par(new=T)
-   plot(subset(stats$DD2, stats$type=="Bollinger"), 
-        100*(subset(stats$TR, stats$type=="Bollinger") - 
-                tradingCost/subset(stats$turnover, stats$type=="Bollinger")), 
-        pch=18, col="magenta", xlab="", ylab="", xlim=xRange, ylim=yRange)
-   par(new=T)
-   plot(subset(stats$DD2, stats$subtype=="balanced"), 
-        100*(subset(stats$TR, stats$subtype=="balanced") - 
-                tradingCost/subset(stats$turnover, stats$subtype=="balanced")), 
-        xlab="drawdown", ylab=paste0("total return (%), net of trading cost of ", round(tradingCost*100), "%"), 
-        pch=15, col="black", xlim=xRange, ylim=yRange)
-   par(new=T)
-   plot(subset(stats$DD2, stats$subtype=="technical"), 
-        100*(subset(stats$TR, stats$subtype=="technical") - 
-                tradingCost/subset(stats$turnover, stats$subtype=="technical")), 
-        pch=15, col="red", xlab="", ylab="", xlim=xRange, ylim=yRange)
-   par(new=T)
-   plot(subset(stats$DD2, stats$subtype=="value"), 
-        100*(subset(stats$TR, stats$subtype=="value") - 
-                tradingCost/subset(stats$turnover, stats$subtype=="value")), 
-        pch=15, col="blue", xlab="", ylab="", xlim=xRange, ylim=yRange)
-   par(new=T)
-   plot(subset(stats$DD2, stats$type=="constantAlloc"), 
-        100*(subset(stats$TR, stats$type=="constantAlloc") - 
-                tradingCost/subset(stats$turnover, stats$type=="constantAlloc")), 
-        type="l", col="black", xlab="", ylab="", xlim=xRange, ylim=yRange)
-   par(new=F)
+   plotAllReturnsVsSomeParameter(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
+                                 type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
+                                 type5=type5, col5=col5, pch5=pch5, 
+                                 Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
+                                 Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
+                                 Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
+                                 lineCol=lineCol,
+                                 xStatsName="volatility", xFactor=xFactor, xLabel=xLabel,
+                                 yStatsName=yStatsName, yFactor=yFactor,
+                                 xMin=xMin, xMax=xMax, yMin=yMin, tradingCost=tradingCost) 
 }
 
-plotReturnVsAverageAlloc <- function(tradingCost=def$tradingCost) { 
+plotAllReturnsVsDrawdown <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, type2=def$type2, col2=def$col2, pch2=def$pch2,
+                                     type3=def$type3, col3=def$col3, pch3=def$pch3, type4=def$type4, col4=def$col4, pch4=def$pch4,
+                                     type5=def$type5, col5=def$col5, pch5=def$pch5, 
+                                     Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
+                                     Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
+                                     Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
+                                     lineCol=def$lineCol,
+                                     xFactor=1, xLabel="drawdowns",
+                                     yStatsName="netTR2", yFactor=100,
+                                     xMin=1, xMax=2.5, yMin=def$yTRmin, tradingCost=def$tradingCost) { 
    
-   xRange <- c(40, 100)
-   yRange <- c(5.5, 9.5 - 100*tradingCost/2)
-   par( mar=c(4, 4, 1.5, 1.5) )
-   
-   #    plot(100*subset(stats$avgStockAlloc, stats$type!="constantAlloc"), 
-   #         100*(subset(stats$TR, stats$type!="constantAlloc") - 
-   #                 tradingCost/subset(stats$turnover, stats$type!="constantAlloc")), 
-   #         pch=15, col="black", xlab="avg. stock alloc.", ylab="", xlim=xRange, ylim=yRange)
-   #    par(new=T)
-   plot(100*subset(stats$avgStockAlloc, stats$type=="CAPE"), 
-        100*(subset(stats$TR, stats$type=="CAPE") - 
-                tradingCost/subset(stats$turnover, stats$type=="CAPE")), 
-        pch=18, col="cyan", xlab="", ylab="", xlim=xRange, ylim=yRange)
-   par(new=T)
-   plot(100*subset(stats$avgStockAlloc, stats$type=="detrended"), 
-        100*(subset(stats$TR, stats$type=="detrended") - 
-                tradingCost/subset(stats$turnover, stats$type=="detrended")), 
-        pch=18, col="skyblue", xlab="", ylab="", xlim=xRange, ylim=yRange)
-   par(new=T)
-   plot(100*subset(stats$avgStockAlloc, stats$type=="momentum"), 
-        100*(subset(stats$TR, stats$type=="momentum") - 
-                tradingCost/subset(stats$turnover, stats$type=="momentum")), 
-        pch=18, col="orange", xlab="", ylab="", xlim=xRange, ylim=yRange)
-   par(new=T)
-   plot(100*subset(stats$avgStockAlloc, stats$type=="SMA"), 
-        100*(subset(stats$TR, stats$type=="SMA") - 
-                tradingCost/subset(stats$turnover, stats$type=="SMA")), 
-        pch=18, col="orangered1", xlab="", ylab="", xlim=xRange, ylim=yRange)
-   par(new=T)
-   plot(100*subset(stats$avgStockAlloc, stats$type=="Bollinger"), 
-        100*(subset(stats$TR, stats$type=="Bollinger") - 
-                tradingCost/subset(stats$turnover, stats$type=="Bollinger")), 
-        pch=18, col="magenta", xlab="", ylab="", xlim=xRange, ylim=yRange)
-   par(new=T)   
-   plot(100*subset(stats$avgStockAlloc, stats$subtype=="balanced"), 
-        100*(subset(stats$TR, stats$subtype=="balanced") - 
-                tradingCost/subset(stats$turnover, stats$subtype=="balanced")), 
-        pch=15, col="black", xlim=xRange, ylim=yRange, 
-        xlab="avg. stock alloc. (%)", ylab=paste0("total return (%), net of trading cost of ", round(tradingCost*100), "%") )
-   par(new=T)   
-   plot(100*subset(stats$avgStockAlloc, stats$subtype=="technical"), 
-        100*(subset(stats$TR, stats$subtype=="technical") - 
-                tradingCost/subset(stats$turnover, stats$subtype=="technical")), 
-        pch=15, col="red", xlab="", ylab="", xlim=xRange, ylim=yRange)
-   par(new=T)   
-   plot(100*subset(stats$avgStockAlloc, stats$subtype=="value"), 
-        100*(subset(stats$TR, stats$subtype=="value") - 
-                tradingCost/subset(stats$turnover, stats$subtype=="value")), 
-        pch=15, col="blue", xlab="", ylab="", xlim=xRange, ylim=yRange)
-   par(new=T)   
-   plot(100*subset(stats$avgStockAlloc, stats$type=="constantAlloc"), 
-        100*(subset(stats$TR, stats$type=="constantAlloc") - 
-                tradingCost/subset(stats$turnover, stats$type=="constantAlloc")), 
-        type="l", col="black", xlab="", ylab="", xlim=xRange, ylim=yRange)
-   par(new=F)
+   plotAllReturnsVsSomeParameter(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
+                                 type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
+                                 type5=type5, col5=col5, pch5=pch5, 
+                                 Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
+                                 Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
+                                 Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
+                                 lineCol=lineCol,
+                                 xStatsName="DD2", xFactor=xFactor, xLabel=xLabel,
+                                 yStatsName=yStatsName, yFactor=yFactor,
+                                 xMin=xMin, xMax=xMax, yMin=yMin, tradingCost=tradingCost) 
 }
 
-plotReturnVsTurnover <- function(tradingCost=def$tradingCost) { 
+plotAllReturnsVsAverageAlloc <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, type2=def$type2, col2=def$col2, pch2=def$pch2,
+                                         type3=def$type3, col3=def$col3, pch3=def$pch3, type4=def$type4, col4=def$col4, pch4=def$pch4,
+                                         type5=def$type5, col5=def$col5, pch5=def$pch5, 
+                                         Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
+                                         Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
+                                         Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
+                                         lineCol=def$lineCol,
+                                         xFactor=100, xLabel="average stock allocation (%)",
+                                         yStatsName="netTR2", yFactor=100,
+                                         xMin=40, xMax=100, yMin=def$yTRmin, tradingCost=def$tradingCost) { 
    
-   xRange <- c(0, 100)
-   yRange <- c(5.5, 9.5 - 100*tradingCost/2)
-   par( mar=c(4, 4, 1.5, 1.5) )
-   
-   plot(100/subset(stats$turnover, stats$type=="CAPE"), 
-        100*(subset(stats$TR, stats$type=="CAPE") - 
-                tradingCost/subset(stats$turnover, stats$type=="CAPE")), 
-        pch=18, col="cyan", xlab="", ylab="", xlim=xRange, ylim=yRange)
-   par(new=T)
-   plot(100/subset(stats$turnover, stats$type=="detrended"), 
-        100*(subset(stats$TR, stats$type=="detrended") - 
-                tradingCost/subset(stats$turnover, stats$type=="detrended")), 
-        pch=18, col="skyblue", xlab="", ylab="", xlim=xRange, ylim=yRange)
-   par(new=T)
-   plot(100/subset(stats$turnover, stats$type=="momentum"), 
-        100*(subset(stats$TR, stats$type=="momentum") - 
-                tradingCost/subset(stats$turnover, stats$type=="momentum")), 
-        pch=18, col="orange", xlab="", ylab="", xlim=xRange, ylim=yRange)
-   par(new=T)
-   plot(100/subset(stats$turnover, stats$type=="SMA"), 
-        100*(subset(stats$TR, stats$type=="SMA") - 
-                tradingCost/subset(stats$turnover, stats$type=="SMA")), 
-        pch=18, col="orangered1", xlab="", ylab="", xlim=xRange, ylim=yRange)
-   par(new=T)
-   plot(100/subset(stats$turnover, stats$type=="Bollinger"), 
-        100*(subset(stats$TR, stats$type=="Bollinger") - 
-                tradingCost/subset(stats$turnover, stats$type=="Bollinger")), 
-        pch=18, col="magenta", xlab="", ylab="", xlim=xRange, ylim=yRange)
-   par(new=T)   
-   plot(100/subset(stats$turnover, stats$subtype=="balanced"), 
-        100*(subset(stats$TR, stats$subtype=="balanced") - 
-                tradingCost/subset(stats$turnover, stats$subtype=="balanced")), 
-        pch=15, col="black", xlim=xRange, ylim=yRange, 
-        xlab="100 / turnover (yrs)", ylab=paste0("total return (%), net of trading cost of ", round(tradingCost*100), "%") )
-   par(new=T)   
-   plot(100/subset(stats$turnover, stats$subtype=="technical"), 
-        100*(subset(stats$TR, stats$subtype=="technical") - 
-                tradingCost/subset(stats$turnover, stats$subtype=="technical")), 
-        pch=15, col="red", xlab="", ylab="", xlim=xRange, ylim=yRange)
-   par(new=T)   
-   plot(100/subset(stats$turnover, stats$subtype=="value"), 
-        100*(subset(stats$TR, stats$subtype=="value") - 
-                tradingCost/subset(stats$turnover, stats$subtype=="value")), 
-        pch=15, col="blue", xlab="", ylab="", xlim=xRange, ylim=yRange)
-   par(new=F)
+   plotAllReturnsVsSomeParameter(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
+                                 type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
+                                 type5=type5, col5=col5, pch5=pch5, 
+                                 Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
+                                 Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
+                                 Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
+                                 lineCol=lineCol,
+                                 xStatsName="avgStockAlloc", xFactor=xFactor, xLabel=xLabel,
+                                 yStatsName=yStatsName, yFactor=yFactor,
+                                 xMin=xMin, xMax=xMax, yMin=yMin, tradingCost=tradingCost) 
 }
 
-plotReturnVsFour <- function(tradingCost=def$tradingCost) {
+plotAllReturnsVsInverseTurnover <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, type2=def$type2, col2=def$col2, pch2=def$pch2,
+                                            type3=def$type3, col3=def$col3, pch3=def$pch3, type4=def$type4, col4=def$col4, pch4=def$pch4,
+                                            type5=def$type5, col5=def$col5, pch5=def$pch5, 
+                                            Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
+                                            Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
+                                            Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
+                                            lineCol=def$lineCol,
+                                            xFactor=100, xLabel="100 / turnover (years)",
+                                            yStatsName="netTR2", yFactor=100,
+                                            xMin=0, xMax=100, yMin=def$yTRmin, tradingCost=def$tradingCost) { 
+   
+   
+   stats$invTurnover <<- 1 / stats$turnover
+   
+   plotAllReturnsVsSomeParameter(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
+                                 type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
+                                 type5=type5, col5=col5, pch5=pch5, 
+                                 Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
+                                 Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
+                                 Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
+                                 lineCol=lineCol,
+                                 xStatsName="invTurnover", xFactor=xFactor, xLabel=xLabel,
+                                 yStatsName=yStatsName, yFactor=yFactor,
+                                 xMin=xMin, xMax=xMax, yMin=yMin, tradingCost=tradingCost) 
+   stats$invTurnover = NULL
+}
+
+
+plotAllReturnsVsFour <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, type2=def$type2, col2=def$col2, pch2=def$pch2,
+                                 type3=def$type3, col3=def$col3, pch3=def$pch3, type4=def$type4, col4=def$col4, pch4=def$pch4,
+                                 type5=def$type5, col5=def$col5, pch5=def$pch5, 
+                                 Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
+                                 Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
+                                 Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
+                                 lineCol=def$lineCol,
+                                 yStatsName="netTR2", yFactor=100,
+                                 yMin=def$yTRmin, tradingCost=def$tradingCost) {
+   
    par(mfrow = c(2, 2))
-   plotReturnVsVolatility(tradingCost=tradingCost) 
-   plotReturnVsDrawdown(tradingCost=tradingCost)
-   plotReturnVsAverageAlloc(tradingCost=tradingCost)
-   plotReturnVsTurnover(tradingCost=tradingCost)
+   
+   plotAllReturnsVsVolatility(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
+                              type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
+                              type5=type5, col5=col5, pch5=pch5, 
+                              Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
+                              Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
+                              Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
+                              lineCol=lineCol,
+                              yStatsName=yStatsName, yFactor=yFactor,
+                              yMin=yMin, tradingCost=tradingCost) 
+   
+   plotAllReturnsVsDrawdown(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
+                            type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
+                            type5=type5, col5=col5, pch5=pch5, 
+                            Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
+                            Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
+                            Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
+                            lineCol=lineCol,
+                            yStatsName=yStatsName, yFactor=yFactor,
+                            yMin=yMin, tradingCost=tradingCost) 
+   
+   plotAllReturnsVsAverageAlloc(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
+                                type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
+                                type5=type5, col5=col5, pch5=pch5, 
+                                Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
+                                Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
+                                Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
+                                lineCol=lineCol,
+                                yStatsName=yStatsName, yFactor=yFactor,
+                                yMin=yMin, tradingCost=tradingCost) 
+   
+   plotAllReturnsVsInverseTurnover(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
+                                   type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
+                                   type5=type5, col5=col5, pch5=pch5, 
+                                   Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
+                                   Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
+                                   Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
+                                   lineCol=lineCol,
+                                   yStatsName=yStatsName, yFactor=yFactor,
+                                   yMin=yMin, tradingCost=tradingCost) 
+   
    par(mfrow = c(1, 1))
 }
