@@ -60,7 +60,7 @@ normalizeDetrended <- function(inputDF, inputName, strategyName, avgOver) {
 
 createDetrendedStrategy <- function(inputDF="dat", inputName="TR", avgOver=def$detrendedAvgOver, 
                                     medianAlloc=60, interQuartileAlloc=80,
-                                    strategyName="", futureYears=def$futureYears, force=F) {   
+                                    strategyName="", futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {   
    if (strategyName=="") {
       if( is.numeric(avgOver) )
          strategyName <- paste0("detrended", inputName, "avg", avgOver, "_", medianAlloc, "_", interQuartileAlloc)
@@ -88,20 +88,21 @@ createDetrendedStrategy <- function(inputDF="dat", inputName="TR", avgOver=def$d
       parameters$inputDF[index]     <<- inputDF
       parameters$inputName[index]   <<- inputName
       parameters$startIndex[index]  <<- startIndex
-      parameters$name1[index]       <<- "avgOver"
-      parameters$value1[index]      <<-  avgOver  
+      parameters$avgOver[index]     <<-  avgOver
       parameters$medianAlloc[index] <<- medianAlloc
       parameters$interQuartileAlloc[index] <<-  interQuartileAlloc
    }
    calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, force=force)
    stats$type[which(stats$strategy == strategyName)] <<- parameters$type[which(parameters$strategy == strategyName)]
+#    calcTRnetOfTradingCost(strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)      
 }
 
 
-searchForOptimalDetrended <-function(inputDF="dat", inputName="TR", minAvgOver=30, maxAvgOver=30, byAvgOver=0, 
+searchForOptimalDetrended <- function(inputDF="dat", inputName="TR", minAvgOver=30, maxAvgOver=30, byAvgOver=0, 
                                      minMed=80, maxMed=95, byMed=5, minIQ=97, maxIQ=99, byIQ=1, 
                                      futureYears=def$futureYears, tradingCost=def$tradingCost, 
-                                     minTR=6.4, maxVol=14., maxDD2=2., minTO=10, force=F) {
+                                     minTR=def$valueMinTR, maxVol=def$valueMaxVol, maxDD2=def$valueMaxDD2, 
+                                     minTO=def$valueMinTO, CPUnumber=def$CPUnumber, force=F) {
    
    print(paste0("strategy                |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
    detrendedName <- paste0("detrended", inputName)
@@ -118,8 +119,9 @@ searchForOptimalDetrended <-function(inputDF="dat", inputName="TR", minAvgOver=3
             showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
                                    minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, force=F)
          }
-      plotReturnVsFour()
+      plotAllReturnsVsFour()
    }
-   #    showSummaries(futureYears=futureYears, tradingCost=tradingCost, detailed=F, force=F)
+   print("")
+   showSummaryForStrategy(def$typicalDetrended)
 }
 

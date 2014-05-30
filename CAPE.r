@@ -59,7 +59,7 @@ normalizeCAPE <- function(CAPEname="CAPE10_2avg24", startIndex=def$startIndex, s
 
 createCAPEstrategy <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver=def$CAPEavgOver, 
                                medianAlloc=def$CAPEmedianAlloc, interQuartileAlloc=def$CAPEinterQuartileAlloc,
-                               futureYears=def$futureYears, strategyName="", force=F) {
+                               strategyName="", futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
 
    CAPEname <- paste0("CAPE", years, "_", cheat, "avg", avgOver)
    if (!(CAPEname %in% colnames(dat)))
@@ -92,33 +92,38 @@ createCAPEstrategy <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver
    }
    calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, force=force)
    stats$type[which(stats$strategy == strategyName)] <<- parameters$type[which(parameters$strategy == strategyName)]
+#   calcTRnetOfTradingCost(strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)      
 }
 
 
-searchForOptimalCAPE <-function(minCheat=2, maxCheat=2, byCheat=0, minAvgOver=30, maxAvgOver=30, byAvgOver=0, 
-                       minMed=40, maxMed=90, byMed=10, minIQ=10, maxIQ=90, byIQ=10, 
-                       futureYears=def$futureYears, tradingCost=def$tradingCost, 
-                       minTR=6.5, maxVol=14.5, maxDD2=1.8, minTO=8, force=F) {
+searchForOptimalCAPE <-function(minYears=10, maxYears=10, byYears=0, minCheat=2, maxCheat=2, byCheat=0, 
+                                minAvgOver=30, maxAvgOver=30, byAvgOver=0, 
+                                minMed=40, maxMed=90, byMed=10, minIQ=10, maxIQ=90, byIQ=10, 
+                                futureYears=def$futureYears, tradingCost=def$tradingCost, 
+                                minTR=def$valueMinTR, maxVol=def$valueMaxVol, maxDD2=def$valueMaxDD2, 
+                                minTO=def$valueMinTO, CPUnumber=def$CPUnumber, force=F) {
    
    print(paste0("strategy            |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
-   for (cheat in seq(minCheat, maxCheat, by=byCheat)) {
-      calcCAPE(years=def$CAPEyears, cheat=cheat)
-      for (avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver)) {
-         calcAvgCAPE(years=def$CAPEyears, cheat=cheat, avgOver=avgOver)
-         for ( med in seq(minMed, maxMed, by=byMed) ) {      
-            for ( IQ in seq(minIQ, maxIQ, by=byIQ) ) {
-               strategyName <- paste0("CAPE10_", cheat, "avg", avgOver, "_", med, "_", IQ)
-               
-               createCAPEstrategy(years=def$CAPEyears, cheat=cheat, avgOver=avgOver, strategyName=strategyName, 
-                                  medianAlloc=med, interQuartileAlloc=IQ, futureYears=futureYears, force=force)
-               showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
-                                      minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, force=F)
+   for (years in seq(minYears, maxYears, by=byYears)) 
+      for (cheat in seq(minCheat, maxCheat, by=byCheat)) {
+         calcCAPE(years=years, cheat=cheat)
+         for (avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver)) {
+            calcAvgCAPE(years=years, cheat=cheat, avgOver=avgOver)
+            for ( med in seq(minMed, maxMed, by=byMed) ) {      
+               for ( IQ in seq(minIQ, maxIQ, by=byIQ) ) {
+                  strategyName <- paste0("CAPE", years, "_", cheat, "avg", avgOver, "_", med, "_", IQ)
+                  
+                  createCAPEstrategy(years=years, cheat=cheat, avgOver=avgOver, strategyName=strategyName, 
+                                     medianAlloc=med, interQuartileAlloc=IQ, futureYears=futureYears, force=force)
+                  showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
+                                         minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, force=F)
+               }
+               plotReturnVsFour()
             }
-         plotReturnVsFour()
          }
       }
-   }
-   #    showSummaries(futureYears=futureYears, tradingCost=tradingCost, detailed=F, force=F)
+   print("")
+   showSummaryForStrategy(def$typicalCAPE)
 }
 
 searchForOptimalMetaCAPE <-function(stratName1=def$CAPEstrategies[[1]], stratName2=def$CAPEstrategies[[2]], stratName3=def$CAPEstrategies[[3]], stratName4="",
@@ -144,7 +149,7 @@ searchForOptimalMetaCAPE <-function(stratName1=def$CAPEstrategies[[1]], stratNam
 }
 
 
-#Plotting
+#Plotting (obsolete)
 plotCAPEreturn <- function(stratName1=def$CAPEstrategies[[1]], stratName2=def$CAPEstrategies[[2]], stratName3=def$CAPEstrategies[[3]], stratName4=def$CAPEstrategies[[4]], 
                            startYear=1885, endYear=2014, minTR=.9, maxTR=10000, normalize=T, showAlloc=T) {
    plotReturn(stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4, 

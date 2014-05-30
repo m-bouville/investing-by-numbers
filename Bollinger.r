@@ -46,25 +46,26 @@ normalizeBoll <- function(inputDF, inputName, avgOver=def$BollAvgOver, strategyN
 
 createBollStrategy <- function(inputDF, inputName, avgOver=def$BollAvgOver, 
                                medianAlloc=def$BollMedianAlloc, interQuartileAlloc=def$BollInterQuartileAlloc,
-                               strategyName="", futureYears=def$FutureYears, force=F) {
+                               strategyName="", futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
 
    if(strategyName=="")  
       strategyName <- paste0("Boll_", inputName, "_", avgOver, "_", medianAlloc, "_", interQuartileAlloc)
-
+   
    if (!(strategyName %in% colnames(TR)) | force) { # if data do not exist yet or we force recalculation:   
-#       time0 <- proc.time()
+      #       time0 <- proc.time()
       normalizeBoll(inputDF=inputDF, inputName=inputName, avgOver=avgOver, strategyName=strategyName, force=force)
-#       print( c( "Bollinger - normalizeBoll() time:", round(summary(proc.time())[[1]] - time0[[1]] , 2) ) )
-
-#       time0 <- proc.time()
+      #       print( c( "Bollinger - normalizeBoll() time:", round(summary(proc.time())[[1]] - time0[[1]] , 2) ) )
+      
+      #       time0 <- proc.time()
       calcAllocFromNorm(strategyName, medianAlloc=medianAlloc, interQuartileAlloc=interQuartileAlloc)
-#       print( c( "Bollinger - calcAllocFromNorm() time:", round(summary(proc.time())[[1]] - time0[[1]] , 2) ) )
+      #       print( c( "Bollinger - calcAllocFromNorm() time:", round(summary(proc.time())[[1]] - time0[[1]] , 2) ) )
       
-      addNumColToTR(strategyName)  
       
-#       time0 <- proc.time()
-      calcStrategyReturn(strategyName, avgOver+1)
-#       print( c( "Bollinger - calcStrategyReturn() time:", round(summary(proc.time())[[1]] - time0[[1]] , 2) ) )
+      #       time0 <- proc.time()
+      addNumColToTR(strategyName)
+      startIndex <- sum(is.na(alloc[, strategyName])) + 1
+      calcStrategyReturn(strategyName, startIndex)
+      #       print( c( "Bollinger - calcStrategyReturn() time:", round(summary(proc.time())[[1]] - time0[[1]] , 2) ) )
    }
    
 #    time0 <- proc.time()
@@ -75,28 +76,32 @@ createBollStrategy <- function(inputDF, inputName, avgOver=def$BollAvgOver,
       }
       index <- which(parameters$strategy == strategyName)
       
-      parameters$type[index] <<- "Bollinger"
-      parameters$startIndex[index] <<- avgOver+1
-      parameters$inputDF[index]   <<- inputDF
-      parameters$inputName[index] <<- inputName
+      parameters$type[index]       <<- "Bollinger"
+      parameters$subtype[index]    <<- inputName
+      parameters$startIndex[index] <<- startIndex
+      parameters$inputDF[index]    <<- inputDF
+      parameters$inputName[index]  <<- inputName
       parameters$medianAlloc[index] <<-  medianAlloc
       parameters$interQuartileAlloc[index] <<-  interQuartileAlloc
       parameters$avgOver[index]    <<-  avgOver
    }
    calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, force=force)
    stats$type[which(stats$strategy == strategyName)] <<- parameters$type[which(parameters$strategy == strategyName)]
+   stats$subtype[which(stats$strategy == strategyName)] <<- parameters$subtype[which(parameters$strategy == strategyName)]
+#    calcTRnetOfTradingCost(strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)      
 # print( c( "Bollinger - stats time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
 }
 
 
 searchForOptimalBoll <- function(inputDF="dat", inputName="TR", minAvgOver=21L, maxAvgOver=21L, byAvgOver=12L, 
-                       minMed=90, maxMed=95, byMed=5, minIQ=10, maxIQ=30, byIQ=5, 
+                       minMed=50, maxMed=95, byMed=10, minIQ=10, maxIQ=50, byIQ=10, 
                        futureYears=def$futureYears, tradingCost=def$tradingCost, 
-                       minTR=6.7, maxVol=14.7, maxDD2=1.8, minTO=1.2, force=F) {
+                       minTR=def$technicalMinTR, maxVol=def$technicalMaxVol, maxDD2=def$technicalMaxDD2, 
+                       minTO=def$technicalMinTO, force=F) {
    
    print(paste0("strategy         |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
    for ( avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver) ) {
-      for ( med in seq(minMed, maxMed, by=byMed) )       
+      for ( med in seq(minMed, maxMed, by=byMed) ) {    
          for ( IQ in seq(minIQ, maxIQ, by=byIQ) ) {
             strategyName <- paste0("Boll_", inputName, "_", avgOver, "_", med, "_", IQ)
             
@@ -107,7 +112,8 @@ searchForOptimalBoll <- function(inputDF="dat", inputName="TR", minAvgOver=21L, 
             showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
                                    minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, force=F)
          }
-      plotReturnVsBothBadWithLine()
+         plotReturnVsFour()
+      }
    }
    #    showSummaries(futureYears=futureYears, tradingCost=tradingCost, detailed=F, force=F)
 }

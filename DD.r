@@ -92,6 +92,8 @@ CalcAllDrawdowns <- function(strategyName, force=F) {
 #             print( paste( "Time for DD #", i, "(", DD$dates[i], "): ", round(summary(proc.time())[[1]] - DD0time[[1]] , 2) ) )
       }
    }
+   if ( is.na(DD[1, strategyName]) ) # If 1st DD cannot be computed b/c it is too early
+   DD[1, strategyName] <<- -0.18 # we assume the worst, i.e. the drawdown of stocks 
 }
 
 # Displays drawdowns worse than the threshold

@@ -27,6 +27,20 @@ requireColInTR <- function(colName) {
 }
 
 
+calcNext10YrsReturn <- function(strategyName, force=F) {
+   if (!strategyName %in% colnames(next10yrs) | force) {
+      next10yrs[, strategyName] <<- numeric(numData)
+      months <- 12*10
+      exponent <- 1/10
+      
+      next10yrs[1:(numData-months), strategyName] <<- 
+         (TR[1:(numData-months)+months, strategyName] / TR[1:(numData-months), strategyName]) ^ exponent - 1
+      next10yrs[(numData-months+1):numData, strategyName] <<- NA
+   }
+   median10 <- median(next10yrs[, strategyName], na.rm=T)
+   five10 <- quantile(next10yrs[, strategyName], .05, na.rm=T)[[1]]
+   return( c(median=median10, five=five10) )
+}
 
 calcNext20YrsReturn <- function(strategyName, force=F) {
    if (!strategyName %in% colnames(next20yrs) | force) {
@@ -62,7 +76,9 @@ calcNext30YrsReturn <- function(strategyName, force=F) {
 calcStrategyFutureReturn <- function(strategyName, futureYears = numeric(), force=F) {
 #    if (futureYears==10)
 #       median_five <- calcNext10YrsReturn(strategyName, force)
-   if (futureYears==20)
+   if (futureYears==10)
+      median_five <- calcNext10YrsReturn(strategyName, force)
+   else if (futureYears==20)
       median_five <- calcNext20YrsReturn(strategyName, force)
    else if (futureYears==30)
       median_five <- calcNext30YrsReturn(strategyName, force)
@@ -137,6 +153,9 @@ calcStrategyReturn <- function(strategyName, startIndex) {
 calcAllocFromNorm <- function(strategyName, medianAlloc, interQuartileAlloc) {
    ## creates an allocation with median (close to) medianAlloc and 
    ## with a difference between the 2 quartiles of interQuartileAlloc
+   if (interQuartileAlloc==100) 
+      interQuartileAlloc <- 100-1e-3
+      
    b <- tan(pi*(medianAlloc/100-.5))
    tan2A <- tan(pi*interQuartileAlloc/100)
    a <- sqrt(1/tan2A^2 + 1 + b^2) - 1/tan2A
@@ -211,10 +230,13 @@ calcTRnetOfTradingCost <- function(strategyName, futureYears=def$futureYears, tr
    index <- which(stats$strategy == strategyName)
    
    cost <- tradingCost/stats$turnover[index]/12
-   
-   if ( !(strategyName %in% colnames(alloc)) ) {# this means we are not dealing with constant allocation (e.g. stocks)
-      netTR2[, strategyName] <<- TR[, strategyName] # no trading, no trading cost
-      netTR4[, strategyName] <<- TR[, strategyName] 
+    
+   if ( !(strategyName %in% colnames(alloc)) ) {# this means we ARE dealing with constant allocation (e.g. stocks)
+      if (tradingCost == 0.02)
+         netTR2[, strategyName] <<- TR[, strategyName] # no trading, no trading cost
+      else if(tradingCost == 0.04)
+         netTR4[, strategyName] <<- TR[, strategyName] 
+      else stop("No data frame \'netTR", round(tradingCost*100), "\' exists.")
    } else {
       if (tradingCost == 0.02) {
          if (!(strategyName %in% colnames(netTR2)) | force) {
@@ -236,6 +258,8 @@ calcTRnetOfTradingCost <- function(strategyName, futureYears=def$futureYears, tr
    }
 }
 
+
+# not used
 calcTurnoverAndTRnetOfTradingCost <- function(strategyName, futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
    #       time1 <- proc.time()      
    if ( (strategyName %in% colnames(alloc)) ) {# this means we are not dealing with constant allocation (e.g. stocks)
@@ -272,7 +296,6 @@ calcTurnoverAndTRnetOfTradingCost <- function(strategyName, futureYears=def$futu
    
    #       print( c( "Time for turnover:", round(summary(proc.time())[[3]] - time1[[3]] , 2) ) )   
 }
-
 
 calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
       
@@ -319,7 +342,7 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
       stats$volatility[index] <<- sd(fit2[dateRange], na.rm=T)
       #       print( c( "Time for fit:", round(summary(proc.time())[[1]] - time1[[1]] , 2) ) )
       
-      if ( (strategyName %in% colnames(alloc)) ) {# this means we are not dealing with constant allocation (e.g. stocks)
+      if ( (strategyName %in% colnames(alloc)) ) {# this means we are NOT dealing with constant allocation (e.g. stocks)
          stats$avgStockAlloc[index]    <<- mean(alloc[dateRange, strategyName], na.rm=T)
          stats$latestStockAlloc[index] <<- alloc[numData, strategyName]     
          dateRange2 <- def$startIndex:(numData-1)

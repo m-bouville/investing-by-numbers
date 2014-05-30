@@ -1,6 +1,6 @@
 #default values of plotting parameters
 setPlottingDefaultValues <- function() {
-   def$yTRmin<<- 5.5
+   def$yTRmin<<- 6
    
    def$colCAPE      <<- "cyan"
    def$colDetrended <<- "skyblue"
@@ -52,24 +52,26 @@ setPlottingDefaultValues <- function() {
 }
 
 
-plotAssetReturn <- function(stratName1="stocks",       col1=def$colConstantAlloc, lwd1=2,
-                            stratName2="bonds",        col2="blue",               lwd2=2,
-                            stratName3="UKhousePrice", col3="grey",               lwd3=2,
-                            stratName4="gold",         col4="gold",               lwd4=2, 
-                            startYear=1975.25, endYear=2014, net=F, minTR=.5, maxTR=15) {
+plotAssetClassesReturn <- function(stratName1="stocks",       col1=def$colConstantAlloc, lwd1=2,
+                                   stratName2="bonds",        col2="darkgreen",          lwd2=2,
+                                   stratName3="UKhousePrice", col3="grey",               lwd3=2,
+                                   stratName4="gold",         col4="gold",               lwd4=2, 
+                                   startYear=1975.25, endYear=2014, 
+                                   yLabel="", net=F, minTR=.5, maxTR=15) {
    plotReturn(stratName1=stratName1, col1=col1, lwd1=lwd1, stratName2=stratName2, col2=col2, lwd2=lwd2,
               stratName3=stratName3, col3=col3, lwd3=lwd3, stratName4=stratName4, col4=col4, lwd4=lwd4, 
-              startYear=startYear, endYear=endYear, net=net, minTR=minTR, maxTR=maxTR) 
+              startYear=startYear, endYear=endYear, tradingCost="", yLabel=yLabel, net=net, minTR=minTR, maxTR=maxTR) 
 }
 
 
-plotReturn <- function(stratName1=def$typicalBalanced,  col1=def$colBalanced,      lwd1=2,
-                       stratName2=def$typicalTechnical, col2=def$colTechnical,     lwd2=1.5,
-                       stratName3=def$typicalValue,     col3=def$colValue,         lwd3=1.5,
-                       stratName4="stocks",             col4=def$colConstantAlloc, lwd4=2,
+plotReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTechnical, 
+                       stratName3=def$typicalValue, stratName4="stocks", 
+                       col1=def$colBalanced, col2=def$colTechnical, col3=def$colValue, col4=def$colConstantAlloc, 
+                       lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=2,
                        startYear=def$startYear, endYear=2015, tradingCost=def$tradingCost, 
-                       minTR=.9, maxTR=20000, net=T, normalize=T) { 
+                       minTR=.9, maxTR=20000, yLabel="", net=T, normalize=T) { 
    
+#    print(c(stratName2, stratName3, stratName4) )
    normDate <- (startYear-1871)*12+1
    par(mar=c(2.5, 4, 1.5, 1.5))
    xRange <- c(startYear, endYear)
@@ -80,15 +82,32 @@ plotReturn <- function(stratName1=def$typicalBalanced,  col1=def$colBalanced,   
    TR3 <- numeric(numData)
    TR4 <- numeric(numData)
    
-   if(net) {
-      yLabel <- paste0("total return (%), net of trading costs of ", round(tradingCost*100), "%")
+   if ( yLabel=="" ) {
+      if( tradingCost==0 )  # trading cost = 0: gross returns
+         yLabel <- paste0("total return (%), GROSS of trading costs")
+      else if( tradingCost>0 ) # trading cost > 0: net returns
+         yLabel <- paste0("total return (%), net of trading costs of ", round(tradingCost*100), "%")   
+      else # no notion of trading cost (e.g. for asset classes)
+         yLabel <- paste0("total return (%)")
+   }
+   
+   if(tradingCost==0) net<-F
+   if(net) {      
       if (tradingCost == 0.02) {
+         if (!stratName1 %in% colnames(netTR2)) calcTRnetOfTradingCost(stratName1)
+         if (!stratName2 %in% colnames(netTR2)) calcTRnetOfTradingCost(stratName2)
+         if (!stratName3 %in% colnames(netTR2)) calcTRnetOfTradingCost(stratName3)
+         if (!stratName4 %in% colnames(netTR2)) calcTRnetOfTradingCost(stratName4)
          TR1 <- netTR2[, stratName1] 
          TR2 <- netTR2[, stratName2] 
          TR3 <- netTR2[, stratName3] 
          TR4 <- netTR2[, stratName4] 
       } 
       else if(tradingCost == 0.04)  {
+         if (!stratName1 %in% colnames(netTR4)) calcTRnetOfTradingCost(stratName1)
+         if (!stratName2 %in% colnames(netTR4)) calcTRnetOfTradingCost(stratName2)
+         if (!stratName3 %in% colnames(netTR4)) calcTRnetOfTradingCost(stratName3)
+         if (!stratName4 %in% colnames(netTR4)) calcTRnetOfTradingCost(stratName4)
          TR1 <- netTR4[, stratName1] 
          TR2 <- netTR4[, stratName2] 
          TR3 <- netTR4[, stratName3] 
@@ -96,7 +115,6 @@ plotReturn <- function(stratName1=def$typicalBalanced,  col1=def$colBalanced,   
       } 
       else stop("No data frame \'netTR", round(tradingCost*100,1), "\' exists.")      
    } else {
-      yLabel <- "total return, GROSS of trading costs"
       TR1 <- TR[, stratName1]
       TR2 <- TR[, stratName2]
       TR3 <- TR[, stratName3]
@@ -136,10 +154,10 @@ plotReturn <- function(stratName1=def$typicalBalanced,  col1=def$colBalanced,   
    par(new=F)
 }
 
-plotAlloc <- function(stratName1=def$typicalBalanced,  col1=def$colBalanced,      lwd1=2,
-                      stratName2=def$typicalTechnical, col2=def$colTechnical,     lwd2=1.5,
-                      stratName3=def$typicalValue,     col3=def$colValue,         lwd3=1.5,
-                      stratName4="stocks",             col4=def$colConstantAlloc, lwd4=2,
+plotAlloc <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTechnical, 
+                      stratName3=def$typicalValue, stratName4="stocks", 
+                      col1=def$colBalanced, col2=def$colTechnical, col3=def$colValue, col4=def$colConstantAlloc, 
+                      lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=2,
                       startYear=def$startYear, endYear=2014) { 
    
    normDate <- (startYear-1871)*12+1
@@ -165,23 +183,39 @@ plotAlloc <- function(stratName1=def$typicalBalanced,  col1=def$colBalanced,    
    par(new=F)   
 }
 
-plotReturnAndAlloc <- function(stratName1=def$typicalBalanced,  col1=def$colBalanced,      lwd1=2,
-                               stratName2=def$typicalTechnical, col2=def$colTechnical,     lwd2=1.5,
-                               stratName3=def$typicalValue,     col3=def$colValue,         lwd3=1.5,
-                               stratName4="stocks",             col4=def$colConstantAlloc, lwd4=2,
+plotReturnAndAlloc <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTechnical, 
+                               stratName3=def$typicalValue, stratName4="stocks", 
+                               col1=def$colBalanced, col2=def$colTechnical, col3=def$colValue, col4=def$colConstantAlloc, 
+                               lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=2,
                                startYear=def$startYear, endYear=2015, tradingCost=def$tradingCost, 
-                               minTR=.9, maxTR=20000, net=T, normalize=T) {
+                               minTR=.9, maxTR=20000, yLabelReturn="", net=T, normalize=T) {
    par(mfrow = c(2, 1))
    plotReturn(stratName1=stratName1, col1=col1, lwd1=lwd1, stratName2=stratName2, col2=col2, lwd2=lwd2,
               stratName3=stratName3, col3=col3, lwd3=lwd3, stratName4=stratName4, col4=col4, lwd4=lwd4, 
               startYear=startYear, endYear=endYear, tradingCost=tradingCost, 
-              normalize=normalize, net=net, minTR=minTR, maxTR=maxTR)  
+              minTR=minTR, maxTR=maxTR, normalize=normalize, yLabel=yLabelReturn, net=net)  
    plotAlloc(stratName1=stratName1, col1=col1, lwd1=lwd1, stratName2=stratName2, col2=col2, lwd2=lwd2,
              stratName3=stratName3, col3=col3, lwd3=lwd3, stratName4=stratName4, col4=col4, lwd4=lwd4, 
              startYear=startYear, endYear=endYear)        
    par(mfrow = c(1, 1))
 }
 
+
+
+showPlotLegend <- function() {
+   print(paste("CAPE:     ", def$colCAPE) )
+   print(paste("detrended:", def$colDetrended) )
+   print(paste("momentum: ", def$colMomentum) )
+   print(paste("SMA:      ", def$colSMA) )
+   print(paste("Bollinger:", def$colBollinger) )
+   
+   print(paste("value:    ", def$colValue) )
+   print(paste("technical:", def$colTechnical) )
+   print(paste("balanced: ", def$colBalanced) )
+   
+#   print(paste("ConstantAlloc:", def$colConstantAlloc) )
+print("")
+}
 
 
 plotAllReturnsVsSomeParameter <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, type2=def$type2, col2=def$col2, pch2=def$pch2,
@@ -214,6 +248,10 @@ plotAllReturnsVsSomeParameter <- function(type1=def$type1, col1=def$col1, pch1=d
    plot(xFactor*subset(stats[, xStatsName], stats$type==type4), 
         yFactor*subset(stats[, yStatsName], stats$type==type4), 
         pch=pch4, col=col4, xlab="", ylab="", xlim=xRange, ylim=yRange)
+   par(new=T)
+   plot(xFactor*subset(stats[, xStatsName], stats$type=="reversal"), 
+        yFactor*subset(stats[, yStatsName], stats$type=="reversal"), 
+        pch=18, col="purple", xlab="", ylab="", xlim=xRange, ylim=yRange)
    par(new=T)
    plot(xFactor*subset(stats[, xStatsName], stats$type==type5), 
         yFactor*subset(stats[, yStatsName], stats$type==type5), 
@@ -249,7 +287,7 @@ plotAllReturnsVsVolatility <- function(type1=def$type1, col1=def$col1, pch1=def$
                                        lineCol=def$lineCol,
                                        xFactor=100, xLabel="volatility (%)",
                                        yStatsName="netTR2", yFactor=100,
-                                       xMin=12, xMax=16, yMin=def$yTRmin, tradingCost=def$tradingCost) { 
+                                       xMin=12.5, xMax=15.5, yMin=def$yTRmin, tradingCost=def$tradingCost) { 
    
    plotAllReturnsVsSomeParameter(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
                                  type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
@@ -272,7 +310,7 @@ plotAllReturnsVsDrawdown <- function(type1=def$type1, col1=def$col1, pch1=def$pc
                                      lineCol=def$lineCol,
                                      xFactor=1, xLabel="drawdowns",
                                      yStatsName="netTR2", yFactor=100,
-                                     xMin=1, xMax=2.5, yMin=def$yTRmin, tradingCost=def$tradingCost) { 
+                                     xMin=1, xMax=2.4, yMin=def$yTRmin, tradingCost=def$tradingCost) { 
    
    plotAllReturnsVsSomeParameter(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
                                  type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
@@ -344,6 +382,8 @@ plotAllReturnsVsFour <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, 
                                  Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
                                  Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
                                  lineCol=def$lineCol,
+                                 xMinVol=12.5, xMaxVol=15.5, xMinDD=1, xMaxDD=2.4, 
+                                 xMinAlloc=40, xMaxAlloc=100, xMinTO=0, xMaxTO=100, 
                                  yStatsName="netTR2", yFactor=100,
                                  yMin=def$yTRmin, tradingCost=def$tradingCost) {
    
@@ -357,7 +397,7 @@ plotAllReturnsVsFour <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, 
                               Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
                               lineCol=lineCol,
                               yStatsName=yStatsName, yFactor=yFactor,
-                              yMin=yMin, tradingCost=tradingCost) 
+                              xMin=xMinVol, xMax=xMaxVol, yMin=yMin, tradingCost=tradingCost) 
    
    plotAllReturnsVsDrawdown(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
                             type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
@@ -367,7 +407,7 @@ plotAllReturnsVsFour <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, 
                             Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
                             lineCol=lineCol,
                             yStatsName=yStatsName, yFactor=yFactor,
-                            yMin=yMin, tradingCost=tradingCost) 
+                            xMin=xMinDD, xMax=xMaxDD,yMin=yMin, tradingCost=tradingCost) 
    
    plotAllReturnsVsAverageAlloc(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
                                 type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
@@ -377,7 +417,7 @@ plotAllReturnsVsFour <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, 
                                 Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
                                 lineCol=lineCol,
                                 yStatsName=yStatsName, yFactor=yFactor,
-                                yMin=yMin, tradingCost=tradingCost) 
+                                xMin=xMinAlloc, xMax=xMaxAlloc, yMin=yMin, tradingCost=tradingCost) 
    
    plotAllReturnsVsInverseTurnover(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
                                    type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
@@ -387,7 +427,7 @@ plotAllReturnsVsFour <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, 
                                    Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
                                    lineCol=lineCol,
                                    yStatsName=yStatsName, yFactor=yFactor,
-                                   yMin=yMin, tradingCost=tradingCost) 
+                                   xMin=xMinTO, xMax=xMaxTO, yMin=yMin, tradingCost=tradingCost) 
    
    par(mfrow = c(1, 1))
 }

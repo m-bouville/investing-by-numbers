@@ -2,7 +2,7 @@
 
 
 # Loading and preparing data
-start <- function(thoroughCheck=F, force=F) {
+start <- function(extrapolateDividends=T, newbie=F, LoadAndCheckAll=F, force=F) {
    
    if(!file.exists("utils.r")) stop("Use \'setwd()\' to change the working directory to that containing the data.")
    
@@ -10,25 +10,30 @@ start <- function(thoroughCheck=F, force=F) {
    
    setDefaultValues(force=force)
    
-   if (!exists("dat") | force) { # if data frame does not exist (or if we want to force the loading), we load the xls file
+   if (!exists("dat") | LoadAndCheckAll) { # if data frame does not exist (or if we want to force the loading), we load the xls file
       message("Starting to load the data from the xls file.")
       message("Then we will also load a list of drawdowns and gold prices.")
       message("After that, we will create the basic data structures.")
       message()
       #if (!constAlloc) message("If you want stock-bond constant allocations to be created and their statistics to be calculated, run \'start(constAlloc=T)\'.")
-      loadData(2, thoroughCheck=thoroughCheck)
+      loadData( LoadAndCheckAll=LoadAndCheckAll )
    } 
    
    if (!exists("normalized")| force) normalized<<- data.frame(date = dat$date, numericDate = dat$numericDate)
-
    if (!exists("alloc")     | force) alloc     <<- data.frame(date = dat$date, numericDate = dat$numericDate)
-   
    if (!exists("TR")        | force) TR        <<- data.frame(date = dat$date, numericDate = dat$numericDate, stocks = dat$TR)
 
-   #  if (!exists("next5yrs")  | force) next5yrs  <<- data.frame(date = dat$date, numericDate = dat$numericDate)
-   #  if (!exists("next10yrs") | force) next10yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
-   if (!exists("next20yrs") | force) next20yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
-   if (!exists("next30yrs") | force) next30yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+   if ( def$tradingCost==0.02 & (!exists("netTR2") | force) )
+      netTR2 <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+   else if ( def$tradingCost==0.04 & (!exists("netTR4") | force) )
+      netTR4 <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+   
+   if ( (def$futureYears==10) & (!exists("next10yrs") | force) )
+      next10yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+   else if ( (def$futureYears==20) & (!exists("next20yrs") | force) )
+      next20yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+   else if ( (def$futureYears==30) & (!exists("next30yrs") | force) )
+      next30yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
    
    if (!exists("DD") | force) loadDDlist(force=force) # loading the dates of major drawdowns
    
@@ -48,7 +53,7 @@ start <- function(thoroughCheck=F, force=F) {
    time0 <- proc.time()
    message("Creating constant-allocation stock-bond strategies.") 
    invisible ( 
-      lapply(c(0, 70, 85, 100), 
+      lapply( c(100, 90, 80, 0), #seq(0, 100, by=5), 
              function(alloc) createConstAllocStrategy(
                 alloc, futureYears=def$futureYears, tradingCost=def$tradingCost, force=force) )
    )
@@ -60,20 +65,17 @@ start <- function(thoroughCheck=F, force=F) {
       message("Real gold prices were obtained from a local csv file.")
    }
    
-   if (!"UKhousePrice" %in% colnames(dat) | !"UKhousePrice" %in% stats$strategy | force) {
-      loadUKhousePriceData()
+   if (!"UKhousePrice" %in% colnames(dat) | !"UKhousePrice" %in% stats$strategy | LoadAndCheckAll) {
+      loadUKhousePriceData(LoadAndCheckAll=LoadAndCheckAll)
       createUKhousePriceStrategy(futureYears=def$futureYears, tradingCost=def$tradingCost, force=force)
       message("Real UK house prices were obtained from Nationwide; they are in pounds, and based on UK inflation.")
    }
    
+   if(newbie) showFornewbie()
+   
    createTypicalStrategies(force=force)
    
-   print("legend for plots:")
-   print("warm colors correspond to technical strategies (turning their holding every 1-2 year).")
-   print("cold colors correspond to valuation strategies (turning their holding every 10-15 years).")
-   print("diamonds are individual strategies, squares are linear combinations thereof (\'multiStrategies\').")
-   print("black square is a linear combination of the linear combinations (the most \'balanced\' strategy.")
-   plotReturnVsFour()
+   plotAllReturnsVsFour()
    # plotReturnAndAlloc()
    
    showSummaries()
@@ -84,11 +86,11 @@ start <- function(thoroughCheck=F, force=F) {
 
 setDefaultValues <- function(force=F) {
    if (!exists("def") | force) def <<- list()
-   def$futureYears       <<- 30L    # default value for the number of years over which future returns are calculated
+   def$futureYears       <<- 10L    # default value for the number of years over which future returns are calculated
    def$tradingCost       <<- 2/100 # default value for the trading costs
    def$startIndex        <<- round(10.5*12+1)
    def$startYear         <<- (def$startIndex-1)/12+1871
-
+   
    def$typicalCAPE       <<- "CAPE10_2avg30_90_98"
    def$typicalDetrended  <<- "detrendedTRavg30_90_97"
    
@@ -103,11 +105,13 @@ setDefaultValues <- function(force=F) {
    
    def$CPUnumber         <<- 1 # Parallelization does not work
       
+   setPlottingDefaultValues()
    setCAPEdefaultValues()
    def$detrendedAvgOver <<- 12
    setBollDefaultValues()
    setMomentumDefaultValues()
    setSMAdefaultValues()
+   setMultidefaultValues()
 }
 
 createStatsDF <- function() {
@@ -115,10 +119,13 @@ createStatsDF <- function() {
                         type = character(), # type: constant allocation, CAPE, SMA, mixed, etc.
                         subtype = character(), # especially for multistrategy
                         TR = numeric(),  # average real total return (exponential regression)
+                        netTR2 = numeric(),  # average real total return net of 2% of trading costs
+                        netTR4 = numeric(),  # average real total return net of 4% of trading costs
                         volatility = numeric(), 
                         avgStockAlloc = numeric(), # average allocation to stocks
                         latestStockAlloc = numeric(), # allocation to stocks as of the last date of the data
                         turnover = numeric(), # turnover of the portfolio (in years)
+                        invTurnover = numeric(), # 1 / turnover
                         DD2 = numeric(), # sum of the squares of the drawdowns
                         score = numeric(), 
                         stringsAsFactors=F)
@@ -128,6 +135,7 @@ createParametersDF <- function() {
    parameters <<- data.frame(strategy = character(), 
                              type = character(), # type: constant allocation, CAPE, SMA, mixed, etc.
                              subtype = character(), # especially for Bollinger and mixed
+
                              startIndex = numeric(), # the first index that is not NA
                              inputDF = character(),
                              inputName = character(),
@@ -150,80 +158,38 @@ createParametersDF <- function() {
 }
 
 
-# Loading gold data from local csv file
-loadGoldData <- function() {
-   addNumColToDat("gold")
-   dat$gold <<- NA
-   nominalGold <- read.csv("gold.csv", header=T)[, 1]
-   
-   index1968 <- (1968-1871)*12+1  # data start in 1968
-   lastGoldIndex <- length(nominalGold)
-   lastDatIndex <- numData
-   
-   if ( lastGoldIndex + index1968 - 1 > lastDatIndex )  # if there are too many months of data for gold
-      lastGoldIndex <- lastDatIndex - index1968 + 1
-   else if (lastGoldIndex + index1968 - 1 < lastDatIndex)  # if there are too few months of data for gold
-      lastDatIndex <- lastGoldIndex + index1968 - 1
-   
-   dat$gold[ index1968:lastDatIndex ] <<- nominalGold[1:lastGoldIndex]
-   dat$gold <<- dat$gold  / dat$CPI * refCPI # calculating real gold prices
-}
-
-# Loading gold data from Nationwide website
-loadUKhousePriceData <- function() {
-      
-   library(XLConnect) # to handle xls file
-   if(!file.exists("Nationwide_data.xls")) # download file if not already locally available
-      download.file("http://www.nationwide.co.uk/~/media/MainSite/documents/about/house-price-index/downloads/uk-house-prices-adjusted-for-inflation.xls",
-                    "uk-house-prices-adjusted-for-inflation.xls", mode = "wb")
-   
-   wk <- loadWorkbook("uk-house-prices-adjusted-for-inflation.xls") 
-   quarterlyData <- readWorksheet(wk, sheet="RealHP", startRow=3)
-   quarterlyData[, 3] <- as.numeric(quarterlyData[, 3])
-   
-   lastUKhousePriceIndex <- dim(quarterlyData)[[1]]
-   while( is.na(quarterlyData[lastUKhousePriceIndex, 3] ) ) { # remove final rows that are not data
-      quarterlyData <- quarterlyData[-lastUKhousePriceIndex, ]
-      lastUKhousePriceIndex <- lastUKhousePriceIndex-1      
-   }
-   
-   addNumColToDat("UKhousePrice")
-   dat$UKhousePrice <<- NA
-   
-   index1975 <- (1975-1871)*12+1  # available data start in 1975
-   lastDatIndex <- numData
-   
-   if ( 3*lastUKhousePriceIndex + index1975 - 2 > lastDatIndex )  # if there are too many months of UKhousePrice data 
-      lastUKhousePriceIndex <- floor( (lastDatIndex - index1975 + 2)/3 )
-   else if (lastUKhousePriceIndex + index1975 - 2 < lastDatIndex)  # if there are too few months of UKhousePrice data 
-      lastDatIndex <- lastUKhousePriceIndex + index1975 - 2
-   
-   for(i in 0:(lastUKhousePriceIndex-1) ) { #(lastDatIndex-index1975)/3 ) {
-      dat$UKhousePrice[index1975+3*i+1] <<- quarterlyData[i+1, 3] # data are centred on the middle month of the quarter (february, etc.)
-      # for 2 out of 3 months, we interpolate:
-      dat$UKhousePrice[index1975+3*i]   <<- dat$UKhousePrice[index1975+3*i+1]*2/3 + dat$UKhousePrice[index1975+3*i-2]*1/3
-      dat$UKhousePrice[index1975+3*i-1] <<- dat$UKhousePrice[index1975+3*i+1]*1/3 + dat$UKhousePrice[index1975+3*i-2]*2/3
-   }
-}
-   
-
 # Loading data from xls file
-loadData <- function(rowsRemoved = 0L, thoroughCheck=F) {  # the xls file has *nominal* values, the "dat" data frame has *real* values
+loadData <- function(extrapolateDividends=T, LoadAndCheckAll=F) {  # the xls file has *nominal* values, the "dat" data frame has *real* values
    library(XLConnect) # to handle xls file
    if(!file.exists("ie_data.xls")) # download file if not already locally available
       download.file("http://www.econ.yale.edu/~shiller/data/ie_data.xls", "ie_data.xls", mode = "wb")
-   else if(thoroughCheck)
+   else if(LoadAndCheckAll) # We check whether the local file is up to date (if we have time)
       checkXlsFileIsUpToDate()
    
    wk <- loadWorkbook("ie_data.xls") 
    rawDat <- readWorksheet(wk, sheet="Data", startRow=8)
    
-   numData <<- dim(rawDat)[1]-1 # number of rows (minus last row, which contains info, not data)
-   message(paste0("According to the xls file, \'", rawDat$P[numData+1], "\'")) # displaying information given in xls file
-   message(paste0("According to the xls file, \'", rawDat$CPI[numData+1], "\'"))
-   message(paste0("According to the xls file, \'", rawDat$Rate.GS10[numData+1], "\'"))
-   numData <<- numData - rowsRemoved # last few rows, full of NA are removed
-   rawDat <- rawDat[1:numData, ] # removing last row(s)
+   numData <<- dim(rawDat)[1]-2 # number of rows
+   message(paste0("According to the xls file, \'", rawDat$P[numData+2], "\'")) # displaying information given in xls file
+   message(paste0("According to the xls file, \'", rawDat$CPI[numData+2], "\'"))
+#   message(paste0("According to the xls file, \'", rawDat$Rate.GS10[numData+2], "\'"))
+   rawDat <- rawDat[-(numData+2), ] # removing the row containing the information just displayed
+   rawDat <- rawDat[-(numData+1), ] # removing the current month, as it is not data for the end of month
+   
+   if (extrapolateDividends) { # do we extrapolate the missing dividends (too soon for data to be available) or do we remove the rows
+      lastIndex <- numData # last index where dividends are valid
+      while( is.na(rawDat$D[lastIndex]) )  lastIndex <- lastIndex-1
+      
+      fitPara <- regression( (lastIndex-12):lastIndex, rawDat$D[(lastIndex-12):lastIndex] )
+      a <- fitPara[[1]]
+      b <- fitPara[[2]]
+      rawDat$D[ (lastIndex+1) : numData ] <- a + b*( (lastIndex+1) : numData) # extrapolate dividend from past year
+   } else # remove rows where dividend is NA (cannot calculate total return)
+      while( is.na(rawDat$D[numData] ) ) { # remove rows where dividend is NA (cannot calculate total return)
+         rawDat <- rawDat[-numData, ]
+         numData <<- numData-1      
+      }
+   
    
    # data are for the last (business) day of each month, 28th is close enough
    dat <<- data.frame(date       = ISOdate( floor(rawDat$Date), round((rawDat$Date%%1)*100,0), 28 ),
@@ -256,23 +222,23 @@ checkXlsFileIsUpToDate <- function() {
       return("ie_data.xls is not on the local disk.")
    
    wk <- loadWorkbook("ie_data.xls") # this is the local file
-   rawDat <- readWorksheet(wk, sheet="Data", startRow=8)
+   localVersion <- readWorksheet(wk, sheet="Data", startRow=8)
    
-   lastLine <- dim(rawDat)[1] 
-   localMessage1 <- as.character(rawDat$P[lastLine])
-   localMessage2 <- as.character(rawDat$CPI[lastLine])
-   localMessage3 <- as.character(rawDat$Rate.GS10[lastLine])
+   lastLine <- dim(localVersion)[1] 
+   localMessage1 <- as.character(localVersion$P[lastLine])
+   localMessage2 <- as.character(localVersion$CPI[lastLine])
+   localMessage3 <- as.character(localVersion$Rate.GS10[lastLine])
    
    download.file("http://www.econ.yale.edu/~shiller/data/ie_data.xls", "ie_data-remote.xls", mode = "wb")
    library(XLConnect) # to handle xls file
    wk <- loadWorkbook("ie_data-remote.xls")  # this is the local file
-   rawDat <- readWorksheet(wk, sheet="Data", startRow=8)
+   remoteVersion <- readWorksheet(wk, sheet="Data", startRow=8)
    file.remove("ie_data-remote.xls") 
    
-   lastLine <- dim(rawDat)[1] 
-   remoteMessage1 <- as.character(rawDat$P[lastLine])
-   remoteMessage2 <- as.character(rawDat$CPI[lastLine])
-   remoteMessage3 <- as.character(rawDat$Rate.GS10[lastLine])
+   lastLine <- dim(remoteVersion)[1] 
+   remoteMessage1 <- as.character(remoteVersion$P[lastLine])
+   remoteMessage2 <- as.character(remoteVersion$CPI[lastLine])
+   remoteMessage3 <- as.character(remoteVersion$Rate.GS10[lastLine])
    
    if (localMessage1 != remoteMessage1)
       print(paste0("On the remote xls file: ", remoteMessage1, "whereas on the local file: ", localMessage1))
@@ -284,50 +250,54 @@ checkXlsFileIsUpToDate <- function() {
 
 
 # Generating typical strategies
-createTypicalStrategies <- function(force=F) {
+createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
    message("Creating entries for the typical strategies")
 
    time0 <- proc.time()
    createCAPEstrategy(years=10, cheat=2, avgOver=30, medianAlloc=90, 
-                      interQuartileAlloc=98, futureYears=def$futureYears, force=force)
+                      interQuartileAlloc=98, futureYears=def$futureYears, tradingCost=def$tradingCost, force=force)
    print( c( "CAPE time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
 
    time0 <- proc.time()
    createDetrendedStrategy(inputDF="dat", inputName="TR", avgOver=30, 
-                           medianAlloc=90, interQuartileAlloc=97, futureYears=def$futureYears, force=force)
+                           medianAlloc=90, interQuartileAlloc=97, 
+                           futureYears=def$futureYears, tradingCost=def$tradingCost, force=force)
    print( c( "detrended time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
    createBollStrategy("dat", "TR", avgOver=21,  medianAlloc=95, interQuartileAlloc=20, 
-                      futureYears=def$futureYears, force=force)   
+                      futureYears=def$futureYears, tradingCost=def$tradingCost, force=force)   
    print( c( "Bollinger time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
    createSMAstrategy("dat", "TR", SMA1=12, SMA2=1, 
                      medianAlloc=90, interQuartileAlloc=50, 
-                     futureYears=def$futureYears, force=force)   
+                     futureYears=def$futureYears, tradingCost=def$tradingCost, force=force)   
    print( c( "SMA time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
    createMomentumStrategy("dat", "TR", 12, medianAlloc=95, interQuartileAlloc=15, 
-                          futureYears=def$futureYears, force=force) 
+                          futureYears=def$futureYears, tradingCost=def$tradingCost, force=force) 
    print( c( "momentum time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
    createMultiStrategy(inputStrategyName1=def$typicalCAPE, inputStrategyName2=def$typicalDetrended, "", "",
                        70, 30, 0, 0, medianAlloc=85, interQuartileAlloc=98,
-                       strategyName="value70_30_85_98", delta="", subtype="value", force=force)
+                       strategyName="value70_30_85_98", subtype="value", 
+                       tradingCost=def$tradingCost, force=force)
    print( c( "value time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
    createMultiStrategy(def$typicalSMA, def$typicalBoll, def$typicalMomentum, "", 50, 25, 25, 0, 
                        medianAlloc=95, interQuartileAlloc=60,
-                       strategyName="technical50_25_25_95_60", delta="", subtype="technical", force=force)
+                       strategyName="technical50_25_25_95_60", subtype="technical", 
+                       tradingCost=def$tradingCost, force=force)
    print( c( "technical time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
 
    time0 <- proc.time()
    createMultiStrategy(def$typicalValue, def$typicalTechnical, "", "",
                        75, 25, 0, 0, medianAlloc=98, interQuartileAlloc=70,
-                       strategyName="balanced75_25_98_70", delta="", subtype="balanced", force=force)
+                       strategyName="balanced75_25_98_70", subtype="balanced", 
+                       tradingCost=def$tradingCost, force=force)
    print( c( "balanced time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )   
 }

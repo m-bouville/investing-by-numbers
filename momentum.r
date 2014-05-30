@@ -26,7 +26,7 @@ calcMomentum <- function(inputDF, inputName, avgOver=def$momentumAvgOver, moment
 normalizeMomentum <- function(inputDF, inputName, avgOver=def$momentumAvgOver, strategyName) {
 
    momentumName <- paste0("momentum_", inputName, "_", avgOver)
-   if (!strategyName %in% colnames(dat)) 
+   if (!momentumName %in% colnames(dat)) 
       calcMomentum(inputDF=inputDF, inputName=inputName, avgOver=avgOver, momentumName=momentumName)
    addNumColToNormalized(strategyName)
    
@@ -39,7 +39,7 @@ normalizeMomentum <- function(inputDF, inputName, avgOver=def$momentumAvgOver, s
 
 createMomentumStrategy <- function(inputDF, inputName, avgOver=def$momentumAvgOver, 
                                    medianAlloc=def$momentumMedianAlloc, interQuartileAlloc=def$momentumInterQuartileAlloc,
-                                   strategyName="", futureYears=def$futureYears, force=F) {
+                                   strategyName="", futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
    
    if (strategyName=="") 
       strategyName <- paste0("momentum_", inputName, "_", avgOver, "_", medianAlloc, "_", interQuartileAlloc)
@@ -61,6 +61,7 @@ createMomentumStrategy <- function(inputDF, inputName, avgOver=def$momentumAvgOv
       
       parameters$strategy[index]    <<- strategyName
       parameters$type[index]        <<- "momentum"
+      parameters$subtype[index]     <<- inputName
       parameters$inputDF[index]     <<- inputDF
       parameters$inputName[index]   <<- inputName
       parameters$startIndex[index]  <<- avgOver+1
@@ -71,13 +72,16 @@ createMomentumStrategy <- function(inputDF, inputName, avgOver=def$momentumAvgOv
    }
    calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, force=force)
    stats$type[which(stats$strategy == strategyName)] <<- parameters$type[which(parameters$strategy == strategyName)]
+   stats$subtype[which(stats$strategy == strategyName)] <<- parameters$subtype[which(parameters$strategy == strategyName)]
+#    calcTRnetOfTradingCost(strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)      
 }
 
 searchForOptimalMomentum <-function(inputDF="dat", inputName="TR", 
                            minAvgOver=12L, maxAvgOver=12L, byAvgOver=3L, 
                            minMed=90, maxMed=99, byMed=2, minIQ=2, maxIQ=20, byIQ=2, 
                            futureYears=def$futureYears, tradingCost=def$tradingCost, 
-                           minTR=6.65, maxVol=14.8, maxDD2=2., minTO=1.3, force=F) {
+                           minTR=def$technicalMinTR, maxVol=def$technicalMaxVol, maxDD2=def$technicalMaxDD2, 
+                           minTO=def$technicalMinTO, force=F) {
    
    print(paste0("strategy             |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
    for ( avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver) ) 
@@ -90,13 +94,14 @@ searchForOptimalMomentum <-function(inputDF="dat", inputName="TR",
             showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
                                    minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, force=F)
          }
-         plotReturnVsFour()
+         plotAllReturnsVsFour()
       }
    print("")
    showSummaryForStrategy(def$typicalMomentum)
 }
 
 
+# No longer works (based on obsolete data structure)
 plotMomentum <- function(avgOver=def$momentumAvgOver, futureYears=def$futureYears, startYear=1885L) {
    futureReturnName <- paste0("futureReturn", futureYears)
    if (!futureReturnName %in% colnames(dat)) calcFutureReturn(futureYears)
