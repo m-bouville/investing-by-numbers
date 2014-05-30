@@ -1,14 +1,72 @@
+#default values of plotting parameters
+setPlottingDefaultValues <- function() {
+   def$yTRmin<<- 5.5
+   
+   def$colCAPE      <<- "cyan"
+   def$colDetrended <<- "skyblue"
+   def$colMomentum  <<- "orange"
+   def$colSMA       <<- "orangered1"
+   def$colBollinger <<- "magenta"
 
-plotAssetReturn <- function(stratName1="gold", stratName2="bonds", 
-                            stratName3="UKhousePrice", stratName4="stocks", 
+   def$colValue     <<- "blue"
+   def$colTechnical <<- "red"
+   def$colBalanced  <<- "black"
+
+   def$colConstantAlloc  <<- "green"
+   
+   # plotAllReturnsVsX()
+   def$type1 <<- "CAPE"
+   def$col1  <<- def$colCAPE
+   def$pch1  <<- 18L
+   
+   def$type2 <<- "detrended"
+   def$col2  <<- def$colDetrended
+   def$pch2  <<- 18L
+   
+   def$type3 <<- "momentum"
+   def$col3  <<- def$colMomentum
+   def$pch3  <<- 18L
+   
+   def$type4 <<- "SMA"
+   def$col4  <<- def$colSMA
+   def$pch4  <<- 18L
+   
+   def$type5 <<- "Bollinger"
+   def$col5  <<- def$colBollinger
+   def$pch5  <<- 18L
+   
+   # plotAllReturnsVsX(): multistrategies
+   def$Msubtype1 <<- "value"
+   def$Mcol1     <<- def$colValue
+   def$Mpch1     <<- 15L
+   
+   def$Msubtype2 <<- "technical"
+   def$Mcol2     <<- def$colTechnical
+   def$Mpch2     <<- 15L
+   
+   def$Msubtype3 <<- "balanced"
+   def$Mcol3     <<- def$colBalanced
+   def$Mpch3     <<- 15L
+   
+   def$lineCol   <<- def$colConstantAlloc
+}
+
+
+plotAssetReturn <- function(stratName1="stocks",       col1=def$colConstantAlloc, lwd1=2,
+                            stratName2="bonds",        col2="blue",               lwd2=2,
+                            stratName3="UKhousePrice", col3="grey",               lwd3=2,
+                            stratName4="gold",         col4="gold",               lwd4=2, 
                             startYear=1975.25, endYear=2014, net=F, minTR=.5, maxTR=15) {
-   plotReturn(stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4, 
+   plotReturn(stratName1=stratName1, col1=col1, lwd1=lwd1, stratName2=stratName2, col2=col2, lwd2=lwd2,
+              stratName3=stratName3, col3=col3, lwd3=lwd3, stratName4=stratName4, col4=col4, lwd4=lwd4, 
               startYear=startYear, endYear=endYear, net=net, minTR=minTR, maxTR=maxTR) 
 }
 
 
-plotReturn <- function(stratName1=def$typicalStrategies[[1]], stratName2=def$typicalStrategies[[2]], 
-                       stratName3=def$typicalStrategies[[3]], stratName4=def$typicalStrategies[[4]], 
+plotReturn <- function(stratName1=def$typicalBalanced,  col1=def$colBalanced,      lwd1=2,
+                       stratName2=def$typicalTechnical, col2=def$colTechnical,     lwd2=1.5,
+                       stratName3=def$typicalValue,     col3=def$colValue,         lwd3=1.5,
+                       stratName4="stocks",             col4=def$colConstantAlloc, lwd4=2,
                        startYear=def$startYear, endYear=2015, tradingCost=def$tradingCost, 
                        minTR=.9, maxTR=20000, net=T, normalize=T) { 
    
@@ -56,29 +114,32 @@ plotReturn <- function(stratName1=def$typicalStrategies[[1]], stratName2=def$typ
       normFactor3 <- 1
       normFactor4 <- 1
    }
-   print(summary(TR1))
-   
+      
    if(stratName1 %in% colnames(TR)) {   
-      plot(TR$numericDate, TR1/normFactor1, col="red", xlab="", ylab=yLabel, log="y", type="l", lwd=1.5, xlim=xRange, ylim=yRange)
+      plot(TR$numericDate, TR1/normFactor1, col=col1, xlab="", ylab=yLabel, log="y", type="l", lwd=lwd1, xlim=xRange, ylim=yRange)
       par(new=T)
    }
    if(stratName2 %in% colnames(TR)) {   
-      plot(TR$numericDate, TR2/normFactor2, col="blue", xlab="", ylab="", log="y", type="l", lwd=1.5, xlim=xRange, ylim=yRange)
+      plot(TR$numericDate, TR2/normFactor2, col=col2, xlab="", ylab="", log="y", type="l", lwd=lwd2, xlim=xRange, ylim=yRange)
       par(new=T)
    }  
    if(stratName3 %in% colnames(TR)) {   
-      plot(TR$numericDate, TR3/normFactor3, col="black", xlab="", ylab="", log="y", type="l", lwd=2, xlim=xRange, ylim=yRange)
+      plot(TR$numericDate, TR3/normFactor3, col=col3, xlab="", ylab="", log="y", type="l", lwd=lwd3, xlim=xRange, ylim=yRange)
       par(new=T)
    }
    if(stratName4 %in% colnames(TR)) {   
-      plot(TR$numericDate, TR4/normFactor4, col="green", xlab="", ylab="", log="y", type="l", lwd=2, xlim=xRange, ylim=yRange)
+      plot(TR$numericDate, TR4/normFactor4, col=col4, xlab="", ylab="", log="y", type="l", lwd=lwd4, xlim=xRange, ylim=yRange)
    }
-   legend("topleft", c(stratName1,stratName2,stratName3,stratName4), cex=1, bty="n", lwd=c(1.5,1.5,2,2), lty = c(1,1,1,1), col=c("red","blue","black","green"))
+   legend( "topleft", c(stratName1,stratName2,stratName3,stratName4), 
+          bty="n", lwd=c(lwd1, lwd2, lwd3, lwd4), lty = c(1,1,1,1), 
+          col=c(col1, col2, col3, col4) )
    par(new=F)
 }
 
-plotAlloc <- function(stratName1=def$typicalStrategies[[1]], stratName2=def$typicalStrategies[[2]], 
-                      stratName3=def$typicalStrategies[[3]], stratName4=def$typicalStrategies[[4]], 
+plotAlloc <- function(stratName1=def$typicalBalanced,  col1=def$colBalanced,      lwd1=2,
+                      stratName2=def$typicalTechnical, col2=def$colTechnical,     lwd2=1.5,
+                      stratName3=def$typicalValue,     col3=def$colValue,         lwd3=1.5,
+                      stratName4="stocks",             col4=def$colConstantAlloc, lwd4=2,
                       startYear=def$startYear, endYear=2014) { 
    
    normDate <- (startYear-1871)*12+1
@@ -87,76 +148,40 @@ plotAlloc <- function(stratName1=def$typicalStrategies[[1]], stratName2=def$typi
    yRange <- c(0, 1)
    
    if(stratName1 %in% colnames(alloc)) {   
-      plot(alloc$numericDate, alloc[, stratName1], col="red", xlab="", ylab="stock allocation", type="l", xlim=xRange, ylim=yRange)
+      plot(alloc$numericDate, alloc[, stratName1], col=col1, xlab="", ylab="stock allocation", lwd=lwd1, type="l", xlim=xRange, ylim=yRange)
       par(new=T)
    }
    if(stratName2 %in% colnames(alloc)) {   
-      plot(alloc$numericDate, alloc[, stratName2], col="blue", xlab="", ylab="", type="l", xlim=xRange, ylim=yRange)
+      plot(alloc$numericDate, alloc[, stratName2], col=col2, xlab="", ylab="", type="l", lwd=lwd2, xlim=xRange, ylim=yRange)
       par(new=T)
    }
    if(stratName3 %in% colnames(alloc)) {
-      plot(alloc$numericDate, alloc[, stratName3], col="black", xlab="", ylab="", type="l", lwd=2, xlim=xRange, ylim=yRange)
+      plot(alloc$numericDate, alloc[, stratName3], col=col3, xlab="", ylab="", type="l", lwd=lwd3, xlim=xRange, ylim=yRange)
       par(new=T)
    }
    if(stratName4 %in% colnames(alloc)) {   
-      plot(alloc$numericDate, alloc[, stratName4], col="green", xlab="", ylab="", type="l", xlim=xRange, ylim=yRange)
+      plot(alloc$numericDate, alloc[, stratName4], col=col4, xlab="", ylab="", type="l", lwd=lwd4, xlim=xRange, ylim=yRange)
    }
    par(new=F)   
 }
 
-plotReturnAndAlloc <- function(stratName1=def$typicalStrategies[[1]], stratName2=def$typicalStrategies[[2]], 
-                               stratName3=def$typicalStrategies[[3]], stratName4=def$typicalStrategies[[4]], 
+plotReturnAndAlloc <- function(stratName1=def$typicalBalanced,  col1=def$colBalanced,      lwd1=2,
+                               stratName2=def$typicalTechnical, col2=def$colTechnical,     lwd2=1.5,
+                               stratName3=def$typicalValue,     col3=def$colValue,         lwd3=1.5,
+                               stratName4="stocks",             col4=def$colConstantAlloc, lwd4=2,
                                startYear=def$startYear, endYear=2015, tradingCost=def$tradingCost, 
                                minTR=.9, maxTR=20000, net=T, normalize=T) {
    par(mfrow = c(2, 1))
-   plotReturn(stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4, 
+   plotReturn(stratName1=stratName1, col1=col1, lwd1=lwd1, stratName2=stratName2, col2=col2, lwd2=lwd2,
+              stratName3=stratName3, col3=col3, lwd3=lwd3, stratName4=stratName4, col4=col4, lwd4=lwd4, 
               startYear=startYear, endYear=endYear, tradingCost=tradingCost, 
               normalize=normalize, net=net, minTR=minTR, maxTR=maxTR)  
-   plotAlloc(stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4, 
+   plotAlloc(stratName1=stratName1, col1=col1, lwd1=lwd1, stratName2=stratName2, col2=col2, lwd2=lwd2,
+             stratName3=stratName3, col3=col3, lwd3=lwd3, stratName4=stratName4, col4=col4, lwd4=lwd4, 
              startYear=startYear, endYear=endYear)        
    par(mfrow = c(1, 1))
 }
 
-
-#default values of plotting parameters
-setPlottingDefaultValues <- function() {
-   def$yTRmin<<- 5.5
-   
-   def$type1 <<- "CAPE"
-   def$col1  <<- "cyan"
-   def$pch1  <<- 18L
-   
-   def$type2 <<- "detrended"
-   def$col2  <<- "skyblue"
-   def$pch2  <<- 18L
-   
-   def$type3 <<- "momentum"
-   def$col3  <<- "orange"
-   def$pch3  <<- 18L
-   
-   def$type4 <<- "SMA"
-   def$col4  <<- "orangered1"
-   def$pch4  <<- 18L
-   
-   def$type5 <<- "Bollinger"
-   def$col5  <<- "magenta"
-   def$pch5  <<- 18L
-   
-   # multistrategies
-   def$Msubtype1 <<- "value"
-   def$Mcol1     <<- "blue"
-   def$Mpch1     <<- 15L
-   
-   def$Msubtype2 <<- "technical"
-   def$Mcol2     <<- "red"
-   def$Mpch2     <<- 15L
-   
-   def$Msubtype3 <<- "balanced"
-   def$Mcol3     <<- "black"
-   def$Mpch3     <<- 15L
-   
-   def$lineCol   <<- "green"
-}
 
 
 plotAllReturnsVsSomeParameter <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, type2=def$type2, col2=def$col2, pch2=def$pch2,
