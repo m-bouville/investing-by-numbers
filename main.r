@@ -15,15 +15,17 @@ source("detrended.r")
 source("Bollinger.r")
 source("SMA.r")
 source("momentum.r")
+source("reversal.r")
 source("multiStrategies.r")
 
 showToDoList <- function() {
    print("What's still left to do:")
-   print(" - Implement trend reversal (i.e. 2nd derivative).")
-   print(" - Speed up drawdown calculations.")
    print(" - Plot future returns.")
+   print(" - Speed up drawdown calculations.")
+   print(" - Use regression to calculate momentum.")
    print(" - Split data between design and testing.")
-   print(" - Try to speed up code (especially parameter searches through compiling and (or) parallelization.")
+   print(" - Try to speed up code (especially parameter searches) through compiling and (or) parallelization.")
+   print(" - Store constant allocations in csv file.")
    print("")
 }
 
@@ -39,7 +41,7 @@ showUsefulFunctions <- function() {
    print("")
 }
 
-showFornewbie <- function() {
+showForNewbie <- function() {
    showUsefulFunctions()   
    
    print("Legend for plots:")
@@ -55,14 +57,18 @@ showFornewbie <- function() {
 
 
 
-
 showToDoList()
 
-start(newbie=F, force=F)
-## force: forces recalculations (slower)
+start(extrapolateDividends=T, # whether to extrapolate missing recent dividends (or remove incomplete months)
+      smoothConstantAlloc=T, # calculates more constant-allocation portfolios, to get smoother curves in plots
+      downloadAndCheckAllFiles=F, # downloads data files even if they exist locally, to check whether they are up to date
+      newbie=F, # displays some information on the code
+      force=T) # forces recalculations (slower)
+
 
 # plotAllReturnsVsFour()
-# plotAllReturnsVsFour(xMinVol=10, xMaxVol=20, xMinDD=0, xMaxDD=4.5, xMinAlloc=40, xMaxAlloc=100, xMinTO=0, xMaxTO=100, yMin=4)
+## Zoomed-out version of the above plot:
+# plotAllReturnsVsFour(xMinVol=10, xMaxVol=20, xMinDD=0, xMaxDD=4.5, xMinAlloc=40, xMaxAlloc=100, xMinTO=0, xMaxTO=100, yMin=5)
 # plotReturnAndAlloc()
 # plotAssetClassesReturn()
 

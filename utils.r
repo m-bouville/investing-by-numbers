@@ -426,17 +426,18 @@ showSummaries <- function(futureYears=def$futureYears, tradingCost=def$tradingCo
    print(paste0("strategy  |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score") )
 
    showSummaryForStrategy("stocks", displayName="stocks   ", futureYears=futureYears, tradingCost=0, force=force)
-   showSummaryForStrategy(def$typicalCAPE, displayName="CAPE10   ", futureYears=futureYears, tradingCost=tradingCost, force=force)
-   showSummaryForStrategy(def$typicalDetrended, displayName="detrended", futureYears=futureYears, tradingCost=tradingCost, force=force)
    
    if(detailed) {
-      showSummaryForStrategy(def$typicalBoll, displayName="Bollinger", futureYears=futureYears, tradingCost=tradingCost, force=force)
-      showSummaryForStrategy(def$typicalSMA, displayName="SMA 12-1 ", futureYears=futureYears, tradingCost=tradingCost, force=force)   
+      showSummaryForStrategy(def$typicalCAPE,     displayName="CAPE10   ", futureYears=futureYears, tradingCost=tradingCost, force=force)
+      showSummaryForStrategy(def$typicalDetrended,displayName="detrended", futureYears=futureYears, tradingCost=tradingCost, force=force)
+      showSummaryForStrategy(def$typicalBoll,     displayName="Bollinger", futureYears=futureYears, tradingCost=tradingCost, force=force)
+      showSummaryForStrategy(def$typicalSMA,      displayName="SMA 12-1 ", futureYears=futureYears, tradingCost=tradingCost, force=force)   
       showSummaryForStrategy(def$typicalMomentum, displayName="momentum ", futureYears=futureYears, tradingCost=tradingCost, force=force)
+      showSummaryForStrategy(def$typicalReversal, displayName="reversal ", futureYears=futureYears, tradingCost=tradingCost, force=force)
    }
-   showSummaryForStrategy(def$typicalValue, displayName="value    ", futureYears=futureYears, tradingCost=tradingCost, force=force)
+   showSummaryForStrategy(def$typicalValue,     displayName="value    ", futureYears=futureYears, tradingCost=tradingCost, force=force)
    showSummaryForStrategy(def$typicalTechnical, displayName="technical", futureYears=futureYears, tradingCost=tradingCost, force=force)
-   showSummaryForStrategy(def$typicalBalanced, displayName="balanced ", futureYears=futureYears, tradingCost=tradingCost, force=force)
+   showSummaryForStrategy(def$typicalBalanced,  displayName="balanced ", futureYears=futureYears, tradingCost=tradingCost, force=force)
    
    print("")
 }

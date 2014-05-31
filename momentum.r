@@ -1,8 +1,12 @@
 #default values of parameters:
 setMomentumDefaultValues <- function() {
-   def$momentumMedianAlloc <<- 95
-   def$momentumInterQuartileAlloc <<- 15
+   def$momentumInputDF           <<- "dat"
+   def$momentumInputName         <<- "TR"
    def$momentumAvgOver           <<- 12L
+   def$momentumMedianAlloc       <<- 95
+   def$momentumInterQuartileAlloc<<- 15
+   def$typicalMomentum           <<- paste0("momentum_", def$momentumInputName, "_", def$momentumAvgOver, "_", 
+                                            def$momentumMedianAlloc, "_", def$momentumInterQuartileAlloc)
 }
 
 

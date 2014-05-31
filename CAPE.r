@@ -8,6 +8,9 @@ setCAPEdefaultValues <- function() {
    
    def$CAPEmedianAlloc <<- 90
    def$CAPEinterQuartileAlloc <<- 98
+
+   def$typicalCAPE       <<- paste0("CAPE", def$CAPEyears, "_", def$CAPEcheat, "avg", def$CAPEavgOver, "_", 
+                                    def$CAPEmedianAlloc, "_", def$CAPEinterQuartileAlloc)
    
    def$CAPEstrategies <<- c("CAPE10_2avg24_15_15", "CAPE10_2avg24_16_20", "CAPE10_2avg24_15_15", "CAPE10_16_24")
 }

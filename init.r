@@ -2,7 +2,11 @@
 
 
 # Loading and preparing data
-start <- function(extrapolateDividends=T, newbie=F, LoadAndCheckAll=F, force=F) {
+start <- function(extrapolateDividends=T, # whether to extrapolate missing recent dividends (or remove incomplete months)
+                  smoothConstantAlloc=F, # calculates more constant-allocation portfolios, to get smoother curves in plots
+                  downloadAndCheckAllFiles=F, # downloads data files even if they exist locally, to check whether they are up to date
+                  newbie=F, # displays some information on the code
+                  force=F) {
    
    if(!file.exists("utils.r")) stop("Use \'setwd()\' to change the working directory to that containing the data.")
    
@@ -10,13 +14,13 @@ start <- function(extrapolateDividends=T, newbie=F, LoadAndCheckAll=F, force=F) 
    
    setDefaultValues(force=force)
    
-   if (!exists("dat") | LoadAndCheckAll) { # if data frame does not exist (or if we want to force the loading), we load the xls file
+   if (!exists("dat") | downloadAndCheckAllFiles) { # if data frame does not exist (or if we want to force the loading), we load the xls file
       message("Starting to load the data from the xls file.")
-      message("Then we will also load a list of drawdowns and gold prices.")
-      message("After that, we will create the basic data structures.")
+      message("Then we will also load a list of drawdowns, of gold prices and of UK house prices.")
+      message("After that, we will create the basic data structures and calculate some basic strategies.")
       message()
       #if (!constAlloc) message("If you want stock-bond constant allocations to be created and their statistics to be calculated, run \'start(constAlloc=T)\'.")
-      loadData( LoadAndCheckAll=LoadAndCheckAll )
+      loadData( downloadAndCheckAllFiles=downloadAndCheckAllFiles )
    } 
    
    if (!exists("normalized")| force) normalized<<- data.frame(date = dat$date, numericDate = dat$numericDate)
@@ -36,9 +40,7 @@ start <- function(extrapolateDividends=T, newbie=F, LoadAndCheckAll=F, force=F) 
       next30yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
    
    if (!exists("DD") | force) loadDDlist(force=force) # loading the dates of major drawdowns
-   
-   if (!exists("stats") | force)  createStatsDF()
-   
+   if (!exists("stats") | force)  createStatsDF()   
    if (!exists("parameters") | force) createParametersDF()
    
    addNumColToDat("TRmonthly")
@@ -52,11 +54,11 @@ start <- function(extrapolateDividends=T, newbie=F, LoadAndCheckAll=F, force=F) 
    
    time0 <- proc.time()
    message("Creating constant-allocation stock-bond strategies.") 
-   invisible ( 
-      lapply( c(100, 90, 80, 0), #seq(0, 100, by=5), 
-             function(alloc) createConstAllocStrategy(
-                alloc, futureYears=def$futureYears, tradingCost=def$tradingCost, force=force) )
-   )
+   if(smoothConstantAlloc)
+      constAllocList <- seq(100, 0, by=-5)
+   else constAllocList <- c(100, 95, 90, 85, 0)
+   invisible ( lapply( constAllocList, function(alloc) createConstAllocStrategy(
+      alloc, futureYears=def$futureYears, tradingCost=def$tradingCost, force=force) ) )
    print( c( "constant allocation time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    if (!"gold" %in% colnames(dat) | !"gold" %in% stats$strategy | force) {
@@ -65,13 +67,17 @@ start <- function(extrapolateDividends=T, newbie=F, LoadAndCheckAll=F, force=F) 
       message("Real gold prices were obtained from a local csv file.")
    }
    
-   if (!"UKhousePrice" %in% colnames(dat) | !"UKhousePrice" %in% stats$strategy | LoadAndCheckAll) {
-      loadUKhousePriceData(LoadAndCheckAll=LoadAndCheckAll)
+   if (!"UKhousePrice" %in% colnames(dat) | !"UKhousePrice" %in% stats$strategy | downloadAndCheckAllFiles) {
+      loadUKhousePriceData(downloadAndCheckAllFiles=downloadAndCheckAllFiles)
       createUKhousePriceStrategy(futureYears=def$futureYears, tradingCost=def$tradingCost, force=force)
       message("Real UK house prices were obtained from Nationwide; they are in pounds, and based on UK inflation.")
    }
    
-   if(newbie) showFornewbie()
+   if(!downloadAndCheckAllFiles) {
+      print( Sys.time() )
+   }
+   
+   if(newbie) showForNewbie()
    
    createTypicalStrategies(force=force)
    
@@ -80,38 +86,35 @@ start <- function(extrapolateDividends=T, newbie=F, LoadAndCheckAll=F, force=F) 
    
    showSummaries()
    
-   print(proc.time() - totTime)
+#    print(proc.time() - totTime)
+   print( paste( "This took:", 
+                 round(summary(proc.time())[[3]] - totTime[[3]] , 0), " s, with about" , 
+                 round(summary(proc.time())[[1]] - totTime[[1]] , 0), " s for calculations and " ,
+                 round(summary(proc.time())[[3]]-summary(proc.time())[[1]] + totTime[[1]]-totTime[[3]] , 0), 
+                 " s to download files." ) )
 }
 
 
 setDefaultValues <- function(force=F) {
    if (!exists("def") | force) def <<- list()
-   def$futureYears       <<- 10L    # default value for the number of years over which future returns are calculated
-   def$tradingCost       <<- 2/100 # default value for the trading costs
+   
+   def$futureYears       <<- 20L    # default value for the number of years over which future returns are calculated
+   def$tradingCost       <<- 4/100 # default value for the trading costs
    def$startIndex        <<- round(10.5*12+1)
    def$startYear         <<- (def$startIndex-1)/12+1871
-   
-   def$typicalCAPE       <<- "CAPE10_2avg30_90_98"
-   def$typicalDetrended  <<- "detrendedTRavg30_90_97"
-   
-   def$typicalSMA        <<- "SMA_TR12_1_90_50"
-   def$typicalBoll       <<- "Boll_TR_21_95_20"
-   def$typicalMomentum   <<- "momentum_TR_12_95_15"
-   
-   def$typicalValue      <<- "value70_30_85_98"
-   def$typicalTechnical  <<- "technical50_25_25_95_60"
-   def$typicalBalanced   <<- "balanced75_25_98_70"
-   def$typicalStrategies <<- c(def$typicalTechnical, def$typicalValue, def$typicalBalanced, "stocks")
    
    def$CPUnumber         <<- 1 # Parallelization does not work
       
    setPlottingDefaultValues()
    setCAPEdefaultValues()
-   def$detrendedAvgOver <<- 12
+   setDetrendedDefaultValues()
    setBollDefaultValues()
-   setMomentumDefaultValues()
    setSMAdefaultValues()
+   setMomentumDefaultValues()
+   setReversalDefaultValues()
    setMultidefaultValues()
+   
+   def$typicalStrategies <<- c(def$typicalTechnical, def$typicalValue, def$typicalBalanced, "stocks")
 }
 
 createStatsDF <- function() {
@@ -159,11 +162,11 @@ createParametersDF <- function() {
 
 
 # Loading data from xls file
-loadData <- function(extrapolateDividends=T, LoadAndCheckAll=F) {  # the xls file has *nominal* values, the "dat" data frame has *real* values
+loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=F) {  # the xls file has *nominal* values, the "dat" data frame has *real* values
    library(XLConnect) # to handle xls file
    if(!file.exists("ie_data.xls")) # download file if not already locally available
       download.file("http://www.econ.yale.edu/~shiller/data/ie_data.xls", "ie_data.xls", mode = "wb")
-   else if(LoadAndCheckAll) # We check whether the local file is up to date (if we have time)
+   else if(downloadAndCheckAllFiles) # We check whether the local file is up to date (if we have time)
       checkXlsFileIsUpToDate()
    
    wk <- loadWorkbook("ie_data.xls") 
@@ -254,50 +257,62 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
    message("Creating entries for the typical strategies")
 
    time0 <- proc.time()
-   createCAPEstrategy(years=10, cheat=2, avgOver=30, medianAlloc=90, 
-                      interQuartileAlloc=98, futureYears=def$futureYears, tradingCost=def$tradingCost, force=force)
+   createCAPEstrategy(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver=def$CAPEavgOver, 
+                      medianAlloc=def$CAPEmedianAlloc, interQuartileAlloc=def$CAPEinterQuartileAlloc, 
+                      futureYears=def$futureYears, tradingCost=def$tradingCost, force=force)
    print( c( "CAPE time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
 
    time0 <- proc.time()
-   createDetrendedStrategy(inputDF="dat", inputName="TR", avgOver=30, 
-                           medianAlloc=90, interQuartileAlloc=97, 
+   createDetrendedStrategy(inputDF=def$detrendedInputDF, inputName=def$detrendedInputName, avgOver=def$detrendedAvgOver, 
+                           medianAlloc=def$detrendedMedianAlloc, interQuartileAlloc=def$detrendedInterQuartileAlloc, 
                            futureYears=def$futureYears, tradingCost=def$tradingCost, force=force)
    print( c( "detrended time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
-   createBollStrategy("dat", "TR", avgOver=21,  medianAlloc=95, interQuartileAlloc=20, 
+   createBollStrategy(inputDF=def$BollInputDF, inputName=def$BollInputName, avgOver=def$BollAvgOver, 
+                      medianAlloc=def$BollMedianAlloc, interQuartileAlloc=def$BollInterQuartileAlloc, 
                       futureYears=def$futureYears, tradingCost=def$tradingCost, force=force)   
    print( c( "Bollinger time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
-   createSMAstrategy("dat", "TR", SMA1=12, SMA2=1, 
-                     medianAlloc=90, interQuartileAlloc=50, 
+   createSMAstrategy(inputDF=def$SMAinputDF, inputName=def$SMAinputName, SMA1=def$SMA1, SMA2=def$SMA2, 
+                     medianAlloc=def$SMAmedianAlloc, interQuartileAlloc=def$SMAinterQuartileAlloc, 
                      futureYears=def$futureYears, tradingCost=def$tradingCost, force=force)   
    print( c( "SMA time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
-   createMomentumStrategy("dat", "TR", 12, medianAlloc=95, interQuartileAlloc=15, 
+   createMomentumStrategy(def$momentumInputDF, def$momentumInputName, def$momentumAvgOver, 
+                          medianAlloc=def$momentumMedianAlloc, interQuartileAlloc=def$momentumInterQuartileAlloc, 
                           futureYears=def$futureYears, tradingCost=def$tradingCost, force=force) 
    print( c( "momentum time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
+   createReversalStrategy(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
+                          avgOver=def$reversalAvgOver, returnToMean=def$reversalReturnToMean, 
+                          medianAlloc=def$reversalMedianAlloc, interQuartileAlloc=def$reversalInterQuartileAlloc, 
+                          futureYears=def$futureYears, tradingCost=def$tradingCost, force=force) 
+   print( c( "reversal time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
+       
+   time0 <- proc.time()
    createMultiStrategy(inputStrategyName1=def$typicalCAPE, inputStrategyName2=def$typicalDetrended, "", "",
-                       70, 30, 0, 0, medianAlloc=85, interQuartileAlloc=98,
-                       strategyName="value70_30_85_98", subtype="value", 
-                       tradingCost=def$tradingCost, force=force)
+                       def$valueFractionCAPE, def$valueFractionDetrended, 0, 0, 
+                       medianAlloc=def$valueMedianAlloc, interQuartileAlloc=def$valueInterQuartileAlloc,
+                       subtype="value", tradingCost=def$tradingCost, force=force)
    print( c( "value time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
-   createMultiStrategy(def$typicalSMA, def$typicalBoll, def$typicalMomentum, "", 50, 25, 25, 0, 
-                       medianAlloc=95, interQuartileAlloc=60,
-                       strategyName="technical50_25_25_95_60", subtype="technical", 
-                       tradingCost=def$tradingCost, force=force)
+   createMultiStrategy(def$typicalSMA, def$typicalBoll, def$typicalMomentum, def$typicalReversal, 
+                       def$technicalFractionSMA, def$technicalFractionBoll, 
+                       def$technicalFractionMomentum, def$technicalFractionReversal, 
+                       medianAlloc=def$technicalMedianAlloc, interQuartileAlloc=def$technicalInterQuartileAlloc,
+                       subtype="technical", tradingCost=def$tradingCost, force=force)
    print( c( "technical time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
-
+   
    time0 <- proc.time()
    createMultiStrategy(def$typicalValue, def$typicalTechnical, "", "",
-                       75, 25, 0, 0, medianAlloc=98, interQuartileAlloc=70,
-                       strategyName="balanced75_25_98_70", subtype="balanced", 
-                       tradingCost=def$tradingCost, force=force)
+                       def$balancedFractionValue, def$balancedFractionTechnical, 0, 0, 
+                       medianAlloc=def$balancedMedianAlloc, interQuartileAlloc=def$balancedInterQuartileAlloc,
+                       subtype="balanced", tradingCost=def$tradingCost, force=force)
    print( c( "balanced time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )   
+   
 }

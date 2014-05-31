@@ -1,8 +1,12 @@
 #default values of parameters:
 setBollDefaultValues <- function() {
-   def$BollMedianAlloc   <<- 95
+   def$BollInputDF          <<- "dat"
+   def$BollInputName        <<- "TR"
+   def$BollAvgOver          <<- 21L
+   def$BollMedianAlloc      <<- 95
    def$BollInterQuartileAlloc <<- 20
-   def$BollAvgOver    <<- 21L
+   def$typicalBoll          <<- paste0("Boll_", def$BollInputName, "_", def$BollAvgOver, "_", 
+                                       def$BollMedianAlloc, "_", def$BollInterQuartileAlloc)
 }
 
 normalizeBoll <- function(inputDF, inputName, avgOver=def$BollAvgOver, strategyName="", force=F) {

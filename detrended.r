@@ -1,4 +1,13 @@
-
+#default values of parameters:
+setDetrendedDefaultValues <- function() {
+   def$detrendedInputDF           <<- "dat"
+   def$detrendedInputName         <<- "TR"
+   def$detrendedAvgOver           <<- 30L
+   def$detrendedMedianAlloc       <<- 90
+   def$detrendedInterQuartileAlloc<<- 97
+   def$typicalDetrended           <<- paste0("detrended", def$detrendedInputName, "avg", def$detrendedAvgOver, "_", 
+                                             def$detrendedMedianAlloc, "_", def$detrendedInterQuartileAlloc)
+}
 
 calcDetrended <- function(inputDF, inputName, detrendedName) {
    if (inputDF=="dat")             logInput <- log( dat[, inputName] )

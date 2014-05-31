@@ -1,9 +1,13 @@
 #default values of parameters:
 setSMAdefaultValues <- function() {
+   def$SMAinputDF          <<- "dat"
+   def$SMAinputName        <<- "TR"
    def$SMA1                <<- 12L
    def$SMA2                <<- 1L
    def$SMAmedianAlloc      <<- 90
    def$SMAinterQuartileAlloc <<- 50
+   def$typicalSMA        <<- paste0("SMA_", def$SMAinputName, def$SMA1, "_", def$SMA2, "_", 
+                                    def$SMAmedianAlloc, "_", def$SMAinterQuartileAlloc)
 }
 
 ## calculating simple moving average (SMA)

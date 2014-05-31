@@ -44,10 +44,10 @@ createGoldStrategy <- function(strategyName="", futureYears=def$futureYears, tra
 
 
 # Loading gold data from Nationwide website
-loadUKhousePriceData <- function(LoadAndCheckAll=F) {
+loadUKhousePriceData <- function(downloadAndCheckAllFiles=F) {
    
    library(XLConnect) # to handle xls file
-   if(!file.exists("uk-house-prices-adjusted-for-inflation.xls") | LoadAndCheckAll) # download file if not already locally available
+   if(!file.exists("uk-house-prices-adjusted-for-inflation.xls") | downloadAndCheckAllFiles) # download file if not already locally available
       download.file("http://www.nationwide.co.uk/~/media/MainSite/documents/about/house-price-index/downloads/uk-house-prices-adjusted-for-inflation.xls",
                     "uk-house-prices-adjusted-for-inflation.xls", mode = "wb")
    

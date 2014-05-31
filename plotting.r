@@ -1,12 +1,21 @@
 #default values of plotting parameters
 setPlottingDefaultValues <- function() {
-   def$yTRmin<<- 6
+   def$yTRmin<<- 7
+   def$yTRmax<<- 9.
+
+   if (def$tradingCost==0.02)
+   def$yStatsName <<- "netTR2"
+   else if (def$tradingCost==0.04)
+      def$yStatsName <<- "netTR4"
+   else stop("No data frame \'netTR", round(tradingCost*100), "\' exists.")
    
+   #Colors consistently used for the various tsrategies
    def$colCAPE      <<- "cyan"
    def$colDetrended <<- "skyblue"
    def$colMomentum  <<- "orange"
    def$colSMA       <<- "orangered1"
-   def$colBollinger <<- "magenta"
+   def$colBollinger <<- "magenta"   
+   def$colReversal  <<- "yellow"
 
    def$colValue     <<- "blue"
    def$colTechnical <<- "red"
@@ -17,23 +26,27 @@ setPlottingDefaultValues <- function() {
    # plotAllReturnsVsX()
    def$type1 <<- "CAPE"
    def$col1  <<- def$colCAPE
-   def$pch1  <<- 18L
+   def$pch1  <<- 16L
    
    def$type2 <<- "detrended"
    def$col2  <<- def$colDetrended
-   def$pch2  <<- 18L
+   def$pch2  <<- 16L
    
    def$type3 <<- "momentum"
    def$col3  <<- def$colMomentum
-   def$pch3  <<- 18L
+   def$pch3  <<- 16L
    
    def$type4 <<- "SMA"
    def$col4  <<- def$colSMA
-   def$pch4  <<- 18L
+   def$pch4  <<- 16L
    
    def$type5 <<- "Bollinger"
    def$col5  <<- def$colBollinger
-   def$pch5  <<- 18L
+   def$pch5  <<- 16L
+   
+   def$type6 <<- "reversal"
+   def$col6  <<- def$colReversal
+   def$pch6  <<- 16L
    
    # plotAllReturnsVsX(): multistrategies
    def$Msubtype1 <<- "value"
@@ -208,7 +221,8 @@ showPlotLegend <- function() {
    print(paste("momentum: ", def$colMomentum) )
    print(paste("SMA:      ", def$colSMA) )
    print(paste("Bollinger:", def$colBollinger) )
-   
+   print(paste("reversal: ", def$colReversal) )
+   print("")   
    print(paste("value:    ", def$colValue) )
    print(paste("technical:", def$colTechnical) )
    print(paste("balanced: ", def$colBalanced) )
@@ -218,19 +232,21 @@ print("")
 }
 
 
+## Basic scatter plot of some parameter on x and net return on y 
+## (the next 4 kinds of plots are wrappers of this one)
 plotAllReturnsVsSomeParameter <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, type2=def$type2, col2=def$col2, pch2=def$pch2,
                                           type3=def$type3, col3=def$col3, pch3=def$pch3, type4=def$type4, col4=def$col4, pch4=def$pch4,
-                                          type5=def$type5, col5=def$col5, pch5=def$pch5, 
+                                          type5=def$type5, col5=def$col5, pch5=def$pch5, type6=def$type6, col6=def$col6, pch6=def$pch6, 
                                           Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
                                           Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
                                           Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
                                           lineCol=def$lineCol,
                                           xStatsName, xFactor=100, xLabel="volatility (%)",
-                                          yStatsName="netTR2", yFactor=100,
-                                          xMin, xMax, yMin=def$yTRmin, tradingCost=def$tradingCost) { 
+                                          yStatsName=def$yStatsName, yFactor=100,
+                                          xMin, xMax, yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost) { 
    
    xRange <- c(xMin, xMax)
-   yRange <- c(yMin, 9.5 - 100*tradingCost/2)
+   yRange <- c(yMin - 100*tradingCost/2, yMax - 100*tradingCost/4)
    par( mar=c(4, 4, 1.5, 1.5) )
       
    plot(xFactor*subset(stats[, xStatsName], stats$type==type1), 
@@ -249,13 +265,13 @@ plotAllReturnsVsSomeParameter <- function(type1=def$type1, col1=def$col1, pch1=d
         yFactor*subset(stats[, yStatsName], stats$type==type4), 
         pch=pch4, col=col4, xlab="", ylab="", xlim=xRange, ylim=yRange)
    par(new=T)
-   plot(xFactor*subset(stats[, xStatsName], stats$type=="reversal"), 
-        yFactor*subset(stats[, yStatsName], stats$type=="reversal"), 
-        pch=18, col="purple", xlab="", ylab="", xlim=xRange, ylim=yRange)
-   par(new=T)
    plot(xFactor*subset(stats[, xStatsName], stats$type==type5), 
         yFactor*subset(stats[, yStatsName], stats$type==type5), 
         pch=pch5, col=col5, xlab="", ylab="", xlim=xRange, ylim=yRange)
+   par(new=T)
+   plot(xFactor*subset(stats[, xStatsName], stats$type==type6), 
+        yFactor*subset(stats[, yStatsName], stats$type==type6), 
+        pch=pch6, col=col6, xlab="", ylab="", xlim=xRange, ylim=yRange)
    par(new=T)
    plot(xFactor*subset(stats[, xStatsName], stats$subtype==Msubtype1), 
         yFactor*subset(stats[, yStatsName], stats$subtype==Msubtype1), 
@@ -280,154 +296,154 @@ plotAllReturnsVsSomeParameter <- function(type1=def$type1, col1=def$col1, pch1=d
 
 plotAllReturnsVsVolatility <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, type2=def$type2, col2=def$col2, pch2=def$pch2,
                                        type3=def$type3, col3=def$col3, pch3=def$pch3, type4=def$type4, col4=def$col4, pch4=def$pch4,
-                                       type5=def$type5, col5=def$col5, pch5=def$pch5, 
+                                       type5=def$type5, col5=def$col5, pch5=def$pch5, type6=def$type6, col6=def$col6, pch6=def$pch6, 
                                        Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
                                        Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
                                        Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
                                        lineCol=def$lineCol,
                                        xFactor=100, xLabel="volatility (%)",
-                                       yStatsName="netTR2", yFactor=100,
-                                       xMin=12.5, xMax=15.5, yMin=def$yTRmin, tradingCost=def$tradingCost) { 
+                                       yStatsName=def$yStatsName, yFactor=100,
+                                       xMin=12.5, xMax=15.5, yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost) { 
    
    plotAllReturnsVsSomeParameter(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
                                  type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
-                                 type5=type5, col5=col5, pch5=pch5, 
+                                 type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6, 
                                  Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
                                  Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
                                  Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
                                  lineCol=lineCol,
                                  xStatsName="volatility", xFactor=xFactor, xLabel=xLabel,
                                  yStatsName=yStatsName, yFactor=yFactor,
-                                 xMin=xMin, xMax=xMax, yMin=yMin, tradingCost=tradingCost) 
+                                 xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax, tradingCost=tradingCost) 
 }
 
 plotAllReturnsVsDrawdown <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, type2=def$type2, col2=def$col2, pch2=def$pch2,
                                      type3=def$type3, col3=def$col3, pch3=def$pch3, type4=def$type4, col4=def$col4, pch4=def$pch4,
-                                     type5=def$type5, col5=def$col5, pch5=def$pch5, 
+                                     type5=def$type5, col5=def$col5, pch5=def$pch5, type6=def$type6, col6=def$col6, pch6=def$pch6, 
                                      Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
                                      Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
                                      Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
                                      lineCol=def$lineCol,
                                      xFactor=1, xLabel="drawdowns",
-                                     yStatsName="netTR2", yFactor=100,
-                                     xMin=1, xMax=2.4, yMin=def$yTRmin, tradingCost=def$tradingCost) { 
+                                     yStatsName=def$yStatsName, yFactor=100,
+                                     xMin=1, xMax=2.4, yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost) { 
    
    plotAllReturnsVsSomeParameter(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
                                  type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
-                                 type5=type5, col5=col5, pch5=pch5, 
+                                 type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6, 
                                  Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
                                  Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
                                  Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
                                  lineCol=lineCol,
                                  xStatsName="DD2", xFactor=xFactor, xLabel=xLabel,
                                  yStatsName=yStatsName, yFactor=yFactor,
-                                 xMin=xMin, xMax=xMax, yMin=yMin, tradingCost=tradingCost) 
+                                 xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax, tradingCost=tradingCost) 
 }
 
 plotAllReturnsVsAverageAlloc <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, type2=def$type2, col2=def$col2, pch2=def$pch2,
                                          type3=def$type3, col3=def$col3, pch3=def$pch3, type4=def$type4, col4=def$col4, pch4=def$pch4,
-                                         type5=def$type5, col5=def$col5, pch5=def$pch5, 
+                                         type5=def$type5, col5=def$col5, pch5=def$pch5, type6=def$type6, col6=def$col6, pch6=def$pch6, 
                                          Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
                                          Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
                                          Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
                                          lineCol=def$lineCol,
                                          xFactor=100, xLabel="average stock allocation (%)",
-                                         yStatsName="netTR2", yFactor=100,
-                                         xMin=40, xMax=100, yMin=def$yTRmin, tradingCost=def$tradingCost) { 
+                                         yStatsName=def$yStatsName, yFactor=100,
+                                         xMin=40, xMax=100, yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost) { 
    
    plotAllReturnsVsSomeParameter(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
                                  type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
-                                 type5=type5, col5=col5, pch5=pch5, 
+                                 type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6, 
                                  Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
                                  Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
                                  Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
                                  lineCol=lineCol,
                                  xStatsName="avgStockAlloc", xFactor=xFactor, xLabel=xLabel,
                                  yStatsName=yStatsName, yFactor=yFactor,
-                                 xMin=xMin, xMax=xMax, yMin=yMin, tradingCost=tradingCost) 
+                                 xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax, tradingCost=tradingCost) 
 }
 
 plotAllReturnsVsInverseTurnover <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, type2=def$type2, col2=def$col2, pch2=def$pch2,
                                             type3=def$type3, col3=def$col3, pch3=def$pch3, type4=def$type4, col4=def$col4, pch4=def$pch4,
-                                            type5=def$type5, col5=def$col5, pch5=def$pch5, 
+                                            type5=def$type5, col5=def$col5, pch5=def$pch5, type6=def$type6, col6=def$col6, pch6=def$pch6, 
                                             Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
                                             Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
                                             Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
                                             lineCol=def$lineCol,
                                             xFactor=100, xLabel="100 / turnover (years)",
-                                            yStatsName="netTR2", yFactor=100,
-                                            xMin=0, xMax=100, yMin=def$yTRmin, tradingCost=def$tradingCost) { 
+                                            yStatsName=def$yStatsName, yFactor=100,
+                                            xMin=0, xMax=100, yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost) { 
    
    
    stats$invTurnover <<- 1 / stats$turnover
    
    plotAllReturnsVsSomeParameter(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
                                  type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
-                                 type5=type5, col5=col5, pch5=pch5, 
+                                 type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6, 
                                  Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
                                  Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
                                  Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
                                  lineCol=lineCol,
                                  xStatsName="invTurnover", xFactor=xFactor, xLabel=xLabel,
                                  yStatsName=yStatsName, yFactor=yFactor,
-                                 xMin=xMin, xMax=xMax, yMin=yMin, tradingCost=tradingCost) 
+                                 xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax, tradingCost=tradingCost) 
    stats$invTurnover = NULL
 }
 
 
 plotAllReturnsVsFour <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, type2=def$type2, col2=def$col2, pch2=def$pch2,
                                  type3=def$type3, col3=def$col3, pch3=def$pch3, type4=def$type4, col4=def$col4, pch4=def$pch4,
-                                 type5=def$type5, col5=def$col5, pch5=def$pch5, 
+                                 type5=def$type5, col5=def$col5, pch5=def$pch5, type6=def$type6, col6=def$col6, pch6=def$pch6, 
                                  Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
                                  Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
                                  Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
                                  lineCol=def$lineCol,
                                  xMinVol=12.5, xMaxVol=15.5, xMinDD=1, xMaxDD=2.4, 
                                  xMinAlloc=40, xMaxAlloc=100, xMinTO=0, xMaxTO=100, 
-                                 yStatsName="netTR2", yFactor=100,
-                                 yMin=def$yTRmin, tradingCost=def$tradingCost) {
+                                 yStatsName=def$yStatsName, yFactor=100,
+                                 yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost) {
    
    par(mfrow = c(2, 2))
    
    plotAllReturnsVsVolatility(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
                               type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
-                              type5=type5, col5=col5, pch5=pch5, 
+                              type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6,  
                               Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
                               Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
                               Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
                               lineCol=lineCol,
                               yStatsName=yStatsName, yFactor=yFactor,
-                              xMin=xMinVol, xMax=xMaxVol, yMin=yMin, tradingCost=tradingCost) 
+                              xMin=xMinVol, xMax=xMaxVol, yMin=yMin, yMax=yMax, tradingCost=tradingCost) 
    
    plotAllReturnsVsDrawdown(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
                             type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
-                            type5=type5, col5=col5, pch5=pch5, 
+                            type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6, 
                             Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
                             Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
                             Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
                             lineCol=lineCol,
                             yStatsName=yStatsName, yFactor=yFactor,
-                            xMin=xMinDD, xMax=xMaxDD,yMin=yMin, tradingCost=tradingCost) 
+                            xMin=xMinDD, xMax=xMaxDD, yMin=yMin, yMax=yMax, tradingCost=tradingCost) 
    
    plotAllReturnsVsAverageAlloc(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
                                 type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
-                                type5=type5, col5=col5, pch5=pch5, 
+                                type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6, 
                                 Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
                                 Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
                                 Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
                                 lineCol=lineCol,
                                 yStatsName=yStatsName, yFactor=yFactor,
-                                xMin=xMinAlloc, xMax=xMaxAlloc, yMin=yMin, tradingCost=tradingCost) 
+                                xMin=xMinAlloc, xMax=xMaxAlloc, yMin=yMin, yMax=yMax, tradingCost=tradingCost) 
    
    plotAllReturnsVsInverseTurnover(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
                                    type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
-                                   type5=type5, col5=col5, pch5=pch5, 
+                                   type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6, 
                                    Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
                                    Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
                                    Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
                                    lineCol=lineCol,
                                    yStatsName=yStatsName, yFactor=yFactor,
-                                   xMin=xMinTO, xMax=xMaxTO, yMin=yMin, tradingCost=tradingCost) 
+                                   xMin=xMinTO, xMax=xMaxTO, yMin=yMin, yMax=yMax, tradingCost=tradingCost) 
    
    par(mfrow = c(1, 1))
 }
