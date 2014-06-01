@@ -1,5 +1,5 @@
 
-# Loading DD list from csv file
+## Loading DD list from csv file
 loadDDlist <- function(force=F) {
    if (!exists("DD") | force) {
       DD <<- read.csv("drawdownList.csv", col.names = c("startYear", "endYear", "comments"), stringsAsFactors=F, header=F)
@@ -21,63 +21,22 @@ loadDDlist <- function(force=F) {
    }
 }
 
-# wrapper calling either drawdownFast or drawdownSlow
+## Calculate the drawdown (bigger price fall) for a certain startegy in a given date range
 drawdown <- function(strategyName, startYear, endYear) {
-   drawdownFast(strategyName, startYear, endYear) 
-}
-
-# Calculate the drawdown for a strategy between 2 years 
-# faster but less accurate when drawdown is weak (returns NA)
-drawdownFast <- function(strategyName, startYear, endYear) {
-   if (!(strategyName %in% colnames(TR)))  stop(paste0("TR$", strategyName, " does not exist."))
-   startIndex <- (startYear-1871)*12+1
-   endIndex <- min((endYear-1871)*12, numData)
-   
-   highValue <- -1
-   monotonicallyIncreasing <- T
-   for (i in startIndex:endIndex) 
-      if (!is.na(TR[i, strategyName]) & (TR[i, strategyName] > highValue) ) {
-         highValue <- TR[i, strategyName]
-         highIndex <- i
-      }
-      else monotonicallyIncreasing <- F
-   if (highValue < 0) return(NA) # if all TR values are NA
-   if (monotonicallyIncreasing) return(0) # if TR increases monotonically then DD = 0
-   
-   lowValue <- Inf
-   for (i in seq(endIndex, startIndex, by=-1))
-      if (!is.na(TR[i, strategyName]) & (TR[i, strategyName] < lowValue) ) {
-         lowValue <- TR[i, strategyName]
-         lowIndex <- i
-      }
-   if(lowIndex > highIndex) # if min occurs after max (as it should)
-      return(lowValue/highValue - 1)
-   else {
-      if (endYear-startYear < 2){
-#         print(paste0( "Switching to slow algo for DD ", startYear," - ", endYear ) )
-         drawdownSlow(strategyName, startYear, endYear) 
-      }
-      else {
-         if ( highValue - TR[endIndex, strategyName] < TR[startIndex, strategyName]-lowValue ) 
-            drawdownFast(strategyName, startYear, endYear-.25) # maximum value is close to endYear: reruns with narrower range
-         else drawdownFast(strategyName, startYear+.25, endYear) # minimum value is close to startYear: reruns with narrower range
-      }
-   }
-}
-
-# slower but accurate
-drawdownSlow <- function(strategyName, startYear, endYear) {
-   if (!(strategyName %in% colnames(TR))) stop(paste0("TR$", strategyName, " does not exist."))
+   requireColInTR(strategyName)
    startIndex <- (startYear-1871)*12+1
    endIndex <- min((endYear-1871)*12, numData)
    
    DD <- 1
-   for (i in startIndex:(endIndex-1) ) {
-      if (!is.na(TR[i, strategyName]))
-          for (j in i:endIndex) 
-             if (!is.na(TR[j, strategyName]) & (TR[j, strategyName] / TR[i, strategyName] < DD ) ) 
-                DD <- TR[j, strategyName]/TR[i, strategyName]
-   }
+   highValue <- -1
+   
+   for (i in startIndex:(endIndex-1) ) 
+      if ( !is.na(TR[i, strategyName]) ) {
+         if (TR[i, strategyName] > highValue)  
+            highValue <- TR[i, strategyName]
+         else if (TR[i, strategyName] / highValue < DD)
+            DD <- TR[i, strategyName] / highValue
+      }   
    return(DD-1)
 }
 
