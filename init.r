@@ -5,10 +5,24 @@
 start <- function(extrapolateDividends=T, # whether to extrapolate missing recent dividends (or remove incomplete months)
                   smoothConstantAlloc=F, # calculates more constant-allocation portfolios, to get smoother curves in plots
                   downloadAndCheckAllFiles=F, # downloads data files even if they exist locally, to check whether they are up to date
-                  newbie=F, # displays some information on the code
+                  otherAssetClasses=F, # loads gold and UK house prices
+                  newcomer=F, # displays some information on the code
                   force=F) {
    
    if(!file.exists("utils.r")) stop("Use \'setwd()\' to change the working directory to that containing the data.")
+
+   source("utils.r")      # general functions (i.e. those not fitting in another file)
+   source("DD.r")         # drawdowns
+   source("plotting.r")   # various functions that generate plots
+   
+   # Strategies:
+   source("CAPE.r")
+   source("detrended.r")
+   source("Bollinger.r")
+   source("SMA.r")
+   source("momentum.r")
+   source("reversal.r")
+   source("multiStrategies.r")
    
    totTime <- proc.time()
    
@@ -56,28 +70,37 @@ start <- function(extrapolateDividends=T, # whether to extrapolate missing recen
    message("Creating constant-allocation stock-bond strategies.") 
    if(smoothConstantAlloc)
       constAllocList <- seq(100, 0, by=-5)
-   else constAllocList <- c(100, 95, 90, 85, 0)
-   invisible ( lapply( constAllocList, function(alloc) createConstAllocStrategy(
+   else {
+      if (def$tradingCost==0.02)
+         constAllocList <- c(100, 95, 90, 85, 0)
+      else if (def$tradingCost==0.04)
+         constAllocList <- c(100, 90, 80, 70, 60, 0)
+   }
+      invisible ( lapply( constAllocList, function(alloc) createConstAllocStrategy(
       alloc, futureYears=def$futureYears, tradingCost=def$tradingCost, force=force) ) )
    print( c( "constant allocation time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
-   if (!"gold" %in% colnames(dat) | !"gold" %in% stats$strategy | force) {
-      loadGoldData()
-      createGoldStrategy(futureYears=def$futureYears, tradingCost=def$tradingCost, force=force)
-      message("Real gold prices were obtained from a local csv file.")
-   }
-   
-   if (!"UKhousePrice" %in% colnames(dat) | !"UKhousePrice" %in% stats$strategy | downloadAndCheckAllFiles) {
-      loadUKhousePriceData(downloadAndCheckAllFiles=downloadAndCheckAllFiles)
-      createUKhousePriceStrategy(futureYears=def$futureYears, tradingCost=def$tradingCost, force=force)
-      message("Real UK house prices were obtained from Nationwide; they are in pounds, and based on UK inflation.")
+   if(otherAssetClasses) {
+      source("otherAssetClasses.r")# gold and UK housing
+      
+      if (!"gold" %in% colnames(dat) | !"gold" %in% stats$strategy | force) {
+         loadGoldData()
+         createGoldStrategy(futureYears=def$futureYears, tradingCost=def$tradingCost, force=force)
+         message("Real gold prices were obtained from a local csv file.")
+      }
+      
+      if (!"UKhousePrice" %in% colnames(dat) | !"UKhousePrice" %in% stats$strategy | downloadAndCheckAllFiles) {
+         loadUKhousePriceData(downloadAndCheckAllFiles=downloadAndCheckAllFiles)
+         createUKhousePriceStrategy(futureYears=def$futureYears, tradingCost=def$tradingCost, force=force)
+         message("Real UK house prices were obtained from Nationwide; they are in pounds, and based on UK inflation.")
+      }
    }
    
    if(!downloadAndCheckAllFiles) {
       print( Sys.time() )
    }
    
-   if(newbie) showForNewbie()
+   if(newcomer) showForNewcomer()
    
    createTypicalStrategies(force=force)
    
@@ -99,7 +122,9 @@ setDefaultValues <- function(force=F) {
    if (!exists("def") | force) def <<- list()
    
    def$futureYears       <<- 20L    # default value for the number of years over which future returns are calculated
-   def$tradingCost       <<- 4/100 # default value for the trading costs
+   message("default futureYears: ", def$futureYears)
+   def$tradingCost       <<- 2/100 # default value for the trading costs
+   message("default tradingCost: ", def$tradingCost*100, "% / per year of turnover")
    def$startIndex        <<- round(10.5*12+1)
    def$startYear         <<- (def$startIndex-1)/12+1871
    
@@ -114,7 +139,7 @@ setDefaultValues <- function(force=F) {
    setReversalDefaultValues()
    setMultidefaultValues()
    
-   def$typicalStrategies <<- c(def$typicalTechnical, def$typicalValue, def$typicalBalanced, "stocks")
+   def$typicalStrategies <<- c(def$typicalBalanced, def$typicalTechnical, def$typicalValue, "stocks")
 }
 
 createStatsDF <- function() {

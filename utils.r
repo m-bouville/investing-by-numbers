@@ -298,7 +298,7 @@ calcTurnoverAndTRnetOfTradingCost <- function(strategyName, futureYears=def$futu
 }
 
 calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
-      
+   
    dateRange <- def$startIndex:numData
    if ( !(strategyName %in% stats$strategy) ) {
       stats[nrow(stats)+1, ] <<- NA
@@ -310,7 +310,7 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
    
    if ( is.na(stats$score[index]) | force) {
       # if data do not exist (we use 'score' to test this as it requires a lot of other data) yet or we force recalculation:   
-
+      
       median_five <- calcStrategyFutureReturn(strategyName, futureYears, force=force)
       medianName <- paste0("median", futureYears)
       fiveName <- paste0("five", futureYears)
@@ -328,7 +328,7 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
          def$startYear  <<- max(def$startYear, (startIndex-1)/12+1871 )
       }
       dateRange <- def$startIndex:numData
-            
+      
       #       time1 <- proc.time()      
       fit <- numeric(numData)
       fitPara <- regression(TR$numericDate[dateRange], log(TR[dateRange, strategyName]))
@@ -337,7 +337,7 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
       fit[dateRange] <- log(TR[dateRange, strategyName]) - (a + b * TR$numericDate[dateRange])
       fit2 <- numeric(numData)
       fit2[dateRange] <- fit[dateRange] - fit[dateRange-12] # requires startIndex to be at least 13
-
+      
       stats$TR[index]         <<- exp(b)-1
       stats$volatility[index] <<- sd(fit2[dateRange], na.rm=T)
       #       print( c( "Time for fit:", round(summary(proc.time())[[1]] - time1[[1]] , 2) ) )
@@ -363,8 +363,13 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
          stats$netTR4[index] <<- stats$TR[index] - tradingCost/stats$turnover[index]
       else stop("No data frame \'netTR", round(tradingCost*100), "\' exists.")     
       
-      stats$score[index]      <<- 100*stats$TR[index] - 100*stats$volatility[index]/5 + 100*stats[index, medianName] + 
-         100*stats[index, fiveName] - stats$DD2[index] - 1/stats$turnover[index]
+      stats$score[index] <<- 75* ( 2*stats$TR[index] - stats$volatility[index]/4 - stats$DD2[index]*2/300 
+                                   + stats[index, medianName] + stats[index, fiveName] 
+                                   - 3*tradingCost*(1/stats$turnover[index]-0.25) )
+         ## For constant allocations, the deiravtive of TR with respect to volatility is about 0.23 and 
+         ## with respect to DD^2 it is about 0.65%.
+         ## So for constant allocations: 2*TR - vol/4 - DD2*2/300 is about constant.
+         ## These 2 coefficients make it possible to 'convert' vol and DD2 into TR equivalents.
    }
 }
 

@@ -22,7 +22,13 @@ calcMomentum <- function(inputDF, inputName, avgOver=def$momentumAvgOver, moment
    addNumColToDat(momentumName)
    for(i in 1:avgOver) { dat[i, momentumName] <<- NA }
    for(i in (avgOver+1):numData) 
-      dat[i, momentumName] <<- input[i] / input[i-avgOver] - 1
+       dat[i, momentumName] <<- input[i] / input[i-avgOver] - 1
+#       dat[i, momentumName] <<- log( input[i] / input[i-avgOver] )
+## this is the slope from an exponential fit:
+#       dat[i, momentumName] <<- exp( regression( (i-avgOver):i, log(dat[(i-avgOver):i, momentumName]) )[[2]] ) - 1
+## there is (surprisingly) little difference  between the 3
+
+
 }
 
 
@@ -43,7 +49,7 @@ normalizeMomentum <- function(inputDF, inputName, avgOver=def$momentumAvgOver, s
 
 createMomentumStrategy <- function(inputDF, inputName, avgOver=def$momentumAvgOver, 
                                    medianAlloc=def$momentumMedianAlloc, interQuartileAlloc=def$momentumInterQuartileAlloc,
-                                   strategyName="", futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
+                                   strategyName="", type="", futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
    
    if (strategyName=="") 
       strategyName <- paste0("momentum_", inputName, "_", avgOver, "_", medianAlloc, "_", interQuartileAlloc)
@@ -64,8 +70,13 @@ createMomentumStrategy <- function(inputDF, inputName, avgOver=def$momentumAvgOv
       index <- which(parameters$strategy == strategyName)
       
       parameters$strategy[index]    <<- strategyName
-      parameters$type[index]        <<- "momentum"
-      parameters$subtype[index]     <<- inputName
+      if (type=="search") {
+         parameters$type[index]        <<- "search"
+         parameters$subtype[index]     <<- "momentum"        
+      } else {
+         parameters$type[index]        <<- "momentum"
+         parameters$subtype[index]     <<- inputName
+      }
       parameters$inputDF[index]     <<- inputDF
       parameters$inputName[index]   <<- inputName
       parameters$startIndex[index]  <<- avgOver+1
@@ -87,18 +98,23 @@ searchForOptimalMomentum <-function(inputDF="dat", inputName="TR",
                            minTR=def$technicalMinTR, maxVol=def$technicalMaxVol, maxDD2=def$technicalMaxDD2, 
                            minTO=def$technicalMinTO, force=F) {
    
+   lastTimePlotted <- proc.time()
    print(paste0("strategy             |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
+
    for ( avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver) ) 
       for ( med in seq(minMed, maxMed, by=byMed) ) {
          for ( IQ in seq(minIQ, maxIQ, by=byIQ) ) {
-            strategyName <- paste0("momentum_", inputName, "_", avgOver    , "_", med, "_", IQ)
+            strategyName <- paste0("momentum_", inputName, "_", avgOver, "_", med, "_", IQ)
             
-            createMomentumStrategy(inputDF=inputDF, inputName=inputName, avgOver    =avgOver    , 
+            createMomentumStrategy(inputDF=inputDF, inputName=inputName, avgOver=avgOver, type="search",
                                    medianAlloc=med, interQuartileAlloc=IQ, strategyName=strategyName, force=force)                  
             showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
                                    minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, force=F)
          }
-         plotAllReturnsVsFour()
+         if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > 5 ) { # we replot only if it's been a while
+            plotAllReturnsVsFour()
+            lastTimePlotted <- proc.time()
+         }
       }
    print("")
    showSummaryForStrategy(def$typicalMomentum)

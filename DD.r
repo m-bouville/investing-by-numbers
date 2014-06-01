@@ -5,11 +5,8 @@ loadDDlist <- function(force=F) {
       DD <<- read.csv("drawdownList.csv", col.names = c("startYear", "endYear", "comments"), stringsAsFactors=F, header=F)
       DD <<- DD[-1, ] # removes 1873 DD since it occurs so early that CAPE-based strategies are unavailable at the time
       DD <<- DD[-1, ] # removes 1876-77 DD since it occurs so early that CAPE-based strategies are unavailable at the time
-      DD <<- DD[-48, ] # removes 2000-09 DD since it (i) overlaps with another 3 and (ii) takes a lot of time to process (it is 9 year long)
       numDD <<- dim(DD)[[1]]
       DD$dates <<- character(numDD)
-#      DD$endYear[27] <<- 1949      # Bonds go down a bit more after 1949 but not much and ...
-#      DD$dates[27] <<- "1946-1948" # ... the extra 4 years take a lot of time to process
       
       for (i in 1:numDD) { # creates names for drawdowns
          year1 <- floor(DD$startYear[i])
@@ -100,8 +97,8 @@ showWorstDrawdownsWithReference <- function(strategyName, refStrategyName, thres
 }
 
 plotDD <- function(DDindex, padding=0, minTR=.8, maxTR=1.5, newStartYear="", newEndYear="", 
-                   stratName1=typicalStrategies[[1]], stratName2=typicalStrategies[[2]], stratName3=typicalStrategies[[3]], stratName4=typicalStrategies[[4]], 
-                   showAlloc=F) {
+                   stratName1=def$typicalStrategies[[1]], stratName2=def$typicalStrategies[[2]], 
+                   stratName3=def$typicalStrategies[[3]], stratName4=def$typicalStrategies[[4]]) {
    if (newStartYear == "") 
       newStartYear <- DD$startYear[DDindex]
    else if (newStartYear < 1000) # obviously not a year
@@ -115,10 +112,10 @@ plotDD <- function(DDindex, padding=0, minTR=.8, maxTR=1.5, newStartYear="", new
                  " -- plotted from ", newStartYear-padding, " to ", newEndYear+padding, 
                  " -- calculations from ", newStartYear, " to ", newEndYear) )
 
-   plotReturn(stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4, 
+   plotReturnAndAlloc(stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4, 
               startYear = newStartYear - padding, 
               endYear   = newEndYear   + padding, 
-              minTR=minTR, maxTR=maxTR, showAlloc=showAlloc)
+              minTR=minTR, maxTR=maxTR)
    
    sapply(c(stratName1, stratName2, stratName3, stratName4), 
           function(x) round(drawdown(x, newStartYear, newEndYear)*100,1) )

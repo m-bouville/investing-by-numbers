@@ -220,6 +220,98 @@ plotReturnAndAlloc <- function(stratName1=def$typicalBalanced, stratName2=def$ty
 }
 
 
+plotFutureReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTechnical, 
+                       stratName3=def$typicalValue, stratName4="stocks", 
+                       col1=def$colBalanced, col2=def$colTechnical, col3=def$colValue, col4=def$colConstantAlloc, 
+                       lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=2,
+                       futureYears=def$futureYears,
+                       startYear=def$startYear, endYear=2015, tradingCost=def$tradingCost, 
+                       minTR=.9, maxTR=20000, yLabel="", net=T, normalize=T) { 
+   
+   #    print(c(stratName2, stratName3, stratName4) )
+   normDate <- (startYear-1871)*12+1
+   par(mar=c(2.5, 4, 1.5, 1.5))
+   xRange <- c(startYear, endYear)
+   yRange <- c(minTR, maxTR)
+   
+   TR1 <- numeric(numData)
+   TR2 <- numeric(numData)
+   TR3 <- numeric(numData)
+   TR4 <- numeric(numData)
+   
+   if ( yLabel=="" ) {
+      if( tradingCost==0 )  # trading cost = 0: gross returns
+         yLabel <- paste0("total return (%) over ", futureYears, "years, GROSS of trading costs")
+      else if( tradingCost>0 ) # trading cost > 0: net returns
+         yLabel <- paste0("total return (%) over ", futureYears, "years, net of trading costs of ", round(tradingCost*100), "%")   
+      else # no notion of trading cost (e.g. for asset classes)
+         yLabel <- paste0("total return (%)")
+   }
+   
+   if(tradingCost==0) net<-F
+   if(net) {      
+      if (tradingCost == 0.02) {
+         if (!stratName1 %in% colnames(netTR2)) calcTRnetOfTradingCost(stratName1)
+         if (!stratName2 %in% colnames(netTR2)) calcTRnetOfTradingCost(stratName2)
+         if (!stratName3 %in% colnames(netTR2)) calcTRnetOfTradingCost(stratName3)
+         if (!stratName4 %in% colnames(netTR2)) calcTRnetOfTradingCost(stratName4)
+         TR1 <- netTR2[, stratName1] 
+         TR2 <- netTR2[, stratName2] 
+         TR3 <- netTR2[, stratName3] 
+         TR4 <- netTR2[, stratName4] 
+      } 
+      else if(tradingCost == 0.04)  {
+         if (!stratName1 %in% colnames(netTR4)) calcTRnetOfTradingCost(stratName1)
+         if (!stratName2 %in% colnames(netTR4)) calcTRnetOfTradingCost(stratName2)
+         if (!stratName3 %in% colnames(netTR4)) calcTRnetOfTradingCost(stratName3)
+         if (!stratName4 %in% colnames(netTR4)) calcTRnetOfTradingCost(stratName4)
+         TR1 <- netTR4[, stratName1] 
+         TR2 <- netTR4[, stratName2] 
+         TR3 <- netTR4[, stratName3] 
+         TR4 <- netTR4[, stratName4] 
+      } 
+      else stop("No data frame \'netTR", round(tradingCost*100,1), "\' exists.")      
+   } else {
+      TR1 <- TR[, stratName1]
+      TR2 <- TR[, stratName2]
+      TR3 <- TR[, stratName3]
+      TR4 <- TR[, stratName4]
+   }
+   
+   if (normalize) {
+      normFactor1 <- TR1[normDate]
+      normFactor2 <- TR2[normDate]
+      normFactor3 <- TR3[normDate]
+      normFactor4 <- TR4[normDate]
+   } else {      
+      normFactor1 <- 1
+      normFactor2 <- 1
+      normFactor3 <- 1
+      normFactor4 <- 1
+   }
+   
+   if(stratName1 %in% colnames(TR)) {   
+      plot(TR$numericDate, TR1/normFactor1, col=col1, xlab="", ylab=yLabel, log="y", type="l", lwd=lwd1, xlim=xRange, ylim=yRange)
+      par(new=T)
+   }
+   if(stratName2 %in% colnames(TR)) {   
+      plot(TR$numericDate, TR2/normFactor2, col=col2, xlab="", ylab="", log="y", type="l", lwd=lwd2, xlim=xRange, ylim=yRange)
+      par(new=T)
+   }  
+   if(stratName3 %in% colnames(TR)) {   
+      plot(TR$numericDate, TR3/normFactor3, col=col3, xlab="", ylab="", log="y", type="l", lwd=lwd3, xlim=xRange, ylim=yRange)
+      par(new=T)
+   }
+   if(stratName4 %in% colnames(TR)) {   
+      plot(TR$numericDate, TR4/normFactor4, col=col4, xlab="", ylab="", log="y", type="l", lwd=lwd4, xlim=xRange, ylim=yRange)
+   }
+   legend( "topleft", c(stratName1,stratName2,stratName3,stratName4), 
+           bty="n", lwd=c(lwd1, lwd2, lwd3, lwd4), lty = c(1,1,1,1), 
+           col=c(col1, col2, col3, col4) )
+   par(new=F)
+}
+
+
 
 showPlotLegend <- function() {
    print(paste("CAPE:     ", def$colCAPE) )

@@ -2,9 +2,9 @@
 setBollDefaultValues <- function() {
    def$BollInputDF          <<- "dat"
    def$BollInputName        <<- "TR"
-   def$BollAvgOver          <<- 21L
-   def$BollMedianAlloc      <<- 95
-   def$BollInterQuartileAlloc <<- 20
+   def$BollAvgOver          <<- 18L
+   def$BollMedianAlloc      <<- 99
+   def$BollInterQuartileAlloc <<- 25
    def$typicalBoll          <<- paste0("Boll_", def$BollInputName, "_", def$BollAvgOver, "_", 
                                        def$BollMedianAlloc, "_", def$BollInterQuartileAlloc)
 }
@@ -50,7 +50,7 @@ normalizeBoll <- function(inputDF, inputName, avgOver=def$BollAvgOver, strategyN
 
 createBollStrategy <- function(inputDF, inputName, avgOver=def$BollAvgOver, 
                                medianAlloc=def$BollMedianAlloc, interQuartileAlloc=def$BollInterQuartileAlloc,
-                               strategyName="", futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
+                               strategyName="", type="", futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
 
    if(strategyName=="")  
       strategyName <- paste0("Boll_", inputName, "_", avgOver, "_", medianAlloc, "_", interQuartileAlloc)
@@ -80,8 +80,13 @@ createBollStrategy <- function(inputDF, inputName, avgOver=def$BollAvgOver,
       }
       index <- which(parameters$strategy == strategyName)
       
-      parameters$type[index]       <<- "Bollinger"
-      parameters$subtype[index]    <<- inputName
+      if (type=="search") {
+         parameters$type[index]        <<- "search"
+         parameters$subtype[index]     <<- "Bollinger"        
+      } else {
+         parameters$type[index]        <<- "Bollinger"
+         parameters$subtype[index]     <<- inputName
+      }
       parameters$startIndex[index] <<- startIndex
       parameters$inputDF[index]    <<- inputDF
       parameters$inputName[index]  <<- inputName
@@ -97,28 +102,34 @@ createBollStrategy <- function(inputDF, inputName, avgOver=def$BollAvgOver,
 }
 
 
-searchForOptimalBoll <- function(inputDF="dat", inputName="TR", minAvgOver=21L, maxAvgOver=21L, byAvgOver=12L, 
+searchForOptimalBoll <- function(inputDF="dat", inputName="TR", minAvgOver=21L, maxAvgOver=21L, byAvgOver=3L, 
                        minMed=50, maxMed=95, byMed=10, minIQ=10, maxIQ=50, byIQ=10, 
                        futureYears=def$futureYears, tradingCost=def$tradingCost, 
                        minTR=def$technicalMinTR, maxVol=def$technicalMaxVol, maxDD2=def$technicalMaxDD2, 
                        minTO=def$technicalMinTO, force=F) {
    
+   lastTimePlotted <- proc.time()
    print(paste0("strategy         |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
+
    for ( avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver) ) {
       for ( med in seq(minMed, maxMed, by=byMed) ) {    
          for ( IQ in seq(minIQ, maxIQ, by=byIQ) ) {
             strategyName <- paste0("Boll_", inputName, "_", avgOver, "_", med, "_", IQ)
             
-            createBollStrategy(inputDF, inputName, avgOver=avgOver, 
+            createBollStrategy(inputDF, inputName, avgOver=avgOver, type="search",
                                medianAlloc=med, interQuartileAlloc=IQ,
                                strategyName=strategyName, futureYears=futureYears, force=force)
             
             showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
                                    minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, force=F)
          }
-         plotReturnVsFour()
+         if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > 5 ) { # we replot only if it's been a while
+            plotAllReturnsVsFour()
+            lastTimePlotted <- proc.time()
+         }
       }
    }
-   #    showSummaries(futureYears=futureYears, tradingCost=tradingCost, detailed=F, force=F)
+   print("")
+   showSummaryForStrategy(def$typicalBoll)
 }
 

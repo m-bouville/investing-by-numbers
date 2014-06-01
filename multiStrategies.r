@@ -159,10 +159,10 @@ searchForOptimalMultiSerial <- function(inputStrategyName1, inputStrategyName2, 
                for ( med in seq(minMed, maxMed, by=byMed) )       
                   for ( IQ in seq(minIQ, maxIQ, by=byIQ) ) {
                      if (maxF4 > 0)
-                        strategyName = paste0(subtype, f1, "_", f2, "_", f3, "_", f4, "__", med, "_", IQ)
+                        strategyName = paste0(subtype, "_", f1, "_", f2, "_", f3, "_", f4, "__", med, "_", IQ)
                      else if (maxF3 > 0)
-                        strategyName = paste0(subtype, f1, "_", f2, "_", f3, "__", med, "_", IQ)
-                     else strategyName = paste0(subtype, f1, "_", f2, "__", med, "_", IQ)
+                        strategyName = paste0(subtype, "_", f1, "_", f2, "_", f3, "__", med, "_", IQ)
+                     else strategyName = paste0(subtype, "_", f1, "_", f2, "__", med, "_", IQ)
                      #print(strategyName)
                      createMultiStrategy(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
                                          f1, f2, f3, f4, medianAlloc=med, interQuartileAlloc=IQ, 
