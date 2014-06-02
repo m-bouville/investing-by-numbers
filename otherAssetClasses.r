@@ -3,7 +3,7 @@
 loadGoldData <- function() {
    addNumColToDat("gold")
    dat$gold <<- NA
-   nominalGold <- read.csv("gold.csv", header=T)[, 1]
+   nominalGold <- read.csv("data/gold.csv", header=T)[, 1]
    
    index1968 <- (1968-1871)*12+1  # data start in 1968
    lastGoldIndex <- length(nominalGold)
@@ -49,9 +49,9 @@ loadUKhousePriceData <- function(downloadAndCheckAllFiles=F) {
    library(XLConnect) # to handle xls file
    if(!file.exists("uk-house-prices-adjusted-for-inflation.xls") | downloadAndCheckAllFiles) # download file if not already locally available
       download.file("http://www.nationwide.co.uk/~/media/MainSite/documents/about/house-price-index/downloads/uk-house-prices-adjusted-for-inflation.xls",
-                    "uk-house-prices-adjusted-for-inflation.xls", mode = "wb")
+                    "data/uk-house-prices-adjusted-for-inflation.xls", mode = "wb")
    
-   wk <- loadWorkbook("uk-house-prices-adjusted-for-inflation.xls") 
+   wk <- loadWorkbook("data/uk-house-prices-adjusted-for-inflation.xls") 
    quarterlyData <- readWorksheet(wk, sheet="RealHP", startRow=3)
    quarterlyData[, 3] <- as.numeric(quarterlyData[, 3])
    

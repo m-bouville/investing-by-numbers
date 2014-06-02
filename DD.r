@@ -2,7 +2,7 @@
 ## Loading DD list from csv file
 loadDDlist <- function(force=F) {
    if (!exists("DD") | force) {
-      DD <<- read.csv("drawdownList.csv", col.names = c("startYear", "endYear", "comments"), stringsAsFactors=F, header=F)
+      DD <<- read.csv("data/drawdownList.csv", col.names = c("startYear", "endYear", "comments"), stringsAsFactors=F, header=F)
       DD <<- DD[-1, ] # removes 1873 DD since it occurs so early that CAPE-based strategies are unavailable at the time
       DD <<- DD[-1, ] # removes 1876-77 DD since it occurs so early that CAPE-based strategies are unavailable at the time
       numDD <<- dim(DD)[[1]]

@@ -189,12 +189,12 @@ createParametersDF <- function() {
 # Loading data from xls file
 loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=F) {  # the xls file has *nominal* values, the "dat" data frame has *real* values
    library(XLConnect) # to handle xls file
-   if(!file.exists("ie_data.xls")) # download file if not already locally available
-      download.file("http://www.econ.yale.edu/~shiller/data/ie_data.xls", "ie_data.xls", mode = "wb")
+   if(!file.exists("data/ie_data.xls")) # download file if not already locally available
+      download.file("http://www.econ.yale.edu/~shiller/data/ie_data.xls", "data/ie_data.xls", mode = "wb")
    else if(downloadAndCheckAllFiles) # We check whether the local file is up to date (if we have time)
       checkXlsFileIsUpToDate()
    
-   wk <- loadWorkbook("ie_data.xls") 
+   wk <- loadWorkbook("data/ie_data.xls") 
    rawDat <- readWorksheet(wk, sheet="Data", startRow=8)
    
    numData <<- dim(rawDat)[1]-2 # number of rows
@@ -246,10 +246,11 @@ loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=F) {  # th
 }
 
 checkXlsFileIsUpToDate <- function() {
-   if(!file.exists("ie_data.xls")) 
+   if(!file.exists("data/ie_data.xls")) 
       return("ie_data.xls is not on the local disk.")
    
-   wk <- loadWorkbook("ie_data.xls") # this is the local file
+   library(XLConnect) # to handle xls file
+   wk <- loadWorkbook("data/ie_data.xls") # this is the local file
    localVersion <- readWorksheet(wk, sheet="Data", startRow=8)
    
    lastLine <- dim(localVersion)[1] 
@@ -268,12 +269,16 @@ checkXlsFileIsUpToDate <- function() {
    remoteMessage2 <- as.character(remoteVersion$CPI[lastLine])
    remoteMessage3 <- as.character(remoteVersion$Rate.GS10[lastLine])
    
-   if (localMessage1 != remoteMessage1)
-      print(paste0("On the remote xls file: ", remoteMessage1, "whereas on the local file: ", localMessage1))
-   if (localMessage2 != remoteMessage2)
-      print(paste0("On the remote xls file: ", remoteMessage2, "whereas on the local file: ", localMessage2))
-   if (localMessage3 != remoteMessage3)
-      print(paste0("On the remote xls file: ", remoteMessage3, "whereas on the local file: ", localMessage3))
+   if (localMessage1 == remoteMessage1 & localMessage2 == remoteMessage2 & localMessage3 == remoteMessage3)
+      print("The local ie_data-remote.xls file is up to date.")
+   else {
+      if (localMessage1 != remoteMessage1)
+         print(paste0("On the remote xls file: ", remoteMessage1, "whereas on the local file: ", localMessage1))
+      if (localMessage2 != remoteMessage2)
+         print(paste0("On the remote xls file: ", remoteMessage2, "whereas on the local file: ", localMessage2))
+      if (localMessage3 != remoteMessage3)
+         print(paste0("On the remote xls file: ", remoteMessage3, "whereas on the local file: ", localMessage3))
+   }
 }
 
 
