@@ -9,29 +9,20 @@ setMultidefaultValues <- function() {
    def$valueMinTR      <<- 6.5
    def$technicalMinTR  <<- 6.5
    
-   def$valueFractionCAPE         <<- 70
-   def$valueFractionDetrended    <<- 30
-#    def$valueMedianAlloc          <<- 85
-#    def$valueInterQuartileAlloc   <<- 98
+   def$valueFractionCAPE         <<- 80
+   def$valueFractionDetrended    <<- 20
    def$typicalValue              <<- paste0("value_", def$valueFractionCAPE, "_", def$valueFractionDetrended)
-   #, "__", def$valueMedianAlloc, "_", def$valueInterQuartileAlloc) 
    
-   def$technicalFractionSMA      <<- 10
-   def$technicalFractionBoll     <<- 15
-   def$technicalFractionMomentum <<- 20
-   def$technicalFractionReversal <<- 55
-#    def$technicalMedianAlloc      <<- 30
-#    def$technicalInterQuartileAlloc <<- 99
+   def$technicalFractionSMA      <<- 15
+   def$technicalFractionBoll     <<- 35
+   def$technicalFractionMomentum <<- 15
+   def$technicalFractionReversal <<- 35
    def$typicalTechnical          <<- paste0("technical_", def$technicalFractionSMA, "_", def$technicalFractionBoll, "_", 
                                           def$technicalFractionMomentum, "_", def$technicalFractionReversal)
-                                          #, "__", def$technicalMedianAlloc, "_", def$technicalInterQuartileAlloc)
 
-   def$balancedFractionValue     <<- 65
-   def$balancedFractionTechnical <<- 35
-#    def$balancedMedianAlloc       <<- 99
-#    def$balancedInterQuartileAlloc<<- 96
+   def$balancedFractionValue     <<- 80
+   def$balancedFractionTechnical <<- 20
    def$typicalBalanced          <<- paste0("balanced_", def$balancedFractionValue, "_", def$balancedFractionTechnical)
-                                           #, "__", def$balancedMedianAlloc, "_", def$balancedInterQuartileAlloc)
 }
 
 
@@ -55,13 +46,15 @@ calcMultiStrategySignal <- function(inputStrategyName1, inputStrategyName2, inpu
       addNumColToSignal(strategyName)
       
       if(fraction4==0) {
-         if(fraction3==0) 
+         if(fraction3==0) # weigthed average with only fractions 1 and 2
             signal[, strategyName] <<- fraction1*signal[, inputStrategyName1] + fraction2*signal[, inputStrategyName2]
-         else          signal[, strategyName] <<- fraction1*signal[, inputStrategyName1] + 
+         else # weigthed average with only the first three fractions  
+            signal[, strategyName] <<- fraction1*signal[, inputStrategyName1] + 
             fraction2*signal[, inputStrategyName2] + fraction3*signal[, inputStrategyName3]
       }
-      else signal[, strategyName] <<- fraction1*signal[, inputStrategyName1] + fraction2*signal[, inputStrategyName2] + 
-         fraction3*alloc[, inputStrategyName3] + fraction4*alloc[, inputStrategyName4] 
+      else # weigthed average with all four fractions
+         signal[, strategyName] <<- fraction1*signal[, inputStrategyName1] + fraction2*signal[, inputStrategyName2] + 
+         fraction3*signal[, inputStrategyName3] + fraction4*signal[, inputStrategyName4] 
    }
 }
 
@@ -80,11 +73,13 @@ createMultiStrategy <- function(inputStrategyName1, inputStrategyName2, inputStr
    
    if(strategyName=="") {
       if(fraction4==0) {
-         if(fraction3==0)
+         if(fraction3==0) # name with only fractions 1 and 2
             strategyName <- paste0(subtype, "_", fraction1, "_", fraction2) #, "__", medianAlloc, "_", interQuartileAlloc)
-         else strategyName <- paste0(subtype, "_", fraction1, "_", fraction2, "_", fraction3) #, "__", medianAlloc, "_", interQuartileAlloc)
+         else # name with only the first three fractions
+            strategyName <- paste0(subtype, "_", fraction1, "_", fraction2, "_", fraction3) #, "__", medianAlloc, "_", interQuartileAlloc)
       }
-      else strategyName <- paste0(subtype, "_", fraction1, "_", fraction2, "_", fraction3, "_", fraction4) #, "__", medianAlloc, "_", interQuartileAlloc)
+      else # name with all four fractions
+         strategyName <- paste0(subtype, "_", fraction1, "_", fraction2, "_", fraction3, "_", fraction4) #, "__", medianAlloc, "_", interQuartileAlloc)
    }
   
    calcMultiStrategySignal(inputStrategyName1=inputStrategyName1, inputStrategyName2=inputStrategyName2, 
@@ -145,10 +140,9 @@ searchForOptimalMultiSerial <- function(inputStrategyName1, inputStrategyName2, 
                                         minF1, maxF1, byF1, minF2, maxF2, byF2, minF3, maxF3, byF3, minF4, maxF4, 
                                         #minMed, maxMed, byMed, minIQ, maxIQ, byIQ, 
                                         futureYears, tradingCost, 
-                                        type="search", subtype, minTR, maxVol, maxDD2, minTO, force=F) {
+                                        type="search", subtype, minTR, maxVol, maxDD2, minTO, col, force=F) {
    
    lastTimePlotted <- proc.time()
-   print(paste0("strategy           |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
 
    for(f1 in seq(minF1, maxF1, by=byF1)) 
       for(f2 in seq(minF2, maxF2, by=byF2)) {
@@ -171,12 +165,13 @@ searchForOptimalMultiSerial <- function(inputStrategyName1, inputStrategyName2, 
                showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
                                       minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, force=F)
                if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > 5 ) { # we replot only if it's been a while
-                  plotAllReturnsVsTwo()
+                  plotAllReturnsVsTwo(col=col)
                   lastTimePlotted <- proc.time()
                }
             }
          }
       }
+   plotAllReturnsVsTwo(col=col) 
 }
 
 
@@ -201,7 +196,6 @@ searchForOptimalMultiParallel <- function(inputStrategyName1, inputStrategyName2
    }
    
    if (def$CPUnumber == 1)
-      print(paste0("strategy                |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
    for(f1 in seq(minF1, maxF1, by=byF1)) {
       for(f2 in seq(minF2, maxF2, by=byF2)) 
          for(f3 in seq(minF3, maxF3, by=byF3)) {
@@ -222,7 +216,7 @@ searchForOptimalMulti <- function(inputStrategyName1, inputStrategyName2, inputS
                                   minF3=minF3, maxF3=maxF3, byF3=byF3, minF4=minF4, maxF4=maxF4,
 #                                  minMed=80, maxMed=95, byMed=5, minIQ=30, maxIQ=60, byIQ=10, 
                                   futureYears=def$futureYears, tradingCost=def$tradingCost, type="search", subtype,
-                                  minTR=6, maxVol=14.5, maxDD2=2.2, minTO=0., CPUnumber=def$CPUnumber, force=F) {
+                                  minTR=6, maxVol=14.5, maxDD2=2.2, minTO=0., CPUnumber=def$CPUnumber, col, force=F) {
    
    if (CPUnumber > 1) {
       library(snowfall)
@@ -242,26 +236,28 @@ searchForOptimalMulti <- function(inputStrategyName1, inputStrategyName2, inputS
                                   minF3=minF3, maxF3=maxF3, byF3=byF3, minF4=minF4, maxF4=maxF4, 
                                   #minMed=minMed, maxMed=maxMed, byMed=byMed, minIQ=minIQ, maxIQ=maxIQ, byIQ=byIQ,
                                   futureYears=futureYears, tradingCost=tradingCost, type=type, subtype=subtype,
-                                  minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, force=force)   
+                                  minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, col=col, force=force)   
 }
 
 
 
 searchForOptimalValue <- function(inputStrategyName1=def$typicalCAPE, inputStrategyName2=def$typicalDetrended, 
                                   inputStrategyName3="", inputStrategyName4="", 
-                                  minF1=60L, maxF1=90L, byF1=5L, minF2=15L, maxF2=35L, byF2=5L, 
+                                  minF1=20L, maxF1=80L, byF1=5L, minF2=20L, maxF2=80L, byF2=5L, 
                                   minF3=0L, maxF3=0L, byF3=0L, minF4=0L, maxF4=0L, 
 #                                  minMed=80, maxMed=90, byMed=5, minIQ=90, maxIQ=98, byIQ=2, 
                                   futureYears=def$futureYears, tradingCost=def$tradingCost, type="search", subtype="value",
                                   minTR=def$valueMinTR, maxVol=def$valueMaxVol, maxDD2=def$valueMaxDD2, 
-                                  minTO=def$valueMinTO, CPUnumber=def$CPUnumber, force=F) {
+                                  minTO=def$valueMinTO, col=F, CPUnumber=def$CPUnumber, force=F) {
+
+   print(paste0("strategy        |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
    searchForOptimalMulti(inputStrategyName1=inputStrategyName1, inputStrategyName2=inputStrategyName2,
                          inputStrategyName3=inputStrategyName3, inputStrategyName4=inputStrategyName4, 
                          minF1=minF1, maxF1=maxF1, byF1=byF1, minF2=minF2, maxF2=maxF2, byF2=byF2, 
                          minF3=minF3, maxF3=maxF3, byF3=byF3, minF4=minF4, maxF4=maxF4, 
                          #minMed=minMed, maxMed=maxMed, byMed=byMed, minIQ=minIQ, maxIQ=maxIQ, byIQ=byIQ, 
                          futureYears=futureYears, tradingCost=tradingCost, type=type, subtype=subtype,
-                         minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, CPUnumber=CPUnumber, force=force) 
+                         minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, col=col, CPUnumber=CPUnumber, force=force) 
    print("")
    showSummaryForStrategy(def$typicalValue)
 }
@@ -269,19 +265,21 @@ searchForOptimalValue <- function(inputStrategyName1=def$typicalCAPE, inputStrat
 
 searchForOptimalTechnical <- function(inputStrategyName1=def$typicalSMA, inputStrategyName2=def$typicalBoll, 
                                       inputStrategyName3=def$typicalMomentum, inputStrategyName4=def$typicalReversal, 
-                                      minF1=10L, maxF1=70L, byF1=20L, minF2=10L, maxF2=70L, byF2=20L, 
-                                      minF3=10L, maxF3=70L, byF3=20L, minF4=10L, maxF4=70L, 
+                                      minF1=20L, maxF1=70L, byF1=4L, minF2=20L, maxF2=70L, byF2=8L, 
+                                      minF3=20L, maxF3=70L, byF3=4L, minF4=20L, maxF4=70L, 
 #                                      minMed=10, maxMed=95, byMed=40, minIQ=10, maxIQ=90, byIQ=40, 
                                       futureYears=def$futureYears, tradingCost=def$tradingCost, type="search", subtype="technical",
                                       minTR=def$technicalMinTR, maxVol=def$technicalMaxVol, maxDD2=def$technicalMaxDD2, 
-                                      minTO=def$technicalMinTO, CPUnumber=def$CPUnumber, force=F) {
+                                      minTO=def$technicalMinTO, col=F, CPUnumber=def$CPUnumber, force=F) {
+   
+   print(paste0("strategy              |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
    searchForOptimalMulti(inputStrategyName1=inputStrategyName1, inputStrategyName2=inputStrategyName2,
                          inputStrategyName3=inputStrategyName3, inputStrategyName4=inputStrategyName4, 
                          minF1=minF1, maxF1=maxF1, byF1=byF1, minF2=minF2, maxF2=maxF2, byF2=byF2, 
                          minF3=minF3, maxF3=maxF3, byF3=byF3, minF4=minF4, maxF4=maxF4, 
                          #minMed=minMed, maxMed=maxMed, byMed=byMed, minIQ=minIQ, maxIQ=maxIQ, byIQ=byIQ, 
                          futureYears=futureYears, tradingCost=tradingCost, type=type, subtype=subtype,
-                         minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, CPUnumber=CPUnumber, force=force) 
+                         minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, col=col, CPUnumber=CPUnumber, force=force) 
    print("")
    showSummaryForStrategy(def$typicalTechnical)
 }
@@ -289,21 +287,22 @@ searchForOptimalTechnical <- function(inputStrategyName1=def$typicalSMA, inputSt
 
 searchForOptimalBalanced <- function(inputStrategyName1=def$typicalValue, inputStrategyName2=def$typicalTechnical, 
                             inputStrategyName3="", inputStrategyName4="", 
-                            minF1=10L, maxF1=100L, byF1=20L, minF2=10L, maxF2=100L, byF2=20L, 
+                            minF1=25L, maxF1=100L, byF1=5L, minF2=25L, maxF2=100L, byF2=5L, 
                             minF3=0L, maxF3=0L, byF3=0L, minF4=0L, maxF4=0L, 
                             #minMed=10, maxMed=98, byMed=20, minIQ=10, maxIQ=90, byIQ=20, 
                             futureYears=def$futureYears, tradingCost=def$tradingCost, type="search", subtype="balanced", 
-                            minTR=def$valueMinTR+1, maxVol=def$valueMaxVol, maxDD2=def$valueMaxDD2, 
-                            minTO=3.5, CPUnumber=def$CPUnumber, force=F) {
+                            minTR=def$valueMinTR+.5, maxVol=def$valueMaxVol, maxDD2=def$valueMaxDD2, 
+                            minTO=3.5, col=F, CPUnumber=def$CPUnumber, force=F) {
    totTime <- proc.time()
-    
+   print(paste0("strategy       |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
+   
    searchForOptimalMulti(inputStrategyName1=inputStrategyName1, inputStrategyName2=inputStrategyName2,
                          inputStrategyName3=inputStrategyName3, inputStrategyName4=inputStrategyName4, 
                          minF1=minF1, maxF1=maxF1, byF1=byF1, minF2=minF2, maxF2=maxF2, byF2=byF2, 
                          minF3=minF3, maxF3=maxF3, byF3=byF3, minF4=minF4, maxF4=maxF4, 
                          #minMed=minMed, maxMed=maxMed, byMed=byMed, minIQ=minIQ, maxIQ=maxIQ, byIQ=byIQ, 
                          futureYears=futureYears, tradingCost=tradingCost, type=type, subtype=subtype,
-                         minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, CPUnumber=CPUnumber, force=force) 
+                         minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, col=col, CPUnumber=CPUnumber, force=force) 
    print("")
    showSummaryForStrategy(def$typicalBalanced)
    
