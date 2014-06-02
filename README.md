@@ -88,7 +88,6 @@ In multiStrategies.r, one can put together several strategies based on a weighte
 In practice, this is done hierarchically: we combine value strategies with value strategies, and technical strategies with technical strategies. Then we combine the 2 resulting strategies to make up a 'balanced' strategy.
 
 
-
 ## Preliminary results
 Here are preliminary results (compared to stocks), in 'table' form:
 
@@ -117,6 +116,11 @@ balanced  | 7  % | 13.8% |     51%,   2% |  4.8 | 1.5 |
 TR: total return (net of trading costs), vol: volatility, TO: turnover (in years), DD^2: sum of the squares of the magnitude of drawdowns
 
 These figures may also help:
-- https://github.com/m-bouville/investing-by-numbers/blob/master/figures/net%20return%20and%20alloc.png#
+- https://github.com/m-bouville/investing-by-numbers/blob/master/figures/net%20return%20and%20alloc.png
 - https://github.com/m-bouville/investing-by-numbers/blob/master/figures/net%20return%20vs%20four%20-%20zoomed%20out.png
 - https://github.com/m-bouville/investing-by-numbers/blob/master/figures/net%20return%20vs%20four%20-%20zoomed%20in.png
+
+
+
+## Issues
+https://github.com/m-bouville/investing-by-numbers/blob/master/figures/net%20return%20vs%20volatility%20-%20balanced%20-%20weird%20behavior.png shows that the weighted average between two strategies does not behave at all as expected.
