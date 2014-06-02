@@ -48,7 +48,7 @@ A common claim regarding any strategy is that if it were so easy to outperform, 
 
 
 ## Technical strategies
-These are based on variations of the prices only. There is no attempt at finding out whether the price is high or low (as with the value strategies) but instead the question is 'will it go up or down in the near future'. So in the late 1990s for instance, prices were high but still increasing, so value strategies were out of the stock market whereas technical ones were in.
+These are based on variations of the prices only. There is no attempt at finding out whether the price is high or low (as with the value strategies) but instead the question is 'will it go up or down in the near future'. In the late 1990s for instance, prices were high but still increasing, so value strategies were out of the stock market whereas technical ones were in.
 
 ### Bollinger bands
 The basic idea is to see whether the price is much higher than it was recently in terms of how many standard deviations away it is (somewhat similar to the z-statistics). See https://en.wikipedia.org/wiki/Bollinger_Bands for instance for a description. 
@@ -58,6 +58,12 @@ A simple moving average over a year is simply the average price over the past ye
 
 ### Momentum
 This compares the current price to the price a year ago, again to spot a trend.
+
+### Reversal
+The trend reversal strategy does not find out whether prices are going up (time to be in the market), or going down (we should be out of the market).
+Instead it finds out whether a rise or fall is starting.
+So when the signal is positive, instead of _setting_ the allocation to a high value, we _increase_ its value.
+For this reason the algoritm is rather different from other strategies.
 
 
 
@@ -69,34 +75,48 @@ I take a weighted average of the best CAPE strategy and the best detrended strat
 
 
 ## Code
+### How allocation and return are calculated
+The figure https://github.com/m-bouville/investing-by-numbers/blob/master/figures/structure.jpg shows the sequence for a given strategy:
+- A signal (a column in the dataframe 'signal') is created based on the algorithm for the strategy and parameters for that strategy.
+- An allocation (a column in the dataframe 'alloc') is generated from the signal (this has no parameter).
+- A return (in the dataframe 'TR', for total return) is calculated based on the allocation.
+- From this one can calculate things like drawdowns and volatility.
 
+### Combining strategies
+In multiStrategies.r, one can put together several strategies based on a weighted average of their 'signal'. 
 
-### Current status
-I switched to R recently and the code needs a bit of cleaning before it can be used by someone not in my mind. I hope to upload it this weekend.
+In practice, this is done hierarchically: we combine value strategies with value strategies, and technical strategies with technical strategies. Then we combine the 2 resulting strategies to make up a 'balanced' strategy.
 
 
 
 ## Preliminary results
-Here they are (compared to stocks), in 'table' form:
+Here are preliminary results (compared to stocks), in 'table' form:
 
-strategy  |  TR  | vol.  |alloc: avg, now|TO yrs| DD^2 | 
+strategy  |  TR  | vol.  |alloc: avg, now|TO yrs| DD^2| 
 
-stocks    | 6.5% | 18.7% |    100%, 100% |  Inf | 4.22 | 
+stocks    | 6.5% | 18.7% |    100%, 100% |  Inf | 4.2 | 
 
-CAPE10    | 7.4% | 14.1% |     50%,   1% |  9.1 | 1.62 |
+CAPE10    | 7.4% | 14.1% |     50%,   1% |  9.1 | 1.6 |
 
-detrended | 7  % | 13.9% |     48%,  98% | 14.7 | 1.48 | 
+detrended | 7  % | 13.9% |     48%,  98% | 14.7 | 1.4 | 
 
-Bollinger | 6.9% | 14  % |     76%,  97% |  1.4 | 1.67 | 
+Bollinger | 7.2% | 14  % |     74%,  99% |  1.3 | 1.6 | 
 
-SMA 12-1  | 6.7% | 13.3% |     70%,  93% |  1.1 | 1.36 | 
+SMA 12-1  | 6.7% | 13.3% |     70%,  93% |  1.1 | 1.3 | 
 
-momentum  | 6.6% | 14.4% |     77%,  97% |  1.5 | 1.8  | 
+momentum  | 6.6% | 14.4% |     77%,  97% |  1.5 | 1.8 | 
 
-value     | 7.2% | 13.9% |     46%,   1% | 12.5 | 1.51 | 
+reversal  | 7.2% | 14.5% |     76%,  99% |  1.7 | 1.8 | 
 
-technical | 7  % | 13.6% |     72%,  97% |  1.2 | 1.48 | 
+value     | 7.2% | 13.9% |     47%,   1% | 12.6 | 1.5 | 
 
-balanced  | 8  % | 14.6% |     78%,  94% |  3.7 | 1.88 | 
+technical | 6.9% | 13.8% |     74%,  97% |  1.3 | 1.5 | 
+
+balanced  | 7  % | 13.8% |     51%,   2% |  4.8 | 1.5 | 
 
 TR: total return (net of trading costs), vol: volatility, TO: turnover (in years), DD^2: sum of the squares of the magnitude of drawdowns
+
+These figures may also help:
+- https://github.com/m-bouville/investing-by-numbers/blob/master/figures/net%20return%20and%20alloc.png#
+- https://github.com/m-bouville/investing-by-numbers/blob/master/figures/net%20return%20vs%20four%20-%20zoomed%20out.png
+- https://github.com/m-bouville/investing-by-numbers/blob/master/figures/net%20return%20vs%20four%20-%20zoomed%20in.png
