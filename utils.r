@@ -2,8 +2,8 @@
 addNumColToDat <- function(colName) {
    if (!colName %in% colnames(dat)) dat[, colName] <<- numeric(numData)
 }
-addNumColToNormalized <- function(colName) {
-   if (!colName %in% colnames(normalized)) normalized[, colName] <<- numeric(numData)
+addNumColToSignal <- function(colName) {
+   if (!colName %in% colnames(signal)) signal[, colName] <<- numeric(numData)
 }
 addNumColToAlloc <- function(colName) {
    if (!colName %in% colnames(alloc)) alloc[, colName] <<- numeric(numData)
@@ -16,8 +16,8 @@ addNumColToTR <- function(colName) {
 requireColInDat <- function(colName) {
    if (!colName %in% colnames(dat)) stop(paste0("dat$", colName, " does not exist."))
 }
-requireColInNormalized <- function(colName) {
-   if (!colName %in% colnames(normalized)) stop(paste0("normalized$", colName, " does not exist."))
+requireColInSignal <- function(colName) {
+   if (!colName %in% colnames(signal)) stop(paste0("signal$", colName, " does not exist."))
 }
 requireColInAlloc <- function(colName) {
    if (!colName %in% colnames(alloc)) stop(paste0("alloc$", colName, " does not exist."))
@@ -149,20 +149,12 @@ calcStrategyReturn <- function(strategyName, startIndex) {
 }
 
 
-## Calculating allocation from normalized
-calcAllocFromNorm <- function(strategyName, medianAlloc, interQuartileAlloc) {
-   ## creates an allocation with median (close to) medianAlloc and 
-   ## with a difference between the 2 quartiles of interQuartileAlloc
-   if (interQuartileAlloc==100) 
-      interQuartileAlloc <- 100-1e-3
-      
-   b <- tan(pi*(medianAlloc/100-.5))
-   tan2A <- tan(pi*interQuartileAlloc/100)
-   a <- sqrt(1/tan2A^2 + 1 + b^2) - 1/tan2A
+## Calculating allocation from signal
+calcAllocFromSignal <- function(strategyName) {
 
-   requireColInNormalized(strategyName)
+   requireColInSignal(strategyName)
    addNumColToAlloc(strategyName)
-   alloc[, strategyName] <<- atan(normalized[, strategyName]*a + b) /pi + .5 
+   alloc[, strategyName] <<- atan( signal[, strategyName] ) /pi + .5 
 }
 
 
@@ -177,10 +169,10 @@ calcSMAofStrategy <- function(inputStrategyName, avgOver=3L, futureYears=def$fut
       if (!(strategyName %in% colnames(alloc))) alloc[, strategyName] <<- numeric(numData)
       if (!(strategyName %in% colnames(TR))) TR[, strategyName] <<- numeric(numData)
       
-      normalized[1:(avgOver-1), strategyName] <<- NA
+      signal[1:(avgOver-1), strategyName] <<- NA
       for (i in avgOver:numData) 
-         normalized[i, strategyName] <<- mean( normalized[(i-avgOver+1):i, inputStrategyName], na.rm=F )
-      calcAllocFromNorm(strategyName, medianAlloc, interQuartileAlloc)
+         signal[i, strategyName] <<- mean( signal[(i-avgOver+1):i, inputStrategyName], na.rm=F )
+      calcAllocFromSignal(strategyName, medianAlloc, interQuartileAlloc)
       startIndex <- sum(is.na(alloc[, strategyName]))+1
       calcStrategyReturn( strategyName, startIndex )
    }
@@ -350,6 +342,7 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
          turnover[1:def$startIndex] <- NA
          turnover[dateRange2+1] <- abs(alloc[dateRange2+1, strategyName] - alloc[dateRange2, strategyName])
          stats$turnover[index] <<- 1/12/mean(turnover[dateRange2+1], na.rm=F)
+         stats$invTurnover[index] <<- 1/stats$turnover[index]
          
          if (tradingCost == 0.02) 
             stats$netTR2[index] <<- stats$TR[index] - tradingCost/stats$turnover[index]

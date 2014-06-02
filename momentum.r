@@ -5,7 +5,7 @@ setMomentumDefaultValues <- function() {
    def$momentumAvgOver           <<- 12L
    def$momentumMedianAlloc       <<- 95
    def$momentumInterQuartileAlloc<<- 15
-   def$typicalMomentum           <<- paste0("momentum_", def$momentumInputName, "_", def$momentumAvgOver, "_", 
+   def$typicalMomentum           <<- paste0("momentum_", def$momentumInputName, "_", def$momentumAvgOver, "__", 
                                             def$momentumMedianAlloc, "_", def$momentumInterQuartileAlloc)
 }
 
@@ -13,7 +13,7 @@ setMomentumDefaultValues <- function() {
 ## calculating momentum
 calcMomentum <- function(inputDF, inputName, avgOver=def$momentumAvgOver, momentumName) {
    if (inputDF=="dat")             input <- dat[, inputName]
-   else if (inputDF=="normalized") input <- normalized[, inputName]
+   else if (inputDF=="signal") input <- signal[, inputName]
    else if (inputDF=="alloc")      input <- alloc[, inputName]
    else if (inputDF=="TR")         input <- TR[, inputName]
    else if (inputDF=="next30yrs")  input <- next30yrs[, inputName]
@@ -27,36 +27,40 @@ calcMomentum <- function(inputDF, inputName, avgOver=def$momentumAvgOver, moment
 ## this is the slope from an exponential fit:
 #       dat[i, momentumName] <<- exp( regression( (i-avgOver):i, log(dat[(i-avgOver):i, momentumName]) )[[2]] ) - 1
 ## there is (surprisingly) little difference  between the 3
-
-
 }
 
 
-## Normalize momentum
-normalizeMomentum <- function(inputDF, inputName, avgOver=def$momentumAvgOver, strategyName) {
+calcMomentumSignal <- function(inputDF, inputName, avgOver=def$momentumAvgOver, 
+                               medianAlloc, interQuartileAlloc, strategyName) {
 
    momentumName <- paste0("momentum_", inputName, "_", avgOver)
    if (!momentumName %in% colnames(dat)) 
       calcMomentum(inputDF=inputDF, inputName=inputName, avgOver=avgOver, momentumName=momentumName)
-   addNumColToNormalized(strategyName)
+   addNumColToSignal(strategyName)
    
    bearish <- quantile(dat[, momentumName], 0.75, na.rm=T)[[1]] # backwards compared to others (high is good)
    bullish <- quantile(dat[, momentumName], 0.25, na.rm=T)[[1]]
 
-   normalized[, strategyName] <<- 2 * (dat[, momentumName]-bullish) / (bearish-bullish) - 1
+   if (interQuartileAlloc==100) interQuartileAlloc <- 100-1e-3
+   
+   b <- tan(pi*(medianAlloc/100-.5))
+   tan2A <- tan(pi*interQuartileAlloc/100)
+   a <- sqrt(1/tan2A^2 + 1 + b^2) - 1/tan2A
+   
+   signal[, strategyName] <<- a * ( 2 * (dat[, momentumName]-bullish) / (bearish-bullish) - 1 ) + b
 }
 
 
 createMomentumStrategy <- function(inputDF, inputName, avgOver=def$momentumAvgOver, 
                                    medianAlloc=def$momentumMedianAlloc, interQuartileAlloc=def$momentumInterQuartileAlloc,
                                    strategyName="", type="", futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
-   
    if (strategyName=="") 
-      strategyName <- paste0("momentum_", inputName, "_", avgOver, "_", medianAlloc, "_", interQuartileAlloc)
+      strategyName <- paste0("momentum_", inputName, "_", avgOver, "__", medianAlloc, "_", interQuartileAlloc)
    
    if (!(strategyName %in% colnames(TR)) | force) { # if data do not exist yet or we force recalculation:   
-      normalizeMomentum(inputDF=inputDF, inputName=inputName, avgOver=avgOver, strategyName=strategyName)
-      calcAllocFromNorm(strategyName, medianAlloc=medianAlloc, interQuartileAlloc=interQuartileAlloc)
+      calcMomentumSignal(inputDF=inputDF, inputName=inputName, avgOver=avgOver, 
+                         medianAlloc=medianAlloc, interQuartileAlloc=interQuartileAlloc, strategyName=strategyName)
+      calcAllocFromSignal(strategyName)
       addNumColToTR(strategyName)  
       startIndex = max(avgOver, sum(is.na(alloc[ ,strategyName])))+1
       calcStrategyReturn(strategyName, startIndex)

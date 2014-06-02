@@ -5,13 +5,13 @@ setDetrendedDefaultValues <- function() {
    def$detrendedAvgOver           <<- 30L
    def$detrendedMedianAlloc       <<- 90
    def$detrendedInterQuartileAlloc<<- 97
-   def$typicalDetrended           <<- paste0("detrended", def$detrendedInputName, "avg", def$detrendedAvgOver, "_", 
+   def$typicalDetrended           <<- paste0("detrended", def$detrendedInputName, "avg", def$detrendedAvgOver, "__", 
                                              def$detrendedMedianAlloc, "_", def$detrendedInterQuartileAlloc)
 }
 
 calcDetrended <- function(inputDF, inputName, detrendedName) {
    if (inputDF=="dat")             logInput <- log( dat[, inputName] )
-   else if (inputDF=="normalized") logInput <- log( normalized[, inputName] )
+   else if (inputDF=="signal")     logInput <- log( signal[, inputName] )
    else if (inputDF=="alloc")      logInput <- log( alloc[, inputName] )
    else if (inputDF=="TR")         logInput <- log( TR[, inputName] )
    else if (inputDF=="next30yrs")  logInput <- log( next30yrs[, inputName] )
@@ -26,14 +26,6 @@ calcDetrended <- function(inputDF, inputName, detrendedName) {
 }
 
 
-
-# par(mfrow = c(1, 1))
-# plot(TR$numericDate, normalized$detrendedTR_90_50, type="l", col="red", ylim=c(-2,2))
-# par(new=T)
-# plot(TR$numericDate, normalized$CAPE10_2avg24_50_90, type="l", col="blue", ylim=c(-2,2))
-# par(new=F)
-
-
 ## Average CAPE over 'avgOver' months
 calcAvgDetrended <- function(detrendedName, avgOver=def$detrendedAvgOver) {
 
@@ -45,40 +37,48 @@ calcAvgDetrended <- function(detrendedName, avgOver=def$detrendedAvgOver) {
 }
 
 
-normalizeDetrended <- function(inputDF, inputName, strategyName, avgOver) {
+CalcDetrendedSignal <- function(inputDF, inputName, medianAlloc, interQuartileAlloc, strategyName, avgOver) {
    
-   detrendedName <- paste0("detrended", inputName)
-#    if (!detrendedName %in% colnames(dat)) 
-      {
+   if (interQuartileAlloc==100) interQuartileAlloc <- 100-1e-3
+   
+   b <- tan(pi*(medianAlloc/100-.5))
+   tan2A <- tan(pi*interQuartileAlloc/100)
+   a <- sqrt(1/tan2A^2 + 1 + b^2) - 1/tan2A
+   
+   detrendedName <- strategyName
+#   if (!detrendedName %in% colnames(dat)) 
+   {
       calcDetrended(inputDF=inputDF, inputName=inputName, detrendedName=detrendedName)
       if( is.numeric(avgOver) ) {
-          if( !paste0(detrendedName,"avg",avgOver) %in% colnames(dat) ) 
+         if( !paste0(detrendedName,"avg",avgOver) %in% colnames(dat) ) 
             calcAvgDetrended(detrendedName, avgOver)
          detrendedName <- paste0(detrendedName, "avg", avgOver) 
       }
       
-      addNumColToNormalized(strategyName)
+      addNumColToSignal(strategyName)
       
       bearish <- quantile(dat[, detrendedName], 0.25, na.rm=T)[[1]]
       bullish <- quantile(dat[, detrendedName], 0.75, na.rm=T)[[1]]
       
-      normalized[, strategyName] <<- 2 * (dat[, detrendedName]-bullish) / (bearish-bullish) - 1
+      signal[, strategyName] <<- a * ( 2 * (dat[, detrendedName]-bullish) / (bearish-bullish) - 1 ) + b
    }
 }
 
 
 createDetrendedStrategy <- function(inputDF="dat", inputName="TR", avgOver=def$detrendedAvgOver, 
                                     medianAlloc=60, interQuartileAlloc=80,
-                                    strategyName="", futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {   
+                                    strategyName="", futureYears=def$futureYears, 
+                                    tradingCost=def$tradingCost, force=F) {   
    if (strategyName=="") {
       if( is.numeric(avgOver) )
-         strategyName <- paste0("detrended", inputName, "avg", avgOver, "_", medianAlloc, "_", interQuartileAlloc)
-      else strategyName <- paste0("detrended", inputName, "_", medianAlloc, "_", interQuartileAlloc)
+         strategyName <- paste0("detrended", inputName, "avg", avgOver, "__", medianAlloc, "_", interQuartileAlloc)
+      else strategyName <- paste0("detrended", inputName, "__", medianAlloc, "_", interQuartileAlloc)
    }
    
     if (!(strategyName %in% colnames(TR)) | force) { # if data do not exist yet or we force recalculation:   
-      normalizeDetrended(inputDF=inputDF, inputName=inputName, strategyName=strategyName, avgOver=avgOver)
-      calcAllocFromNorm(strategyName, medianAlloc=medianAlloc, interQuartileAlloc=interQuartileAlloc)
+       CalcDetrendedSignal(inputDF=inputDF, inputName=inputName, medianAlloc=medianAlloc, 
+                           interQuartileAlloc=interQuartileAlloc, strategyName=strategyName, avgOver=avgOver)
+      calcAllocFromSignal(strategyName)
       addNumColToTR(strategyName)  
       startIndex = avgOver # max(months, sum(is.na(alloc[ ,strategyName])))+1
       calcStrategyReturn(strategyName, startIndex)
@@ -97,7 +97,7 @@ createDetrendedStrategy <- function(inputDF="dat", inputName="TR", avgOver=def$d
       parameters$inputDF[index]     <<- inputDF
       parameters$inputName[index]   <<- inputName
       parameters$startIndex[index]  <<- startIndex
-      parameters$avgOver[index]     <<-  avgOver
+      parameters$avgOver[index]     <<- avgOver
       parameters$medianAlloc[index] <<- medianAlloc
       parameters$interQuartileAlloc[index] <<-  interQuartileAlloc
    }

@@ -6,14 +6,14 @@ setSMAdefaultValues <- function() {
    def$SMA2                <<- 1L
    def$SMAmedianAlloc      <<- 90
    def$SMAinterQuartileAlloc <<- 50
-   def$typicalSMA        <<- paste0("SMA_", def$SMAinputName, def$SMA1, "_", def$SMA2, "_", 
+   def$typicalSMA        <<- paste0("SMA_", def$SMAinputName, def$SMA1, "_", def$SMA2, "__", 
                                     def$SMAmedianAlloc, "_", def$SMAinterQuartileAlloc)
 }
 
 ## calculating simple moving average (SMA)
 calcSMA <- function(inputDF, inputName, avgOver, SMAname) {
    if (inputDF=="dat")             input <- dat[, inputName]
-   else if (inputDF=="normalized") input <- normalized[, inputName]
+   else if (inputDF=="signal") input <- signal[, inputName]
    else if (inputDF=="alloc")      input <- alloc[, inputName]
    else if (inputDF=="TR")         input <- TR[, inputName]
    else if (inputDF=="next30yrs")  input <- next30yrs[, inputName]
@@ -27,19 +27,24 @@ calcSMA <- function(inputDF, inputName, avgOver, SMAname) {
 }
 
 
-## Normalize SMA
-normalizeSMA <- function(SMAname1, SMAname2, strategyName) {
-   
+calcSMAsignal <- function(SMAname1, SMAname2, medianAlloc=medianAlloc, 
+                          interQuartileAlloc=interQuartileAlloc, strategyName) {
    requireColInDat(SMAname1)
    requireColInDat(SMAname2)
-   addNumColToNormalized(strategyName)
+   addNumColToSignal(strategyName)
    
    temp <- dat[, SMAname1] / dat[, SMAname2] - 1
 
    bearish <- quantile(temp, 0.25, na.rm=T)[[1]]
    bullish <- quantile(temp, 0.75, na.rm=T)[[1]]
    
-   normalized[, strategyName] <<- 2 * (temp-bullish) / (bearish-bullish) - 1
+   if (interQuartileAlloc==100) interQuartileAlloc <- 100-1e-3
+   
+   b <- tan(pi*(medianAlloc/100-.5))
+   tan2A <- tan(pi*interQuartileAlloc/100)
+   a <- sqrt(1/tan2A^2 + 1 + b^2) - 1/tan2A
+   
+   signal[, strategyName] <<- a * ( 2 * (temp-bullish) / (bearish-bullish) - 1 ) + b
 }
 
 
@@ -48,7 +53,7 @@ createSMAstrategy <- function(inputDF="dat", inputName="TR", SMA1=def$SMA1, SMA2
                               strategyName="", futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
    
    if (strategyName=="") 
-      strategyName <- paste0("SMA_", inputName, SMA1, "_", SMA2, "_", medianAlloc, "_", interQuartileAlloc)
+      strategyName <- paste0("SMA_", inputName, SMA1, "_", SMA2, "__", medianAlloc, "_", interQuartileAlloc)
    SMAname1 <- paste0("SMA_", inputName, "_", SMA1)
    if (!(SMAname1 %in% colnames(dat)) | force)
       calcSMA(inputDF, inputName, SMA1, SMAname1)      
@@ -57,8 +62,9 @@ createSMAstrategy <- function(inputDF="dat", inputName="TR", SMA1=def$SMA1, SMA2
       calcSMA(inputDF, inputName, SMA2, SMAname2)      
    
    if (!(strategyName %in% colnames(TR)) | force) { # if data do not exist yet or we force recalculation:   
-      normalizeSMA(SMAname1, SMAname2, strategyName=strategyName)
-      calcAllocFromNorm(strategyName, medianAlloc=medianAlloc, interQuartileAlloc=interQuartileAlloc)
+      calcSMAsignal(SMAname1, SMAname2, medianAlloc=medianAlloc, 
+                    interQuartileAlloc=interQuartileAlloc, strategyName=strategyName)
+      calcAllocFromSignal(strategyName)
 #       calcSMAallocation(SMA1, SMA2, offset, ratioLow, ratioHigh, allocLow, allocHigh, strategyName=strategyName)
       addNumColToTR(strategyName)
       calcStrategyReturn(strategyName, max(SMA1,SMA2)+1)

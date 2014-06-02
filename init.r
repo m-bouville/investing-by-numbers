@@ -37,9 +37,9 @@ start <- function(extrapolateDividends=T, # whether to extrapolate missing recen
       loadData( downloadAndCheckAllFiles=downloadAndCheckAllFiles )
    } 
    
-   if (!exists("normalized")| force) normalized<<- data.frame(date = dat$date, numericDate = dat$numericDate)
-   if (!exists("alloc")     | force) alloc     <<- data.frame(date = dat$date, numericDate = dat$numericDate)
-   if (!exists("TR")        | force) TR        <<- data.frame(date = dat$date, numericDate = dat$numericDate, stocks = dat$TR)
+   if (!exists("signal")| force) signal <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+   if (!exists("alloc") | force) alloc  <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+   if (!exists("TR")    | force) TR     <<- data.frame(date = dat$date, numericDate = dat$numericDate, stocks = dat$TR)
 
    if ( def$tradingCost==0.02 & (!exists("netTR2") | force) )
       netTR2 <<- data.frame(date = dat$date, numericDate = dat$numericDate)
@@ -321,7 +321,7 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
    time0 <- proc.time()
    createMultiStrategy(inputStrategyName1=def$typicalCAPE, inputStrategyName2=def$typicalDetrended, "", "",
                        def$valueFractionCAPE, def$valueFractionDetrended, 0, 0, 
-                       medianAlloc=def$valueMedianAlloc, interQuartileAlloc=def$valueInterQuartileAlloc,
+                       #medianAlloc=def$valueMedianAlloc, interQuartileAlloc=def$valueInterQuartileAlloc,
                        subtype="value", tradingCost=def$tradingCost, force=force)
    print( c( "value time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
@@ -329,14 +329,14 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
    createMultiStrategy(def$typicalSMA, def$typicalBoll, def$typicalMomentum, def$typicalReversal, 
                        def$technicalFractionSMA, def$technicalFractionBoll, 
                        def$technicalFractionMomentum, def$technicalFractionReversal, 
-                       medianAlloc=def$technicalMedianAlloc, interQuartileAlloc=def$technicalInterQuartileAlloc,
+                       #medianAlloc=def$technicalMedianAlloc, interQuartileAlloc=def$technicalInterQuartileAlloc,
                        subtype="technical", tradingCost=def$tradingCost, force=force)
    print( c( "technical time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
    createMultiStrategy(def$typicalValue, def$typicalTechnical, "", "",
                        def$balancedFractionValue, def$balancedFractionTechnical, 0, 0, 
-                       medianAlloc=def$balancedMedianAlloc, interQuartileAlloc=def$balancedInterQuartileAlloc,
+                       #medianAlloc=def$balancedMedianAlloc, interQuartileAlloc=def$balancedInterQuartileAlloc,
                        subtype="balanced", tradingCost=def$tradingCost, force=force)
    print( c( "balanced time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )   
    

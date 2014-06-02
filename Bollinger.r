@@ -5,18 +5,20 @@ setBollDefaultValues <- function() {
    def$BollAvgOver          <<- 18L
    def$BollMedianAlloc      <<- 99
    def$BollInterQuartileAlloc <<- 25
-   def$typicalBoll          <<- paste0("Boll_", def$BollInputName, "_", def$BollAvgOver, "_", 
+   def$typicalBoll          <<- paste0("Boll_", def$BollInputName, "_", def$BollAvgOver, "__", 
                                        def$BollMedianAlloc, "_", def$BollInterQuartileAlloc)
 }
 
-normalizeBoll <- function(inputDF, inputName, avgOver=def$BollAvgOver, strategyName="", force=F) {
+calcBollSignal <- function(inputDF, inputName, avgOver=def$BollAvgOver, 
+                           medianAlloc=medianAlloc, interQuartileAlloc=interQuartileAlloc, 
+                           strategyName="", force=F) {
 
    BollBandsName <- paste0(inputName, avgOver)
    avgName <- paste0("avg_", BollBandsName)
    SDname <- paste0("SD_", BollBandsName)
    
    if (inputDF=="dat")             input <- dat[, inputName]
-   else if (inputDF=="normalized") input <- normalized[, inputName]
+   else if (inputDF=="signal") input <- signal[, inputName]
    else if (inputDF=="alloc")      input <- alloc[, inputName]
    else if (inputDF=="TR")         input <- TR[, inputName]
    else if (inputDF=="next30yrs")  input <- next30yrs[, inputName]
@@ -36,13 +38,20 @@ normalizeBoll <- function(inputDF, inputName, avgOver=def$BollAvgOver, strategyN
    #    print( c( "Bollinger - calc-avg-&SD time:", round(summary(proc.time())[[1]] - time1[[1]] , 2) ) )
    
    #    time1 <- proc.time()    
-   if ( !(strategyName %in% colnames(normalized)) | force) {# if data do not exist yet or we force recalculation:
-      addNumColToNormalized(strategyName)
-      normalized[, strategyName] <<- (input[] - dat[, avgName]) / dat[, SDname]
+   if ( !(strategyName %in% colnames(signal)) | force) {# if data do not exist yet or we force recalculation:
+      addNumColToSignal(strategyName)
+      signal[, strategyName] <<- (input[] - dat[, avgName]) / dat[, SDname]
       
-      bearish <- quantile(normalized[, strategyName], 0.75, na.rm=T)[[1]]
-      bullish <- quantile(normalized[, strategyName], 0.25, na.rm=T)[[1]]
-      normalized[, strategyName] <<- 2 * (normalized[, strategyName]-bullish) / (bearish-bullish) - 1
+      bearish <- quantile(signal[, strategyName], 0.75, na.rm=T)[[1]]
+      bullish <- quantile(signal[, strategyName], 0.25, na.rm=T)[[1]]
+      
+      if (interQuartileAlloc==100) interQuartileAlloc <- 100-1e-3
+      
+      b <- tan(pi*(medianAlloc/100-.5))
+      tan2A <- tan(pi*interQuartileAlloc/100)
+      a <- sqrt(1/tan2A^2 + 1 + b^2) - 1/tan2A
+      
+      signal[, strategyName] <<- a * ( 2 * (signal[, strategyName]-bullish) / (bearish-bullish) - 1 ) + b
    }
    #    print( c( "Bollinger - compare-to-bands time:", round(summary(proc.time())[[1]] - time1[[1]] , 2) ) )
 }
@@ -53,18 +62,19 @@ createBollStrategy <- function(inputDF, inputName, avgOver=def$BollAvgOver,
                                strategyName="", type="", futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
 
    if(strategyName=="")  
-      strategyName <- paste0("Boll_", inputName, "_", avgOver, "_", medianAlloc, "_", interQuartileAlloc)
+      strategyName <- paste0("Boll_", inputName, "_", avgOver, "__", medianAlloc, "_", interQuartileAlloc)
    
    if (!(strategyName %in% colnames(TR)) | force) { # if data do not exist yet or we force recalculation:   
       #       time0 <- proc.time()
-      normalizeBoll(inputDF=inputDF, inputName=inputName, avgOver=avgOver, strategyName=strategyName, force=force)
-      #       print( c( "Bollinger - normalizeBoll() time:", round(summary(proc.time())[[1]] - time0[[1]] , 2) ) )
+      calcBollSignal(inputDF=inputDF, inputName=inputName, avgOver=avgOver, 
+                     medianAlloc=medianAlloc, interQuartileAlloc=interQuartileAlloc, 
+                     strategyName=strategyName, force=force)
+      #       print( c( "Bollinger - calcBollSignal() time:", round(summary(proc.time())[[1]] - time0[[1]] , 2) ) )
       
       #       time0 <- proc.time()
-      calcAllocFromNorm(strategyName, medianAlloc=medianAlloc, interQuartileAlloc=interQuartileAlloc)
+      calcAllocFromSignal(strategyName)
       #       print( c( "Bollinger - calcAllocFromNorm() time:", round(summary(proc.time())[[1]] - time0[[1]] , 2) ) )
-      
-      
+            
       #       time0 <- proc.time()
       addNumColToTR(strategyName)
       startIndex <- sum(is.na(alloc[, strategyName])) + 1

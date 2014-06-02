@@ -9,7 +9,7 @@ setReversalDefaultValues <- function() {
    def$reversalMedianAlloc        <<- 99
    def$reversalInterQuartileAlloc <<- 10
    def$typicalReversal            <<- paste0("reversal_", def$reversalInputName, "_", 
-                                             def$reversalAvgOver, "_", def$reversalReturnToMean, "_", 
+                                             def$reversalAvgOver, "__", def$reversalReturnToMean, "_", 
                                              def$reversalMedianAlloc, "_", def$reversalInterQuartileAlloc)
 }
 
@@ -17,7 +17,7 @@ setReversalDefaultValues <- function() {
 ## calculating trend reversal (essentially a second derivative)
 calcReversal <- function(inputDF, inputName, avgOver=def$reversalAvgOver, reversalName) {
    if (inputDF=="dat")             input <- dat[, inputName]
-   else if (inputDF=="normalized") input <- normalized[, inputName]
+   else if (inputDF=="signal") input <- signal[, inputName]
    else if (inputDF=="alloc")      input <- alloc[, inputName]
    else if (inputDF=="TR")         input <- TR[, inputName]
    else if (inputDF=="next30yrs")  input <- next30yrs[, inputName]
@@ -30,24 +30,30 @@ calcReversal <- function(inputDF, inputName, avgOver=def$reversalAvgOver, revers
 }
 
 
-normalizeReversal <- function(signal, strategyName) {
+calcReversalSignal <- function(signal0, medianAlloc, interQuartileAlloc, strategyName) {
    
 #    reversalName <- paste0("reversal_", inputName, "_", avgOver)
 #    if (!reversalName %in% colnames(dat)) 
 #       calcReversal(inputDF=inputDF, inputName=inputName, avgOver=avgOver, reversalName=reversalName)
-   addNumColToNormalized(strategyName)
+   addNumColToSignal(strategyName)
    
-   bearish <- quantile(signal, 0.75, na.rm=T)[[1]] # backwards compared to others (high is good)
-   bullish <- quantile(signal, 0.25, na.rm=T)[[1]]
+   bearish <- quantile(signal0, 0.75, na.rm=T)[[1]] # backwards compared to others (high is good)
+   bullish <- quantile(signal0, 0.25, na.rm=T)[[1]]
+
+   if (interQuartileAlloc==100) interQuartileAlloc <- 100-1e-3
    
-   normalized[, strategyName] <<- 2 * (signal-bullish) / (bearish-bullish) - 1
+   b <- tan(pi*(medianAlloc/100-.5))
+   tan2A <- tan(pi*interQuartileAlloc/100)
+   a <- sqrt(1/tan2A^2 + 1 + b^2) - 1/tan2A
+   
+   signal[, strategyName] <<- a * ( 2 * (signal0-bullish) / (bearish-bullish) - 1 ) + b
 }
 
 
 ## The trend reversal strategy does not find out whether prices are going up (time to be in the market),
 ## or going down (we should be out of the market).
 ## Instead it finds out whether a rise or fall is starting.
-## So when the signal is positive, instead of _setting_ normalized to a high value, we _increase_ its value.
+## So when the signal is positive, instead of _setting_ the allocation to a high value, we _increase_ its value.
 ## For this reason the algoritm is rather different from other strategies.
 createReversalStrategy <- function(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
                                    avgOver=def$reversalAvgOver, returnToMean=def$reversalReturnToMean, 
@@ -55,7 +61,7 @@ createReversalStrategy <- function(inputDF=def$reversalInputDF, inputName=def$re
                                    strategyName="", futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
    reversalName <- paste0("reversal_", inputName, "_", avgOver)
    if (strategyName=="") 
-      strategyName <- paste0(reversalName, "_", returnToMean, "_", medianAlloc, "_", interQuartileAlloc)
+      strategyName <- paste0(reversalName, "__", returnToMean, "_", medianAlloc, "_", interQuartileAlloc)
    
    if (!(strategyName %in% colnames(TR)) | force) { # if data do not exist yet or we force recalculation:   
       if (!reversalName %in% colnames(dat)) 
@@ -68,19 +74,20 @@ createReversalStrategy <- function(inputDF=def$reversalInputDF, inputName=def$re
       ## Note that we use the average known at the time, 
       ## i.e. we do not use what would have been future information at the time.   
       
-      signal <- numeric(numData)
-      signal <- NA
-      signal[2*avgOver+2] <- 0
+      signal0 <- numeric(numData)
+      signal0 <- NA
+      signal0[2*avgOver+2] <- 0
       for (i in (2*avgOver+3):numData ) 
-         signal[i] <- signal[i-1] + dat[i, reversalName] - returnToMean/100 * signal[i-1]
-      ## 'signal' is essentially an integral of dat[, reversalName]
-      ## 'returnToMean' brings 'signal' back towards 0 over time, to avoid a long-term drift.
+         signal0[i] <- signal0[i-1] + dat[i, reversalName] - returnToMean/100 * signal0[i-1]
+      ## 'signal0' is essentially an integral of dat[, reversalName]
+      ## 'returnToMean' brings 'signal0' back towards 0 over time, to avoid a long-term drift.
       
-      normalizeReversal(signal, strategyName=strategyName)      
+      calcReversalSignal(signal0, medianAlloc=medianAlloc, 
+                         interQuartileAlloc=interQuartileAlloc, strategyName=strategyName)      
       
-      requireColInNormalized(strategyName)
+      requireColInSignal(strategyName)
       addNumColToAlloc(strategyName)
-      calcAllocFromNorm(strategyName, medianAlloc=medianAlloc, interQuartileAlloc=interQuartileAlloc)
+      calcAllocFromSignal(strategyName)
       
       addNumColToTR(strategyName)  
       startIndex = 2*avgOver+1 + 12 # padding to allow settling down

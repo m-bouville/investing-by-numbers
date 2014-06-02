@@ -1,7 +1,7 @@
 #default values of plotting parameters
 setPlottingDefaultValues <- function() {
    def$yTRmin<<- 7
-   def$yTRmax<<- 9.
+   def$yTRmax<<- 8.5
 
    if (def$tradingCost==0.02)
    def$yStatsName <<- "netTR2"
@@ -88,7 +88,7 @@ plotReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTec
                        col1=def$colBalanced, col2=def$colTechnical, col3=def$colValue, col4=def$colConstantAlloc, 
                        lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=2,
                        startYear=def$startYear, endYear=2015, tradingCost=def$tradingCost, 
-                       minTR=.9, maxTR=20000, yLabel="", net=T, normalize=T) { 
+                       minTR=.9, maxTR=10000, yLabel="", net=T, normalize=T) { 
    
 #    print(c(stratName2, stratName3, stratName4) )
    normDate <- (startYear-1871)*12+1
@@ -152,19 +152,19 @@ plotReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTec
       normFactor4 <- 1
    }
       
-   if(stratName1 %in% colnames(TR)) {   
+   if((stratName1 != "") && stratName1 %in% colnames(TR)) {   
       plot(TR$numericDate, TR1/normFactor1, col=col1, xlab="", ylab=yLabel, log="y", type="l", lwd=lwd1, xlim=xRange, ylim=yRange)
       par(new=T)
    }
-   if(stratName2 %in% colnames(TR)) {   
+   if((stratName2 != "") && stratName2 %in% colnames(TR)) {   
       plot(TR$numericDate, TR2/normFactor2, col=col2, xlab="", ylab="", log="y", type="l", lwd=lwd2, xlim=xRange, ylim=yRange)
       par(new=T)
    }  
-   if(stratName3 %in% colnames(TR)) {   
+   if((stratName3 != "") && stratName3 %in% colnames(TR)) {   
       plot(TR$numericDate, TR3/normFactor3, col=col3, xlab="", ylab="", log="y", type="l", lwd=lwd3, xlim=xRange, ylim=yRange)
       par(new=T)
    }
-   if(stratName4 %in% colnames(TR)) {   
+   if((stratName4 != "") && stratName4 %in% colnames(TR)) {   
       plot(TR$numericDate, TR4/normFactor4, col=col4, xlab="", ylab="", log="y", type="l", lwd=lwd4, xlim=xRange, ylim=yRange)
    }
    legend( "topleft", c(stratName1,stratName2,stratName3,stratName4), 
@@ -184,19 +184,19 @@ plotAlloc <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTech
    xRange <- c(startYear, endYear)
    yRange <- c(0, 1)
    
-   if(stratName1 %in% colnames(alloc)) {   
+   if((stratName1 != "") && stratName1 %in% colnames(alloc)) {   
       plot(alloc$numericDate, alloc[, stratName1], col=col1, xlab="", ylab="stock allocation", lwd=lwd1, type="l", xlim=xRange, ylim=yRange)
       par(new=T)
    }
-   if(stratName2 %in% colnames(alloc)) {   
+   if((stratName2 != "") && stratName2 %in% colnames(alloc)) {   
       plot(alloc$numericDate, alloc[, stratName2], col=col2, xlab="", ylab="", type="l", lwd=lwd2, xlim=xRange, ylim=yRange)
       par(new=T)
    }
-   if(stratName3 %in% colnames(alloc)) {
+   if((stratName3 != "") && stratName3 %in% colnames(alloc)) {
       plot(alloc$numericDate, alloc[, stratName3], col=col3, xlab="", ylab="", type="l", lwd=lwd3, xlim=xRange, ylim=yRange)
       par(new=T)
    }
-   if(stratName4 %in% colnames(alloc)) {   
+   if((stratName4 != "") && stratName4 %in% colnames(alloc)) {   
       plot(alloc$numericDate, alloc[, stratName4], col=col4, xlab="", ylab="", type="l", lwd=lwd4, xlim=xRange, ylim=yRange)
    }
    par(new=F)   
@@ -207,7 +207,7 @@ plotReturnAndAlloc <- function(stratName1=def$typicalBalanced, stratName2=def$ty
                                col1=def$colBalanced, col2=def$colTechnical, col3=def$colValue, col4=def$colConstantAlloc, 
                                lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=2,
                                startYear=def$startYear, endYear=2015, tradingCost=def$tradingCost, 
-                               minTR=.9, maxTR=20000, yLabelReturn="", net=T, normalize=T) {
+                               minTR=.9, maxTR=10000, yLabelReturn="", net=T, normalize=T) {
    par(mfrow = c(2, 1))
    plotReturn(stratName1=stratName1, col1=col1, lwd1=lwd1, stratName2=stratName2, col2=col2, lwd2=lwd2,
               stratName3=stratName3, col3=col3, lwd3=lwd3, stratName4=stratName4, col4=col4, lwd4=lwd4, 
@@ -226,7 +226,7 @@ plotFutureReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typi
                        lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=2,
                        futureYears=def$futureYears,
                        startYear=def$startYear, endYear=2015, tradingCost=def$tradingCost, 
-                       minTR=.9, maxTR=20000, yLabel="", net=T, normalize=T) { 
+                       minTR=.9, maxTR=10000, yLabel="", net=T, normalize=T) { 
    
    #    print(c(stratName2, stratName3, stratName4) )
    normDate <- (startYear-1871)*12+1
@@ -290,19 +290,19 @@ plotFutureReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typi
       normFactor4 <- 1
    }
    
-   if(stratName1 %in% colnames(TR)) {   
+   if((stratName1 != "") && stratName1 %in% colnames(TR)) {   
       plot(TR$numericDate, TR1/normFactor1, col=col1, xlab="", ylab=yLabel, log="y", type="l", lwd=lwd1, xlim=xRange, ylim=yRange)
       par(new=T)
    }
-   if(stratName2 %in% colnames(TR)) {   
+   if((stratName2 != "") && stratName2 %in% colnames(TR)) {   
       plot(TR$numericDate, TR2/normFactor2, col=col2, xlab="", ylab="", log="y", type="l", lwd=lwd2, xlim=xRange, ylim=yRange)
       par(new=T)
    }  
-   if(stratName3 %in% colnames(TR)) {   
+   if((stratName3 != "") && stratName3 %in% colnames(TR)) {   
       plot(TR$numericDate, TR3/normFactor3, col=col3, xlab="", ylab="", log="y", type="l", lwd=lwd3, xlim=xRange, ylim=yRange)
       par(new=T)
    }
-   if(stratName4 %in% colnames(TR)) {   
+   if((stratName4 != "") && stratName4 %in% colnames(TR)) {   
       plot(TR$numericDate, TR4/normFactor4, col=col4, xlab="", ylab="", log="y", type="l", lwd=lwd4, xlim=xRange, ylim=yRange)
    }
    legend( "topleft", c(stratName1,stratName2,stratName3,stratName4), 
@@ -470,7 +470,7 @@ plotAllReturnsVsDrawdown <- function(type1=def$type1, col1=def$col1, pch1=def$pc
                                      lineCol=def$lineCol,
                                      xFactor=1, xLabel="drawdowns",
                                      yStatsName=def$yStatsName, yFactor=100,
-                                     xMin=1, xMax=2.4, yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost) { 
+                                     xMin=1, xMax=2.2, yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost) { 
    
    plotAllReturnsVsSomeParameter(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
                                  type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
@@ -542,7 +542,7 @@ plotAllReturnsVsFour <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, 
                                  Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
                                  Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
                                  lineCol=def$lineCol,
-                                 xMinVol=12.5, xMaxVol=15.5, xMinDD=1, xMaxDD=2.4, 
+                                 xMinVol=12.5, xMaxVol=15.5, xMinDD=1, xMaxDD=2.2, 
                                  xMinAlloc=40, xMaxAlloc=100, xMinTO=0, xMaxTO=100, 
                                  yStatsName=def$yStatsName, yFactor=100,
                                  yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost) {
@@ -589,5 +589,42 @@ plotAllReturnsVsFour <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, 
                                    yStatsName=yStatsName, yFactor=yFactor,
                                    xMin=xMinTO, xMax=xMaxTO, yMin=yMin, yMax=yMax, tradingCost=tradingCost) 
    
+   par(mfrow = c(1, 1))
+}
+
+
+plotAllReturnsVsTwo <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, type2=def$type2, col2=def$col2, pch2=def$pch2,
+                                 type3=def$type3, col3=def$col3, pch3=def$pch3, type4=def$type4, col4=def$col4, pch4=def$pch4,
+                                 type5=def$type5, col5=def$col5, pch5=def$pch5, type6=def$type6, col6=def$col6, pch6=def$pch6, 
+                                 Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
+                                 Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
+                                 Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
+                                 lineCol=def$lineCol,
+                                 xMinVol=12.5, xMaxVol=15.5, xMinDD=1, xMaxDD=2.2, 
+                                 xMinAlloc=40, xMaxAlloc=100, xMinTO=0, xMaxTO=100, 
+                                 yStatsName=def$yStatsName, yFactor=100,
+                                 yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost) {
+   
+   par(mfrow = c(2, 1))
+   
+   plotAllReturnsVsVolatility(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
+                              type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
+                              type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6,  
+                              Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
+                              Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
+                              Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
+                              lineCol=lineCol,
+                              yStatsName=yStatsName, yFactor=yFactor,
+                              xMin=xMinVol, xMax=xMaxVol, yMin=yMin, yMax=yMax, tradingCost=tradingCost) 
+   
+   plotAllReturnsVsDrawdown(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
+                            type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
+                            type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6, 
+                            Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
+                            Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
+                            Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
+                            lineCol=lineCol,
+                            yStatsName=yStatsName, yFactor=yFactor,
+                            xMin=xMinDD, xMax=xMaxDD, yMin=yMin, yMax=yMax, tradingCost=tradingCost) 
    par(mfrow = c(1, 1))
 }
