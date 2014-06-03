@@ -10,6 +10,7 @@ showToDoList <- function() {
    print("What's still left TO DO:")
    print(" - Plot future returns.")
    print(" - Split data between parameter optimization and testing.")
+   print(" - Automate parameter search.")
    print(" - Try to speed up code (especially parameter searches) through compiling and (or) parallelization.")
    print(" - Store constant allocations in csv file.")
    print("")
@@ -17,13 +18,17 @@ showToDoList <- function() {
 
 showUsefulFunctions <- function() {
    print("Here are some useful functions (all can be called without arguments):")
-   print("* Plotting:")
-   print(" - plotAllReturnsVsFour(),")
-   print(" - plotReturnAndAlloc(),")
-   print(" - plotAssetClassesReturn(),")
-   print(" - showPlotLegend().")
-   print("* Searching the parameter space:")
-   print(" - searchForOptimalBalanced() -- for instance.")
+   print("## Plotting:")
+   print("plotAllReturnsVsFour()")
+   print("    # Zoomed-out version of the above plot:")
+   print("plotAllReturnsVsFour(xMinVol=10, xMaxVol=20, xMinDD=0, xMaxDD=4.5, xMinAlloc=40, xMaxAlloc=100, xMinTO=0, xMaxTO=100, yMin=5)")
+   print("plotAllReturnsVsTwo(col=T), # 'col' switches between the two plots on a row or column")
+   print("plotReturnAndAlloc()")
+   print("plotAssetClassesReturn()")
+   plotAllReturnsVsTwo(col=F)
+   print("showPlotLegend()")
+   print("## Searching the parameter space:")
+   print("searchForOptimalBalanced() # for instance.")
    print("")
 }
 
@@ -50,8 +55,10 @@ start(extrapolateDividends=T, # whether to extrapolate missing recent dividends 
       downloadAndCheckAllFiles=F, # downloads data files even if they exist locally, to check whether they are up to date
       otherAssetClasses=F, # loads gold and UK house prices
       newcomer=F, # displays some information on the code
-      force=T) # forces recalculations (slower)
+      force=T) # forces recalculations (useful when making modifications to the algorthm, but slower)
 
+
+plotAllReturnsVsTwo(col=F)
 
 # plotAllReturnsVsFour()
 ## Zoomed-out version of the above plot:

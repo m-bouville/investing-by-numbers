@@ -104,9 +104,6 @@ start <- function(extrapolateDividends=T, # whether to extrapolate missing recen
    
    createTypicalStrategies(force=force)
    
-   plotAllReturnsVsFour()
-   # plotReturnAndAlloc()
-   
    showSummaries()
    
 #    print(proc.time() - totTime)
@@ -125,6 +122,9 @@ setDefaultValues <- function(force=F) {
    message("default futureYears: ", def$futureYears)
    def$tradingCost       <<- 2/100 # default value for the trading costs
    message("default tradingCost: ", def$tradingCost*100, "% / per year of turnover")
+   def$interQuartileAlloc<<- 90
+   message("default interQuartileAlloc: ", def$interQuartileAlloc, "%")
+   
    def$startIndex        <<- round(10.5*12+1)
    def$startYear         <<- (def$startIndex-1)/12+1871
    
@@ -239,7 +239,7 @@ loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=F) {  # th
    for(i in 2:numData)
       dat$TR[i] <<- dat$TR[i-1] * dat$price[i]/dat$price[i-1] * (1 + dat$dividend[i]/dat$price[i]/12)
    
-   dat$bonds <<- read.csv("bonds.csv", header=T)[1:numData, 1]
+   dat$bonds <<- read.csv("data/bonds.csv", header=T)[1:numData, 1]
    message("Real bond prices were imported from an Excel calculation.")
    
    message("Shiller's xls file has *nominal* values, the \'dat\' data frame has *real* values.")
