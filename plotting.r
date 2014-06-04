@@ -2,6 +2,9 @@
 setPlottingDefaultValues <- function() {
    def$yTRmin<<- 7.25
    def$yTRmax<<- 8.25
+   
+   def$pngWidth  <<- 800
+   def$pngHeight <<- 600
 
    if (def$tradingCost==0.02)
    def$yStatsName <<- "netTR2"
@@ -77,10 +80,15 @@ plotAssetClassesReturn <- function(stratName1="stocks",       col1=def$colConsta
                                    stratName3="UKhousePrice", col3="grey",               lwd3=2,
                                    stratName4="gold",         col4="gold",               lwd4=2, 
                                    startYear=1975.25, endYear=2014, 
-                                   yLabel="", net=F, minTR=.5, maxTR=15) {
+                                   yLabel="", net=F, minTR=.5, maxTR=15,
+                                   pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, pngName="figures/asset_classes_returns.png") {
+
+   requireColInDat("gold")
+   requireColInDat("UKhousePrice")
    plotReturn(stratName1=stratName1, col1=col1, lwd1=lwd1, stratName2=stratName2, col2=col2, lwd2=lwd2,
               stratName3=stratName3, col3=col3, lwd3=lwd3, stratName4=stratName4, col4=col4, lwd4=lwd4, 
-              startYear=startYear, endYear=endYear, tradingCost="", yLabel=yLabel, net=net, minTR=minTR, maxTR=maxTR) 
+              startYear=startYear, endYear=endYear, tradingCost="", yLabel=yLabel, net=net, minTR=minTR, maxTR=maxTR,
+              pngOutput=pngOutput, pngWidth=pngWidth, pngHeight=pngHeight, pngName=pngName) 
 }
 
 
@@ -89,9 +97,12 @@ plotReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTec
                        col1=def$colBalanced, col2=def$colTechnical, col3=def$colValue, col4=def$colConstantAlloc, 
                        lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=2,
                        startYear=def$startYear, endYear=2015, tradingCost=def$tradingCost, 
-                       minTR=.9, maxTR=10000, yLabel="", net=T, normalize=T) { 
+                       minTR=.9, maxTR=10000, yLabel="", net=T, normalize=T,
+                       pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, pngName="figures/return.png") {   
    
-#    print(c(stratName2, stratName3, stratName4) )
+   if(pngOutput)
+      png(file=pngName, width=pngWidth, height=pngHeight)
+
    normDate <- (startYear-1871)*12+1
    par(mar=c(2.5, 4, 1.5, 1.5))
    xRange <- c(startYear, endYear)
@@ -172,43 +183,63 @@ plotReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTec
           bty="n", lwd=c(lwd1, lwd2, lwd3, lwd4), lty = c(1,1,1,1), 
           col=c(col1, col2, col3, col4) )
    par(new=F)
+
+   if(pngOutput) {
+      dev.off()
+      print( paste0("png file (", pngWidth, " by ", pngHeight, ") written to: ", pngName) )
+   }
 }
+
 
 plotAlloc <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTechnical, 
                       stratName3=def$typicalValue, stratName4="stocks", 
                       col1=def$colBalanced, col2=def$colTechnical, col3=def$colValue, col4=def$colConstantAlloc, 
                       lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=2,
-                      startYear=def$startYear, endYear=2014) { 
+                      startYear=def$startYear, endYear=2014,
+                      pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, pngName="figures/allocation.png") { 
    
+   if(pngOutput)
+      png(file=pngName, width=pngWidth, height=pngHeight)
+
    normDate <- (startYear-1871)*12+1
    par(mar=c(2.5, 4, 1.5, 1.5))
    xRange <- c(startYear, endYear)
-   yRange <- c(0, 1)
+   yRange <- c(0, 100)
    
    if((stratName1 != "") && stratName1 %in% colnames(alloc)) {   
-      plot(alloc$numericDate, alloc[, stratName1], col=col1, xlab="", ylab="stock allocation", lwd=lwd1, type="l", xlim=xRange, ylim=yRange)
+      plot(alloc$numericDate, 100*alloc[, stratName1], col=col1, xlab="", ylab="stock allocation (%)", lwd=lwd1, type="l", xlim=xRange, ylim=yRange)
       par(new=T)
    }
    if((stratName2 != "") && stratName2 %in% colnames(alloc)) {   
-      plot(alloc$numericDate, alloc[, stratName2], col=col2, xlab="", ylab="", type="l", lwd=lwd2, xlim=xRange, ylim=yRange)
+      plot(alloc$numericDate, 100*alloc[, stratName2], col=col2, xlab="", ylab="", type="l", lwd=lwd2, xlim=xRange, ylim=yRange)
       par(new=T)
    }
    if((stratName3 != "") && stratName3 %in% colnames(alloc)) {
-      plot(alloc$numericDate, alloc[, stratName3], col=col3, xlab="", ylab="", type="l", lwd=lwd3, xlim=xRange, ylim=yRange)
+      plot(alloc$numericDate, 100*alloc[, stratName3], col=col3, xlab="", ylab="", type="l", lwd=lwd3, xlim=xRange, ylim=yRange)
       par(new=T)
    }
    if((stratName4 != "") && stratName4 %in% colnames(alloc)) {   
-      plot(alloc$numericDate, alloc[, stratName4], col=col4, xlab="", ylab="", type="l", lwd=lwd4, xlim=xRange, ylim=yRange)
+      plot(alloc$numericDate, 100*alloc[, stratName4], col=col4, xlab="", ylab="", type="l", lwd=lwd4, xlim=xRange, ylim=yRange)
    }
-   par(new=F)   
+   par(new=F)  
+   
+   if(pngOutput) {
+      dev.off()
+      print( paste0("png file (", pngWidth, " by ", pngHeight, ") written to: ", pngName) )
+   }
 }
+
 
 plotReturnAndAlloc <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTechnical, 
                                stratName3=def$typicalValue, stratName4="stocks", 
                                col1=def$colBalanced, col2=def$colTechnical, col3=def$colValue, col4=def$colConstantAlloc, 
                                lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=2,
                                startYear=def$startYear, endYear=2015, tradingCost=def$tradingCost, 
-                               minTR=.9, maxTR=10000, yLabelReturn="", net=T, normalize=T) {
+                               minTR=.9, maxTR=10000, yLabelReturn="", net=T, normalize=T,
+                               pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, pngName="figures/return_and_allocation.png") {
+   if(pngOutput)
+      png(file=pngName, width=pngWidth, height=pngHeight)
+
    par(mfrow = c(2, 1))
    plotReturn(stratName1=stratName1, col1=col1, lwd1=lwd1, stratName2=stratName2, col2=col2, lwd2=lwd2,
               stratName3=stratName3, col3=col3, lwd3=lwd3, stratName4=stratName4, col4=col4, lwd4=lwd4, 
@@ -218,6 +249,11 @@ plotReturnAndAlloc <- function(stratName1=def$typicalBalanced, stratName2=def$ty
              stratName3=stratName3, col3=col3, lwd3=lwd3, stratName4=stratName4, col4=col4, lwd4=lwd4, 
              startYear=startYear, endYear=endYear)        
    par(mfrow = c(1, 1))
+   
+   if(pngOutput) {
+      dev.off()
+      print( paste0("png file (", pngWidth, " by ", pngHeight, ") written to: ", pngName) )
+   }
 }
 
 
@@ -342,8 +378,12 @@ plotAllReturnsVsSomeParameter <- function(type1=def$type1, col1=def$col1, pch1=d
                                           lineCol=def$lineCol,
                                           xStatsName, xFactor=100, xLabel="volatility (%)",
                                           yStatsName=def$yStatsName, yFactor=100,
-                                          xMin, xMax, yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost) { 
+                                          xMin, xMax, yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost,
+                                          pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, pngName) { 
    
+   if(pngOutput)
+      png(file=pngName, width=pngWidth, height=pngHeight)
+
    ## 'search' type is generated by searchForOptimalX() functions.
    ## Since there are many data points of this type we use open symbols for them.
    ## We look only for the last one: since they are produced in batches, we expect them to be all of the same kind.  
@@ -390,7 +430,8 @@ plotAllReturnsVsSomeParameter <- function(type1=def$type1, col1=def$col1, pch1=d
       
    plot(xFactor*subset(stats[, xStatsName], stats$type==type1), 
         yFactor*subset(stats[, yStatsName], stats$type==type1), 
-        pch=pch1, col=col1, xlab="", ylab="", xlim=xRange, ylim=yRange)
+        pch=pch1, col=col1, xlim=xRange, ylim=yRange, 
+        xlab=xLabel, ylab=paste0("total return (%), net of trading cost of ", round(tradingCost*100), "%") )
    points(xFactor*subset(stats[, xStatsName], stats$type==type2), 
         yFactor*subset(stats[, yStatsName], stats$type==type2), 
         pch=pch2, col=col2, xlab="", ylab="", xlim=xRange, ylim=yRange)
@@ -409,8 +450,7 @@ plotAllReturnsVsSomeParameter <- function(type1=def$type1, col1=def$col1, pch1=d
    ## Multistrategies:
    points(xFactor*subset(stats[, xStatsName], (stats$type=="multi" & stats$subtype==Msubtype1) ), 
         yFactor*subset(stats[, yStatsName], (stats$type=="multi" & stats$subtype==Msubtype1) ), 
-        pch=Mpch1, col=Mcol1, xlim=xRange, ylim=yRange,
-        xlab=xLabel, ylab=paste0("total return (%), net of trading cost of ", round(tradingCost*100), "%") )
+        pch=Mpch1, col=Mcol1, xlab="", ylab="", xlim=xRange, ylim=yRange)
    points(xFactor*subset(stats[, xStatsName], (stats$type=="multi" & stats$subtype==Msubtype2) ), 
         yFactor*subset(stats[, yStatsName], (stats$type=="multi" & stats$subtype==Msubtype2) ), 
         pch=Mpch2, col=Mcol2, xlab="", ylab="", xlim=xRange, ylim=yRange)
@@ -425,8 +465,12 @@ plotAllReturnsVsSomeParameter <- function(type1=def$type1, col1=def$col1, pch1=d
    points(xFactor*subset(stats[, xStatsName], stats$type==def$Stype), 
         yFactor*subset(stats[, yStatsName], stats$type==def$Stype), 
         pch=Spch, col=Scol, xlab="", ylab="", xlim=xRange, ylim=yRange)
+   
+   if(pngOutput) {
+      dev.off()
+      print( paste0("png file (", pngWidth, " by ", pngHeight, ") written to: ", pngName) )
+   }
 }
-
 
 
 plotAllReturnsVsVolatility <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, type2=def$type2, col2=def$col2, pch2=def$pch2,
@@ -438,8 +482,10 @@ plotAllReturnsVsVolatility <- function(type1=def$type1, col1=def$col1, pch1=def$
                                        lineCol=def$lineCol,
                                        xFactor=100, xLabel="volatility (%)",
                                        yStatsName=def$yStatsName, yFactor=100,
-                                       xMin=13, xMax=15., yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost) { 
-   
+                                       xMin=13, xMax=15., yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost,
+                                       pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
+                                       pngName="figures/return_vs_volatility.png") {
+                                       
    plotAllReturnsVsSomeParameter(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
                                  type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
                                  type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6, 
@@ -449,7 +495,8 @@ plotAllReturnsVsVolatility <- function(type1=def$type1, col1=def$col1, pch1=def$
                                  lineCol=lineCol,
                                  xStatsName="volatility", xFactor=xFactor, xLabel=xLabel,
                                  yStatsName=yStatsName, yFactor=yFactor,
-                                 xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax, tradingCost=tradingCost) 
+                                 xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax, tradingCost=tradingCost,
+                                 pngOutput=pngOutput, pngWidth=pngWidth, pngHeight=pngHeight, pngName=pngName) 
 }
 
 plotAllReturnsVsDrawdown <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, type2=def$type2, col2=def$col2, pch2=def$pch2,
@@ -461,7 +508,9 @@ plotAllReturnsVsDrawdown <- function(type1=def$type1, col1=def$col1, pch1=def$pc
                                      lineCol=def$lineCol,
                                      xFactor=1, xLabel="drawdowns",
                                      yStatsName=def$yStatsName, yFactor=100,
-                                     xMin=1.2, xMax=2., yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost) { 
+                                     xMin=1.2, xMax=2., yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost,
+                                     pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
+                                     pngName="figures/return_vs_drawdown.png") { 
    
    plotAllReturnsVsSomeParameter(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
                                  type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
@@ -472,7 +521,8 @@ plotAllReturnsVsDrawdown <- function(type1=def$type1, col1=def$col1, pch1=def$pc
                                  lineCol=lineCol,
                                  xStatsName="DD2", xFactor=xFactor, xLabel=xLabel,
                                  yStatsName=yStatsName, yFactor=yFactor,
-                                 xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax, tradingCost=tradingCost) 
+                                 xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax, tradingCost=tradingCost,
+                                 pngOutput=pngOutput, pngWidth=pngWidth, pngHeight=pngHeight, pngName=pngName) 
 }
 
 plotAllReturnsVsAverageAlloc <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, type2=def$type2, col2=def$col2, pch2=def$pch2,
@@ -484,7 +534,9 @@ plotAllReturnsVsAverageAlloc <- function(type1=def$type1, col1=def$col1, pch1=de
                                          lineCol=def$lineCol,
                                          xFactor=100, xLabel="average stock allocation (%)",
                                          yStatsName=def$yStatsName, yFactor=100,
-                                         xMin=40, xMax=100, yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost) { 
+                                         xMin=40, xMax=100, yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost,
+                                         pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
+                                         pngName="figures/return_vs_average_alloc.png") { 
    
    plotAllReturnsVsSomeParameter(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
                                  type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
@@ -495,7 +547,8 @@ plotAllReturnsVsAverageAlloc <- function(type1=def$type1, col1=def$col1, pch1=de
                                  lineCol=lineCol,
                                  xStatsName="avgStockAlloc", xFactor=xFactor, xLabel=xLabel,
                                  yStatsName=yStatsName, yFactor=yFactor,
-                                 xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax, tradingCost=tradingCost) 
+                                 xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax, tradingCost=tradingCost,
+                                 pngOutput=pngOutput, pngWidth=pngWidth, pngHeight=pngHeight, pngName=pngName) 
 }
 
 plotAllReturnsVsInverseTurnover <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, type2=def$type2, col2=def$col2, pch2=def$pch2,
@@ -507,7 +560,9 @@ plotAllReturnsVsInverseTurnover <- function(type1=def$type1, col1=def$col1, pch1
                                             lineCol=def$lineCol,
                                             xFactor=100, xLabel="100 / turnover (years)",
                                             yStatsName=def$yStatsName, yFactor=100,
-                                            xMin=0, xMax=100, yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost) { 
+                                            xMin=0, xMax=100, yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost,
+                                            pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
+                                            pngName="figures/return_vs_inverse_turnover.png") { 
    
    
    stats$invTurnover <<- 1 / stats$turnover
@@ -521,7 +576,8 @@ plotAllReturnsVsInverseTurnover <- function(type1=def$type1, col1=def$col1, pch1
                                  lineCol=lineCol,
                                  xStatsName="invTurnover", xFactor=xFactor, xLabel=xLabel,
                                  yStatsName=yStatsName, yFactor=yFactor,
-                                 xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax, tradingCost=tradingCost) 
+                                 xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax, tradingCost=tradingCost,
+                                 pngOutput=pngOutput, pngWidth=pngWidth, pngHeight=pngHeight, pngName=pngName) 
    stats$invTurnover = NULL
 }
 
@@ -536,7 +592,11 @@ plotAllReturnsVsFour <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, 
                                  xMinVol=13, xMaxVol=15., xMinDD=1.2, xMaxDD=2., 
                                  xMinAlloc=40, xMaxAlloc=100, xMinTO=0, xMaxTO=100, 
                                  yStatsName=def$yStatsName, yFactor=100,
-                                 yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost) {
+                                 yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost,
+                                 pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, pngName="figures/return_vs_four.png") {
+   
+   if(pngOutput)
+      png(file=pngName, width=pngWidth, height=pngHeight)
    
    par(mfrow = c(2, 2))
    
@@ -581,20 +641,29 @@ plotAllReturnsVsFour <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, 
                                    xMin=xMinTO, xMax=xMaxTO, yMin=yMin, yMax=yMax, tradingCost=tradingCost) 
    
    par(mfrow = c(1, 1))
+   
+   if(pngOutput) {
+      dev.off()
+      print( paste0("png file (", pngWidth, " by ", pngHeight, ") written to: ", pngName) )
+   }
 }
 
 
 plotAllReturnsVsTwo <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, type2=def$type2, col2=def$col2, pch2=def$pch2,
-                                 type3=def$type3, col3=def$col3, pch3=def$pch3, type4=def$type4, col4=def$col4, pch4=def$pch4,
-                                 type5=def$type5, col5=def$col5, pch5=def$pch5, type6=def$type6, col6=def$col6, pch6=def$pch6, 
-                                 Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
-                                 Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
-                                 Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
-                                 lineCol=def$lineCol,
-                                 xMinVol=13, xMaxVol=15., xMinDD=1.2, xMaxDD=2., 
-                                 xMinAlloc=40, xMaxAlloc=100, xMinTO=0, xMaxTO=100, 
-                                 yStatsName=def$yStatsName, yFactor=100, col=T,
-                                 yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost) {
+                                type3=def$type3, col3=def$col3, pch3=def$pch3, type4=def$type4, col4=def$col4, pch4=def$pch4,
+                                type5=def$type5, col5=def$col5, pch5=def$pch5, type6=def$type6, col6=def$col6, pch6=def$pch6, 
+                                Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
+                                Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
+                                Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
+                                lineCol=def$lineCol,
+                                xMinVol=13, xMaxVol=15., xMinDD=1.2, xMaxDD=2., 
+                                xMinAlloc=40, xMaxAlloc=100, xMinTO=0, xMaxTO=100, 
+                                yStatsName=def$yStatsName, yFactor=100, col=T,
+                                yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost,
+                                pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, pngName="figures/return_vs_two.png") {
+   
+   if(pngOutput)
+      png(file=pngName, width=pngWidth, height=pngHeight)
    
    if (col)
       par(mfrow = c(2, 1))
@@ -620,4 +689,22 @@ plotAllReturnsVsTwo <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, t
                             yStatsName=yStatsName, yFactor=yFactor,
                             xMin=xMinDD, xMax=xMaxDD, yMin=yMin, yMax=yMax, tradingCost=tradingCost) 
    par(mfrow = c(1, 1))
+   
+   if(pngOutput) {
+      dev.off()
+      print( paste0("png file (", pngWidth, " by ", pngHeight, ") written to: ", pngName) )
+   }
+}
+
+createAllPlotsAsPng <- function(pngWidth=def$pngWidth, pngHeight=def$pngHeight) {
+   plotReturn(pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight)
+   plotAlloc(pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight)
+   plotReturnAndAlloc(pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight)
+   
+   plotAllReturnsVsVolatility(pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight)
+   plotAllReturnsVsDrawdown(pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight)
+   plotAllReturnsVsAverageAlloc(pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight)
+   plotAllReturnsVsInverseTurnover(pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight)
+   plotAllReturnsVsFour(pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight)
+   plotAllReturnsVsTwo(pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight)
 }
