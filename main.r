@@ -57,7 +57,6 @@ start(extrapolateDividends=T, # whether to extrapolate missing recent dividends 
       newcomer=F, # displays some information on the code
       force=T) # forces recalculations (useful when making modifications to the algorthm, but slower)
 
-
 plotAllReturnsVsTwo(col=F)
 
 # plotAllReturnsVsFour()
@@ -65,5 +64,13 @@ plotAllReturnsVsTwo(col=F)
 # plotAllReturnsVsFour(xMinVol=10, xMaxVol=20, xMinDD=0, xMaxDD=4.5, xMinAlloc=40, xMaxAlloc=100, xMinTO=0, xMaxTO=100, yMin=5)
 # plotReturnAndAlloc()
 # plotAssetClassesReturn()
+
+
+## Plotting to png files:
+# plotReturnAndAlloc(pngOutput=T)
+# plotAllReturnsVsFour(pngOutput=T, pngName="figures/return_vs_four_zoomed_in.png")
+# plotAllReturnsVsFour(xMinVol=10, xMaxVol=20, xMinDD=0, xMaxDD=4.5, 
+#                      xMinAlloc=40, xMaxAlloc=100, xMinTO=0, xMaxTO=100, yMin=5, 
+#                      pngOutput=T, pngName="figures/return_vs_four_zoomed_out.png")
 
 

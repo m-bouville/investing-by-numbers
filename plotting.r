@@ -5,6 +5,8 @@ setPlottingDefaultValues <- function() {
    
    def$pngWidth  <<- 800
    def$pngHeight <<- 600
+   
+   def$volMin <<- 12.5
 
    if (def$tradingCost==0.02)
    def$yStatsName <<- "netTR2"
@@ -68,8 +70,8 @@ setPlottingDefaultValues <- function() {
    # plotAllReturnsVsX(): searches
    def$Stype    <<- "search"
    def$Scol     <<- NA # we need the subtype to set the color, we do that in the plotting function
-   def$Spch     <<- "." # default symbol
-   def$SpchM    <<- "." # empty square for multistrategies
+   def$Spch     <<- 16L # default symbol
+   def$SpchM    <<- 15L # empty square for multistrategies
    
    def$lineCol   <<- def$colConstantAlloc
 }
@@ -425,7 +427,12 @@ plotAllReturnsVsSomeParameter <- function(type1=def$type1, col1=def$col1, pch1=d
    if (searchPlotType=="line") {
       Stype <- "l"
       Spch <- ""
-   } else Stype <- "p"
+   } else if (searchPlotType=="dots") {
+      Stype <- "p"
+      Spch <- "."
+   } else if (searchPlotType=="symbols")
+      Stype <- "p"
+   else stop(searchPlotType, " is not a legitimate value for argument searchPlotType, only line, dots or symbols")
       
 
    
@@ -487,7 +494,7 @@ plotAllReturnsVsVolatility <- function(type1=def$type1, col1=def$col1, pch1=def$
                                        lineCol=def$lineCol, searchPlotType="dots",
                                        xFactor=100, xLabel="volatility (%)",
                                        yStatsName=def$yStatsName, yFactor=100,
-                                       xMin=13, xMax=15., yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost,
+                                       xMin=def$minVol, xMax=def$maxVol, yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost,
                                        pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
                                        pngName="figures/return_vs_volatility.png") {
                                        
@@ -594,7 +601,7 @@ plotAllReturnsVsFour <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, 
                                  Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
                                  Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
                                  lineCol=def$lineCol, searchPlotType="dots",
-                                 xMinVol=13, xMaxVol=15., xMinDD=1.2, xMaxDD=2., 
+                                 xMinVol=def$minVol, xMaxVol=def$maxVol, xMinDD=1.2, xMaxDD=2., 
                                  xMinAlloc=40, xMaxAlloc=100, xMinTO=0, xMaxTO=100, 
                                  yStatsName=def$yStatsName, yFactor=100,
                                  yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost,
@@ -661,7 +668,7 @@ plotAllReturnsVsTwo <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, t
                                 Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
                                 Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
                                 lineCol=def$lineCol, searchPlotType="dots",
-                                xMinVol=13, xMaxVol=15., xMinDD=1.2, xMaxDD=2., 
+                                xMinVol=def$minVol, xMaxVol=def$maxVol, xMinDD=1.2, xMaxDD=2., 
                                 xMinAlloc=40, xMaxAlloc=100, xMinTO=0, xMaxTO=100, 
                                 yStatsName=def$yStatsName, yFactor=100, col=T,
                                 yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost,

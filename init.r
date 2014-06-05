@@ -107,8 +107,8 @@ start <- function(extrapolateDividends=T, # whether to extrapolate missing recen
    showSummaries()
    
 #    print(proc.time() - totTime)
-   print( paste( "This took:", 
-                 round(summary(proc.time())[[3]] - totTime[[3]] , 0), " s, with about" , 
+   print( paste0( "This took: ", 
+                 round(summary(proc.time())[[3]] - totTime[[3]] , 0), " s, with about " , 
                  round(summary(proc.time())[[1]] - totTime[[1]] , 0), " s for calculations and " ,
                  round(summary(proc.time())[[3]]-summary(proc.time())[[1]] + totTime[[1]]-totTime[[3]] , 0), 
                  " s to download files." ) )
@@ -122,14 +122,17 @@ setDefaultValues <- function(force=F) {
    message("default futureYears: ", def$futureYears)
    def$tradingCost       <<- 2/100 # default value for the trading costs
    message("default tradingCost: ", def$tradingCost*100, "% / per year of turnover")
-   def$interQuartileAlloc<<- 90
-   message("default interQuartileAlloc: ", def$interQuartileAlloc, "%")
+#    def$interQuartileAlloc<<- 90
+#    message("default interQuartileAlloc: ", def$interQuartileAlloc, "%")
    
    def$startIndex        <<- round(10.5*12+1)
    def$startYear         <<- (def$startIndex-1)/12+1871
    
    def$CPUnumber         <<- 1 # Parallelization does not work
-      
+   
+   def$signalMin <<- -0.2
+   def$signalMax <<-  1.2
+   
    setPlottingDefaultValues()
    setCAPEdefaultValues()
    setDetrendedDefaultValues()
@@ -168,8 +171,10 @@ createParametersDF <- function() {
                              inputDF = character(),
                              inputName = character(),
                              avgOver = numeric(),
-                             medianAlloc = numeric(),
-                             interQuartileAlloc = numeric(),
+                             bearish = numeric(),
+                             bullish = numeric(),
+                             # medianAlloc = numeric(),
+                             # interQuartileAlloc = numeric(),
 
                              name1 = character(), # other parameters used to create the strategy
                              value1 = numeric(), # values of these parameters
@@ -245,12 +250,12 @@ loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=F) {  # th
    message("Shiller's xls file has *nominal* values, the \'dat\' data frame has *real* values.")
 }
 
-checkXlsFileIsUpToDate <- function() {
-   if(!file.exists("data/ie_data.xls")) 
-      return("ie_data.xls is not on the local disk.")
+checkXlsFileIsUpToDate <- function(fileName="data/ie_data.xls") {
+   if(!file.exists(fileName)) 
+      stop(fileName, " is not on the local disk.")
    
    library(XLConnect) # to handle xls file
-   wk <- loadWorkbook("data/ie_data.xls") # this is the local file
+   wk <- loadWorkbook(fileName) # this is the local file
    localVersion <- readWorksheet(wk, sheet="Data", startRow=8)
    
    lastLine <- dim(localVersion)[1] 
@@ -270,7 +275,7 @@ checkXlsFileIsUpToDate <- function() {
    remoteMessage3 <- as.character(remoteVersion$Rate.GS10[lastLine])
    
    if (localMessage1 == remoteMessage1 & localMessage2 == remoteMessage2 & localMessage3 == remoteMessage3)
-      print("The local ie_data-remote.xls file is up to date.")
+      print(paste("The file", fileName, "is up to date.") )
    else {
       if (localMessage1 != remoteMessage1)
          print(paste0("On the remote xls file: ", remoteMessage1, "whereas on the local file: ", localMessage1))
@@ -288,45 +293,50 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
 
    time0 <- proc.time()
    createCAPEstrategy(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver=def$CAPEavgOver, 
-                      medianAlloc=def$CAPEmedianAlloc, interQuartileAlloc=def$CAPEinterQuartileAlloc, 
+                      bearish=def$CAPEbearish, bullish=def$CAPEbullish, 
+                      signalMin=def$signalMin, signalMax=def$signalMax,
                       futureYears=def$futureYears, tradingCost=def$tradingCost, force=force)
    print( c( "CAPE time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
 
    time0 <- proc.time()
    createDetrendedStrategy(inputDF=def$detrendedInputDF, inputName=def$detrendedInputName, avgOver=def$detrendedAvgOver, 
-                           medianAlloc=def$detrendedMedianAlloc, interQuartileAlloc=def$detrendedInterQuartileAlloc, 
+                           bearish=def$detrendedBearish, bullish=def$detrendedBullish, 
+                           signalMin=def$signalMin, signalMax=def$signalMax,
                            futureYears=def$futureYears, tradingCost=def$tradingCost, force=force)
    print( c( "detrended time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
    createBollStrategy(inputDF=def$BollInputDF, inputName=def$BollInputName, avgOver=def$BollAvgOver, 
-                      medianAlloc=def$BollMedianAlloc, interQuartileAlloc=def$BollInterQuartileAlloc, 
+                      bearish=def$BollBearish, bullish=def$BollBullish, 
+                      signalMin=def$signalMin, signalMax=def$signalMax,
                       futureYears=def$futureYears, tradingCost=def$tradingCost, force=force)   
    print( c( "Bollinger time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
    createSMAstrategy(inputDF=def$SMAinputDF, inputName=def$SMAinputName, SMA1=def$SMA1, SMA2=def$SMA2, 
-                     medianAlloc=def$SMAmedianAlloc, interQuartileAlloc=def$SMAinterQuartileAlloc, 
+                     bearish=def$SMAbearish, bullish=def$SMAbullish, 
+                     signalMin=def$signalMin, signalMax=def$signalMax,
                      futureYears=def$futureYears, tradingCost=def$tradingCost, force=force)   
    print( c( "SMA time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
    createMomentumStrategy(def$momentumInputDF, def$momentumInputName, def$momentumAvgOver, 
-                          medianAlloc=def$momentumMedianAlloc, interQuartileAlloc=def$momentumInterQuartileAlloc, 
+                          bearish=def$momentumBearish, bullish=def$momentumBullish, 
+                          signalMin=def$signalMin, signalMax=def$signalMax,
                           futureYears=def$futureYears, tradingCost=def$tradingCost, force=force) 
    print( c( "momentum time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
    createReversalStrategy(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
                           avgOver=def$reversalAvgOver, returnToMean=def$reversalReturnToMean, 
-                          medianAlloc=def$reversalMedianAlloc, interQuartileAlloc=def$reversalInterQuartileAlloc, 
+                          bearish=def$reversalBearish, bullish=def$reversalBullish, 
+                          signalMin=def$signalMin, signalMax=def$signalMax,
                           futureYears=def$futureYears, tradingCost=def$tradingCost, force=force) 
    print( c( "reversal time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
        
    time0 <- proc.time()
    createMultiStrategy(inputStrategyName1=def$typicalCAPE, inputStrategyName2=def$typicalDetrended, "", "",
                        def$valueFractionCAPE, def$valueFractionDetrended, 0, 0, 
-                       #medianAlloc=def$valueMedianAlloc, interQuartileAlloc=def$valueInterQuartileAlloc,
                        subtype="value", tradingCost=def$tradingCost, force=force)
    print( c( "value time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    

@@ -149,12 +149,43 @@ calcStrategyReturn <- function(strategyName, startIndex) {
 }
 
 
-## Calculating allocation from signal
-calcAllocFromSignal <- function(strategyName) {
 
+## Calculating signal -- same function for all strategies
+calcSignalForStrategy <- function(strategyName, # the signal will be written to signal[, strategyName]
+                                  input, # vector containing the data from which the signal will be calculated
+                                  bearish, # value of the input at which allocation = 0
+                                  bullish, # value of the input at which allocation = 1
+                                  signalMin=def$signalMin, # the values of the signal will be between...
+                                  signalMax=def$signalMax, # signalMin and signalMax
+                                  startIndex=def$startIndex # where the signal starts (NA before that)
+                                  ) {   
+      
+   dateRange <- startIndex:numData
+   if( sum(is.na(input[dateRange])) > 0) # there should be no NA after startIndex
+     stop("Input contains NA after startIndex (", startIndex, ").")
+   
+   isZero <- tan ( pi * ( -signalMin / (signalMax - signalMin) - 1/2 ) ) 
+   isOne <- tan ( pi * ( (1-signalMin) / (signalMax - signalMin) - 1/2 ) )
+   #message("FYI: alloc = 0 @ ", isZero, " and 1 @ ", isOne)
+   a <- (isOne-isZero) / (bullish-bearish)
+   b <- isOne - a * bullish
+   #message("FYI: a = ", a, " and b = ", b)
+   
+   addNumColToSignal(strategyName)
+   signal[1:(startIndex-1), strategyName] <<- NA  
+   signal[dateRange, strategyName] <<- ( atan( a * input[dateRange] + b ) / pi + .5 ) * 
+      (signalMax - signalMin) + signalMin
+}
+
+
+## Calculating allocation (between 0 and 1) from signal -- same function for all strategies
+## signal < 0 is _very_ bearish, but we do not go short
+## signal > 1 is _very_ bullish, but we do not use leverage
+calcAllocFromSignal <- function(strategyName) {
    requireColInSignal(strategyName)
    addNumColToAlloc(strategyName)
-   alloc[, strategyName] <<- atan( signal[, strategyName] ) /pi + .5 
+   for(i in 1:numData)
+      alloc[i, strategyName] <<- max( min( signal[i, strategyName], 1), 0)
 }
 
 
@@ -251,7 +282,7 @@ calcTRnetOfTradingCost <- function(strategyName, futureYears=def$futureYears, tr
 }
 
 
-# not used
+## not used
 calcTurnoverAndTRnetOfTradingCost <- function(strategyName, futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
    #       time1 <- proc.time()      
    if ( (strategyName %in% colnames(alloc)) ) {# this means we are not dealing with constant allocation (e.g. stocks)
@@ -356,17 +387,18 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
          stats$netTR4[index] <<- stats$TR[index] - tradingCost/stats$turnover[index]
       else stop("No data frame \'netTR", round(tradingCost*100), "\' exists.")     
       
-      stats$score[index] <<- 75* ( 2*stats$TR[index] - stats$volatility[index]/4 - stats$DD2[index]*2/300 
+      stats$score[index] <<- 70* ( 2*stats$TR[index] - stats$volatility[index]/4 - stats$DD2[index]*2/300 
                                    + stats[index, medianName] + stats[index, fiveName] 
                                    - 3*tradingCost*(1/stats$turnover[index]-0.25) )
-         ## For constant allocations, the deiravtive of TR with respect to volatility is about 0.23 and 
-         ## with respect to DD^2 it is about 0.65%.
-         ## So for constant allocations: 2*TR - vol/4 - DD2*2/300 is about constant.
-         ## These 2 coefficients make it possible to 'convert' vol and DD2 into TR equivalents.
+      ## For constant allocations, the deiravtive of TR with respect to volatility is about 0.23 and 
+      ## with respect to DD^2 it is about 0.65%.
+      ## So for constant allocations: 2*TR - vol/4 - DD2*2/300 is about constant.
+      ## These 2 coefficients make it possible to 'convert' vol and DD2 into TR equivalents.
    }
 }
 
-showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def$futureYears, tradingCost=def$tradingCost, 
+showSummaryForStrategy <- function(strategyName, displayName="", 
+                                   futureYears=def$futureYears, tradingCost=def$tradingCost, 
                                    minTR=0, maxVol=20, maxDD2=5, minTO=0, force=F) {
    
    if ( !(strategyName %in% stats$strategy) | force) 
@@ -388,7 +420,7 @@ showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def
    five <- 100*(stats[index, fiveName] - TOcost) 
    DD2  <- stats$DD2[index]
    score<- stats$score[index] + 1.5*tradingCost*100
-   
+      
    if (round(ret,1)%%1 == 0) retPad = "  "
       else retPad = ""
    if (round(vol,1)%%1 == 0) volPad = "  "

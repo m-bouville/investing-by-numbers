@@ -3,16 +3,18 @@
 setCAPEdefaultValues <- function() {
    def$CAPEyears     <<- 10
    def$CAPEcheat     <<- 2
+   def$CAPEbearish   <<- 20
+   def$CAPEbullish   <<- 12
    def$CAPEavgOver   <<- 30
    def$initialOffset <<- (def$CAPEyears-def$CAPEcheat)*12 + def$CAPEavgOver
    
-   def$CAPEmedianAlloc <<- 90
-   def$CAPEinterQuartileAlloc <<- 98
+#    def$CAPEmedianAlloc <<- 90
+#    def$CAPEinterQuartileAlloc <<- def$interQuartileAlloc
 
    def$typicalCAPE    <<- paste0("CAPE", def$CAPEyears, "_", def$CAPEcheat, "avg", def$CAPEavgOver, "__", 
-                                    def$CAPEmedianAlloc, "_", def$CAPEinterQuartileAlloc)
+                                    def$CAPEbearish, "_", def$CAPEbullish)
    
-   def$CAPEstrategies <<- c("CAPE10_2avg24_15_15", "CAPE10_2avg24_16_20", "CAPE10_2avg24_15_15", "CAPE10_16_24")
+   #def$CAPEstrategies <<- c("CAPE10_2avg24_15_15", "CAPE10_2avg24_16_20", "CAPE10_2avg24_15_15", "CAPE10_16_24")
 }
 
 
@@ -43,48 +45,32 @@ calcAvgCAPE <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver=def$CA
 
 
 ## Calculate CAPE signal, to be used to calculate allocation
-calcCAPEsignal <- function(CAPEname="CAPE10_2avg24", medianAlloc, interQuartileAlloc, 
-                          startIndex=def$startIndex, strategyName="") {
-
-   requireColInDat(CAPEname)
-   bearish <- quantile(dat[, CAPEname], 0.25, na.rm=T)[[1]]
-   bullish <- quantile(dat[, CAPEname], 0.75, na.rm=T)[[1]]
-
-   if (interQuartileAlloc==100) interQuartileAlloc <- 100-1e-3
+calcCAPEsignal <- function(CAPEname, bearish=def$CAPEbearish, bullish=def$CAPEbullish, 
+                           signalMin=def$signalMin, signalMax=def$signalMax, 
+                           startIndex=def$startIndex, strategyName="") {
    
-   b <- tan(pi*(medianAlloc/100-.5))
-   tan2A <- tan(pi*interQuartileAlloc/100)
-   a <- sqrt(1/tan2A^2 + 1 + b^2) - 1/tan2A
-   
-   #if(strategyName=="") strategyName <- paste0(CAPEname)
-   if(strategyName=="") strategyName <- paste0(CAPEname, "__", bearishThreshold, "_", bullishThreshold)  
-   
-   addNumColToSignal(strategyName)
-   signal[1:(startIndex-1), strategyName] <<- NA  
-   dateRange <- startIndex:numData
-   signal[dateRange, strategyName] <<- a * ( 2 * (dat[dateRange, CAPEname]-bullish) / (bearish-bullish) - 1 ) + b
-   ## Signal has its 2 quartiles at a+b and b-a.
-   
-   ## creates an allocation with median (close to) medianAlloc and 
-   ## with a difference between the 2 quartiles of interQuartileAlloc
-   
+   requireColInDat(CAPEname)   
+   if(strategyName=="") strategyName <- paste0(CAPEname, "__", bearish, "_", bullish)
+   calcSignalForStrategy(strategyName, input=dat[, CAPEname], bearish=bearish, bullish=bullish,
+                         signalMin=signalMin, signalMax=signalMax, startIndex=startIndex ) 
 }
 
 
 createCAPEstrategy <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver=def$CAPEavgOver, 
-                               medianAlloc=def$CAPEmedianAlloc, interQuartileAlloc=def$CAPEinterQuartileAlloc,
-                               strategyName="", futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
+                               bearish=def$CAPEbearish, bullish=def$CAPEbullish, 
+                               signalMin=def$signalMin, signalMax=def$signalMax,
+                               strategyName="", type="CAPE", 
+                               futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
 
    CAPEname <- paste0("CAPE", years, "_", cheat, "avg", avgOver)
    if (!(CAPEname %in% colnames(dat)))
       calcAvgCAPE(years=years, cheat=cheat, avgOver=avgOver)     
    startIndex <- (years-cheat)*12 + avgOver + 1
    
-   if(strategyName=="") strategyName <- paste0(CAPEname, "__", medianAlloc, "_", interQuartileAlloc)
-   #    if(strategyName=="") strategyName <- paste0(CAPEname, "_", bearishThreshold, "_", bullishThreshold)  
+   if(strategyName=="") strategyName <- paste0(CAPEname, "__", bearish, "_", bullish)
    
    if (!(strategyName %in% colnames(TR)) | !(strategyName %in% colnames(alloc)) | force) { # if data do not exist yet or we force recalculation:   
-      calcCAPEsignal(CAPEname, medianAlloc=medianAlloc, interQuartileAlloc=interQuartileAlloc, 
+      calcCAPEsignal(CAPEname, bearish=bearish, bullish=bullish, signalMin=signalMin, signalMax=signalMax,
                      startIndex=startIndex, strategyName=strategyName)
       calcAllocFromSignal(strategyName)
       addNumColToTR(strategyName)
@@ -99,10 +85,17 @@ createCAPEstrategy <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver
       index <- which(parameters$strategy == strategyName)
       
       parameters$strategy[index]   <<- strategyName
-      parameters$type[index]       <<- "CAPE"
+      if (type=="search") {
+         parameters$type[index]        <<- "search"
+         parameters$subtype[index]     <<- "CAPE"        
+      } else {
+         parameters$type[index]        <<- "CAPE"
+      }
       parameters$startIndex[index] <<- startIndex
-      parameters$medianAlloc[index]<<-  medianAlloc
-      parameters$interQuartileAlloc[index] <<-  interQuartileAlloc
+      parameters$bearish[index]    <<- bearish
+      parameters$bullish[index]    <<- bullish      
+#       parameters$medianAlloc[index]<<-  medianAlloc
+#       parameters$interQuartileAlloc[index] <<-  interQuartileAlloc
       parameters$avgOver[index]    <<-  avgOver   
    }
    calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, force=force)
@@ -113,7 +106,7 @@ createCAPEstrategy <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver
 
 searchForOptimalCAPE <-function(minYears=10, maxYears=10, byYears=0, minCheat=2, maxCheat=2, byCheat=0, 
                                 minAvgOver=30, maxAvgOver=30, byAvgOver=0, 
-                                minMed=40, maxMed=90, byMed=10, minIQ=10, maxIQ=90, byIQ=10, 
+                                minBear=16, maxBear=24, byBear=2, minBull=8, maxBull=16, byBull=2, 
                                 futureYears=def$futureYears, tradingCost=def$tradingCost, 
                                 minTR=def$valueMinTR, maxVol=def$valueMaxVol, maxDD2=def$valueMaxDD2, 
                                 minTO=def$valueMinTO, CPUnumber=def$CPUnumber, force=F) {
@@ -126,17 +119,21 @@ searchForOptimalCAPE <-function(minYears=10, maxYears=10, byYears=0, minCheat=2,
          calcCAPE(years=years, cheat=cheat)
          for (avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver)) {
             calcAvgCAPE(years=years, cheat=cheat, avgOver=avgOver)
-            for ( med in seq(minMed, maxMed, by=byMed) ) {      
-               for ( IQ in seq(minIQ, maxIQ, by=byIQ) ) {
-                  strategyName <- paste0("CAPE", years, "_", cheat, "avg", avgOver, "_", med, "_", IQ)
-                  
-                  createCAPEstrategy(years=years, cheat=cheat, avgOver=avgOver, strategyName=strategyName, 
-                                     medianAlloc=med, interQuartileAlloc=IQ, futureYears=futureYears, force=force)
-                  showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
-                                         minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, force=F)
+            for ( bear in seq(minBear, maxBear, by=byBear) ) {      
+               for ( bull in seq(minBull, maxBull, by=byBull) ) {
+                  if (bull < bear + 1e-3 ) {
+                     strategyName <- paste0("CAPE", years, "_", cheat, "avg", avgOver, "_", bear, "_", bull)
+                     if (bull > bear - 1e-3 ) bull = bear - 1e-3 # bear=bull creates problems
+                     
+                     createCAPEstrategy(years=years, cheat=cheat, avgOver=avgOver, strategyName=strategyName, 
+                                        bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
+                                        type="search", futureYears=futureYears, force=force)
+                     showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
+                                            minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, force=F)
+                  }
                }
                if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > 5 ) { # we replot only if it's been a while
-                  plotAllReturnsVsFour()
+                  plotAllReturnsVsTwo(col=T)
                   lastTimePlotted <- proc.time()
                }
             }
@@ -144,7 +141,9 @@ searchForOptimalCAPE <-function(minYears=10, maxYears=10, byYears=0, minCheat=2,
       }
    print("")
    showSummaryForStrategy(def$typicalCAPE)
+   plotAllReturnsVsTwo(col=T)
 }
+
 
 searchForOptimalMetaCAPE <-function(stratName1=def$CAPEstrategies[[1]], stratName2=def$CAPEstrategies[[2]], stratName3=def$CAPEstrategies[[3]], stratName4="",
                             minF1=20, maxF1=80, dF1=20, minF2=minF1, maxF2=maxF1, dF2=dF1, minF3=minF1, maxF3=maxF1, 
