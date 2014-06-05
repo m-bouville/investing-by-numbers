@@ -1,5 +1,5 @@
 #default values of parameters:
-setMultidefaultValues <- function() {
+setCombinedDefaultValues <- function() {
    def$valueMaxVol     <<- 14.5
    def$technicalMaxVol <<- 14.5
    def$valueMaxDD2     <<- 2
@@ -18,8 +18,8 @@ setMultidefaultValues <- function() {
    def$technicalFractionMomentum <<- 20
    def$technicalFractionReversal <<- 30
    def$typicalTechnical          <<- paste0("technical_", def$technicalFractionSMA, "_", def$technicalFractionBoll, "_", 
-                                          def$technicalFractionMomentum, "_", def$technicalFractionReversal)
-
+                                            def$technicalFractionMomentum, "_", def$technicalFractionReversal)
+   
    def$balancedFractionValue     <<- 50
    def$balancedFractionTechnical <<- 50
    def$typicalBalanced          <<- paste0("balanced_", def$balancedFractionValue, "_", def$balancedFractionTechnical)
@@ -28,13 +28,13 @@ setMultidefaultValues <- function() {
 
 
 ## Calculating average alloc between 2 strategies, and corresponding results
-calcMultiStrategySignal <- function(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
-                                    fraction1, fraction2, fraction3, fraction4, 
-                                    strategyName, force=F) {
+calcCombinedStrategySignal <- function(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
+                                       fraction1, fraction2, fraction3, fraction4, 
+                                       strategyName, force=F) {
    
    sumCoeff <- fraction1 + fraction2 + fraction3 + fraction4
    if (abs(sumCoeff-1)>1e-6) stop(paste("Sum of coefficients must be 1, not", sumCoeff))   
-
+   
    requireColInSignal(inputStrategyName1)
    requireColInSignal(inputStrategyName2)
    if (!(inputStrategyName3 %in% colnames(signal)) & fraction3 != 0) 
@@ -58,10 +58,10 @@ calcMultiStrategySignal <- function(inputStrategyName1, inputStrategyName2, inpu
    }
 }
 
-   
-createMultiStrategy <- function(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
-                                fraction1=25, fraction2=25, fraction3=25, fraction4="", 
-                                strategyName="", type="multi", subtype, futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
+
+combineStrategies <- function(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
+                                   fraction1=25, fraction2=25, fraction3=25, fraction4="", 
+                                   strategyName="", type="combined", subtype, futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
    
    if (!is.numeric(fraction1)) fraction1 <- 100 - fraction2 - fraction3 - fraction4
    if (!is.numeric(fraction2)) fraction2 <- 100 - fraction1 - fraction3 - fraction4
@@ -80,12 +80,12 @@ createMultiStrategy <- function(inputStrategyName1, inputStrategyName2, inputStr
       else # name with all four fractions
          strategyName <- paste0(subtype, "_", fraction1, "_", fraction2, "_", fraction3, "_", fraction4) #, "__", medianAlloc, "_", interQuartileAlloc)
    }
-  
+   
    if (!(strategyName %in% colnames(alloc)) | force) {      
-      calcMultiStrategySignal(inputStrategyName1=inputStrategyName1, inputStrategyName2=inputStrategyName2, 
-                              inputStrategyName3=inputStrategyName3, inputStrategyName4=inputStrategyName4, 
-                              fraction1=fraction1/100, fraction2=fraction2/100, fraction3=fraction3/100, fraction4=fraction4/100, 
-                              strategyName=strategyName, force=force)
+      calcCombinedStrategySignal(inputStrategyName1=inputStrategyName1, inputStrategyName2=inputStrategyName2, 
+                                 inputStrategyName3=inputStrategyName3, inputStrategyName4=inputStrategyName4, 
+                                 fraction1=fraction1/100, fraction2=fraction2/100, fraction3=fraction3/100, fraction4=fraction4/100, 
+                                 strategyName=strategyName, force=force)
       calcAllocFromSignal(strategyName)
    }
    
@@ -93,7 +93,7 @@ createMultiStrategy <- function(inputStrategyName1, inputStrategyName2, inputStr
                       parameters$startIndex[ which(parameters$strategy == inputStrategyName2) ],
                       parameters$startIndex[ which(parameters$strategy == inputStrategyName3) ],
                       parameters$startIndex[ which(parameters$strategy == inputStrategyName4) ] )
- 
+   
    if (!(strategyName %in% colnames(TR)) | force) { # if data do not exist yet or we force recalculation:   
       addNumColToTR(strategyName)
       calcStrategyReturn(strategyName, startIndex)
@@ -107,16 +107,16 @@ createMultiStrategy <- function(inputStrategyName1, inputStrategyName2, inputStr
          parameters$strategy[nrow(parameters)] <<- strategyName
       }
       index <- which(parameters$strategy == strategyName)
-#       print( row.names(parameters)[which(parameters$strategy == strategyName)] )
-#       row.names(parameters)[which(parameters$strategy == strategyName)] <<- strategyName
-#       print( row.names(parameters)[which(parameters$strategy == strategyName)] )
-            
+      #       print( row.names(parameters)[which(parameters$strategy == strategyName)] )
+      #       row.names(parameters)[which(parameters$strategy == strategyName)] <<- strategyName
+      #       print( row.names(parameters)[which(parameters$strategy == strategyName)] )
+      
       parameters$strategy[index] <<- strategyName
       parameters$type[index] <<- type
       parameters$subtype[index] <<- subtype
       parameters$startIndex[index] <<- startIndex
-#       parameters$medianAlloc[index] <<-  medianAlloc
-#       parameters$interQuartileAlloc[index] <<-  interQuartileAlloc
+      #       parameters$medianAlloc[index] <<-  medianAlloc
+      #       parameters$interQuartileAlloc[index] <<-  interQuartileAlloc
       
       parameters$inputStrategyName1[index] <<- inputStrategyName1
       parameters$fraction1[index] <<- fraction1
@@ -132,20 +132,20 @@ createMultiStrategy <- function(inputStrategyName1, inputStrategyName2, inputStr
    calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, force=force)
    stats$type[which(stats$strategy == strategyName)] <<- parameters$type[which(parameters$strategy == strategyName)]
    stats$subtype[which(stats$strategy == strategyName)] <<- parameters$subtype[which(parameters$strategy == strategyName)]
-#    calcTRnetOfTradingCost(strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)      
+   #    calcTRnetOfTradingCost(strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)      
 }
-   
 
 
-searchForOptimalMultiSerial <- function(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
-                                        minF1, maxF1, byF1, minF2, maxF2, byF2, minF3, maxF3, byF3, minF4, maxF4, 
-                                        #minMed, maxMed, byMed, minIQ, maxIQ, byIQ, 
-                                        futureYears, tradingCost, 
-                                        type="search", subtype, minTR, maxVol, maxDD2, minTO, 
-                                        col, plotType="dots", force=F) {
+
+searchForOptimalCombinedSerial <- function(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
+                                           minF1, maxF1, byF1, minF2, maxF2, byF2, minF3, maxF3, byF3, minF4, maxF4, 
+                                           #minMed, maxMed, byMed, minIQ, maxIQ, byIQ, 
+                                           futureYears, tradingCost, 
+                                           type="search", subtype, minTR, maxVol, maxDD2, minTO, 
+                                           col, plotType="dots", force=F) {
    
    lastTimePlotted <- proc.time()
-
+   
    for(f1 in seq(minF1, maxF1, by=byF1)) 
       for(f2 in seq(minF2, maxF2, by=byF2)) {
          for(f3 in seq(minF3, maxF3, by=byF3)) {
@@ -159,10 +159,10 @@ searchForOptimalMultiSerial <- function(inputStrategyName1, inputStrategyName2, 
                   strategyName = paste0(subtype, "_", f1, "_", f2, "_", f3) #, "__", med, "_", IQ)
                else strategyName = paste0(subtype, "_", f1, "_", f2) #, "__", med, "_", IQ)
                #print(strategyName)
-               createMultiStrategy(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
-                                   f1, f2, f3, f4, 
-                                   #medianAlloc=med, interQuartileAlloc=IQ, 
-                                   strategyName=strategyName, type=type, subtype=subtype, force=force)
+               createCombinedStrategy(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
+                                      f1, f2, f3, f4, 
+                                      #medianAlloc=med, interQuartileAlloc=IQ, 
+                                      strategyName=strategyName, type=type, subtype=subtype, force=force)
                
                showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
                                       minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, force=F)
@@ -178,69 +178,69 @@ searchForOptimalMultiSerial <- function(inputStrategyName1, inputStrategyName2, 
 
 
 # does not work
-searchForOptimalMultiParallel <- function(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
-                                          minF1=minF1, maxF1=maxF1, byF1=byF1, minF2=minF2, maxF2=maxF2, byF2=byF2, 
-                                          minF3=minF3, maxF3=maxF3, byF3=byF3, minF4=minF4, maxF4=maxF4,
-#                                          minMed=80, maxMed=95, byMed=5, minIQ=30, maxIQ=60, byIQ=10, 
-                                          futureYears=def$futureYears, tradingCost=def$tradingCost, type="search", subtype,
-                                          minTR=6, maxVol=14.5, maxDD2=2.2, minTO=0., plotType="dots", force=F) {
+searchForOptimalCombinedParallel <- function(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
+                                             minF1=minF1, maxF1=maxF1, byF1=byF1, minF2=minF2, maxF2=maxF2, byF2=byF2, 
+                                             minF3=minF3, maxF3=maxF3, byF3=byF3, minF4=minF4, maxF4=maxF4,
+                                             #                                          minMed=80, maxMed=95, byMed=5, minIQ=30, maxIQ=60, byIQ=10, 
+                                             futureYears=def$futureYears, tradingCost=def$tradingCost, type="search", subtype,
+                                             minTR=6, maxVol=14.5, maxDD2=2.2, minTO=0., plotType="dots", force=F) {
    
    wrapper <- function(IQ) {
       if (maxF3 > 0)
          strategyName = paste0(subtype, f1, "_", f2, "_", f3, "_", med, "_", IQ)
       else strategyName = paste0(subtype, f1, "_", f2, "_", med, "_", IQ)
       #print(strategyName)
-      createMultiStrategy(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
-                          f1, f2, f3, f4, medianAlloc=med, interQuartileAlloc=IQ, 
-                          strategyName=strategyName, type=type, subtype=subtype, force=force)     
-#          showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
-#                                 minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, force=F)
+      createCombinedStrategy(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
+                             f1, f2, f3, f4, medianAlloc=med, interQuartileAlloc=IQ, 
+                             strategyName=strategyName, type=type, subtype=subtype, force=force)     
+      #          showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
+      #                                 minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, force=F)
    }
    
    if (def$CPUnumber == 1)
-   for(f1 in seq(minF1, maxF1, by=byF1)) {
-      for(f2 in seq(minF2, maxF2, by=byF2)) 
-         for(f3 in seq(minF3, maxF3, by=byF3)) {
-            f4 <- round(100 - f1 - f2 - f3)
-            if ((f4 >= minF4) & (f4 <= maxF4)) 
-               for ( med in seq(minMed, maxMed, by=byMed) )       
-                  sfClusterApplyLB( seq(minIQ, maxIQ, by=byIQ) , wrapper )
-         }
-      plotAllReturnsVsFour(searchPlotType=plotType)
-   }
+      for(f1 in seq(minF1, maxF1, by=byF1)) {
+         for(f2 in seq(minF2, maxF2, by=byF2)) 
+            for(f3 in seq(minF3, maxF3, by=byF3)) {
+               f4 <- round(100 - f1 - f2 - f3)
+               if ((f4 >= minF4) & (f4 <= maxF4)) 
+                  for ( med in seq(minMed, maxMed, by=byMed) )       
+                     sfClusterApplyLB( seq(minIQ, maxIQ, by=byIQ) , wrapper )
+            }
+         plotAllReturnsVsFour(searchPlotType=plotType)
+      }
    #    showSummaries(futureYears=futureYears, tradingCost=tradingCost, detailed=F, force=F)
 }
 
 
 
-searchForOptimalMulti <- function(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
-                                  minF1=minF1, maxF1=maxF1, byF1=byF1, minF2=minF2, maxF2=maxF2, byF2=byF2, 
-                                  minF3=minF3, maxF3=maxF3, byF3=byF3, minF4=minF4, maxF4=maxF4,
-                                  futureYears=def$futureYears, tradingCost=def$tradingCost, type="search", subtype,
-                                  minTR=6, maxVol=14.5, maxDD2=2.2, minTO=0., 
-                                  CPUnumber=def$CPUnumber, plotType="dots", col, force=F) {
+searchForOptimalCombined <- function(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
+                                     minF1=minF1, maxF1=maxF1, byF1=byF1, minF2=minF2, maxF2=maxF2, byF2=byF2, 
+                                     minF3=minF3, maxF3=maxF3, byF3=byF3, minF4=minF4, maxF4=maxF4,
+                                     futureYears=def$futureYears, tradingCost=def$tradingCost, type="search", subtype,
+                                     minTR=6, maxVol=14.5, maxDD2=2.2, minTO=0., 
+                                     CPUnumber=def$CPUnumber, plotType="dots", col, force=F) {
    
    if (CPUnumber > 1) {
       library(snowfall)
       sfInit( parallel=TRUE, cpus=CPUnumber )
       sfExportAll( )
-            
-      searchForOptimalMultiParallel(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
-                                    minF1=minF1, maxF1=maxF1, byF1=byF1, minF2=minF2, maxF2=maxF2, byF2=byF2, 
-                                    minF3=minF3, maxF3=maxF3, byF3=byF3, minF4=minF4, maxF4=maxF4, 
-                                    #minMed=minMed, maxMed=maxMed, byMed=byMed, minIQ=minIQ, maxIQ=maxIQ, byIQ=byIQ,
-                                    futureYears=futureYears, tradingCost=tradingCost, type=type, subtype=subtype,
-                                    minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, 
-                                    plotType=plotType, force=force) 
+      
+      searchForOptimalCombinedParallel(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
+                                       minF1=minF1, maxF1=maxF1, byF1=byF1, minF2=minF2, maxF2=maxF2, byF2=byF2, 
+                                       minF3=minF3, maxF3=maxF3, byF3=byF3, minF4=minF4, maxF4=maxF4, 
+                                       #minMed=minMed, maxMed=maxMed, byMed=byMed, minIQ=minIQ, maxIQ=maxIQ, byIQ=byIQ,
+                                       futureYears=futureYears, tradingCost=tradingCost, type=type, subtype=subtype,
+                                       minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, 
+                                       plotType=plotType, force=force) 
       sfStop()   
    } else
-      searchForOptimalMultiSerial(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
-                                  minF1=minF1, maxF1=maxF1, byF1=byF1, minF2=minF2, maxF2=maxF2, byF2=byF2, 
-                                  minF3=minF3, maxF3=maxF3, byF3=byF3, minF4=minF4, maxF4=maxF4, 
-                                  #minMed=minMed, maxMed=maxMed, byMed=byMed, minIQ=minIQ, maxIQ=maxIQ, byIQ=byIQ,
-                                  futureYears=futureYears, tradingCost=tradingCost, type=type, subtype=subtype,
-                                  minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, 
-                                  col=col, plotType=plotType, force=force)   
+      searchForOptimalCombinedSerial(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
+                                     minF1=minF1, maxF1=maxF1, byF1=byF1, minF2=minF2, maxF2=maxF2, byF2=byF2, 
+                                     minF3=minF3, maxF3=maxF3, byF3=byF3, minF4=minF4, maxF4=maxF4, 
+                                     #minMed=minMed, maxMed=maxMed, byMed=byMed, minIQ=minIQ, maxIQ=maxIQ, byIQ=byIQ,
+                                     futureYears=futureYears, tradingCost=tradingCost, type=type, subtype=subtype,
+                                     minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, 
+                                     col=col, plotType=plotType, force=force)   
 }
 
 
@@ -254,16 +254,16 @@ searchForOptimalValue <- function(inputStrategyName1=def$typicalCAPE, inputStrat
                                   minTR=def$valueMinTR, maxVol=def$valueMaxVol, 
                                   maxDD2=def$valueMaxDD2, minTO=def$valueMinTO, 
                                   col=F, CPUnumber=def$CPUnumber, plotType="line", force=F) {
-
+   
    print(paste0("strategy     |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
-   searchForOptimalMulti(inputStrategyName1=inputStrategyName1, inputStrategyName2=inputStrategyName2,
-                         inputStrategyName3=inputStrategyName3, inputStrategyName4=inputStrategyName4, 
-                         minF1=minF1, maxF1=maxF1, byF1=byF1, minF2=minF2, maxF2=maxF2, byF2=byF2, 
-                         minF3=minF3, maxF3=maxF3, byF3=byF3, minF4=minF4, maxF4=maxF4, 
-                         #minMed=minMed, maxMed=maxMed, byMed=byMed, minIQ=minIQ, maxIQ=maxIQ, byIQ=byIQ, 
-                         futureYears=futureYears, tradingCost=tradingCost, type=type, subtype=subtype,
-                         minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, 
-                         col=col, CPUnumber=CPUnumber, plotType=plotType, force=force) 
+   searchForOptimalCombined(inputStrategyName1=inputStrategyName1, inputStrategyName2=inputStrategyName2,
+                            inputStrategyName3=inputStrategyName3, inputStrategyName4=inputStrategyName4, 
+                            minF1=minF1, maxF1=maxF1, byF1=byF1, minF2=minF2, maxF2=maxF2, byF2=byF2, 
+                            minF3=minF3, maxF3=maxF3, byF3=byF3, minF4=minF4, maxF4=maxF4, 
+                            #minMed=minMed, maxMed=maxMed, byMed=byMed, minIQ=minIQ, maxIQ=maxIQ, byIQ=byIQ, 
+                            futureYears=futureYears, tradingCost=tradingCost, type=type, subtype=subtype,
+                            minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, 
+                            col=col, CPUnumber=CPUnumber, plotType=plotType, force=force) 
    print("")
    showSummaryForStrategy(def$typicalValue)
 }
@@ -280,35 +280,35 @@ searchForOptimalTechnical <- function(inputStrategyName1=def$typicalSMA, inputSt
                                       CPUnumber=def$CPUnumber, plotType="dots", force=F) {
    
    print(paste0("strategy              |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
-   searchForOptimalMulti(inputStrategyName1=inputStrategyName1, inputStrategyName2=inputStrategyName2,
-                         inputStrategyName3=inputStrategyName3, inputStrategyName4=inputStrategyName4, 
-                         minF1=minF1, maxF1=maxF1, byF1=byF1, minF2=minF2, maxF2=maxF2, byF2=byF2, 
-                         minF3=minF3, maxF3=maxF3, byF3=byF3, minF4=minF4, maxF4=maxF4, 
-                         futureYears=futureYears, tradingCost=tradingCost, type=type, subtype=subtype,
-                         minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, 
-                         col=col, CPUnumber=CPUnumber, plotType=plotType, force=force) 
+   searchForOptimalCombined(inputStrategyName1=inputStrategyName1, inputStrategyName2=inputStrategyName2,
+                            inputStrategyName3=inputStrategyName3, inputStrategyName4=inputStrategyName4, 
+                            minF1=minF1, maxF1=maxF1, byF1=byF1, minF2=minF2, maxF2=maxF2, byF2=byF2, 
+                            minF3=minF3, maxF3=maxF3, byF3=byF3, minF4=minF4, maxF4=maxF4, 
+                            futureYears=futureYears, tradingCost=tradingCost, type=type, subtype=subtype,
+                            minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, 
+                            col=col, CPUnumber=CPUnumber, plotType=plotType, force=force) 
    print("")
    showSummaryForStrategy(def$typicalTechnical)
 }
 
 
 searchForOptimalBalanced <- function(inputStrategyName1=def$typicalValue, inputStrategyName2=def$typicalTechnical, 
-                            inputStrategyName3="", inputStrategyName4="", 
-                            minF1=20L, maxF1=100L, byF1=2L, minF2=20L, maxF2=100L, byF2=2L, 
-                            minF3=0L, maxF3=0L, byF3=0L, minF4=0L, maxF4=0L, 
-                            futureYears=def$futureYears, tradingCost=def$tradingCost, type="search", subtype="balanced", 
-                            minTR=def$valueMinTR+.5, maxVol=def$valueMaxVol, maxDD2=def$valueMaxDD2, 
-                            minTO=3.5, col=F, CPUnumber=def$CPUnumber, plotType="line", force=F) {
+                                     inputStrategyName3="", inputStrategyName4="", 
+                                     minF1=20L, maxF1=100L, byF1=2L, minF2=20L, maxF2=100L, byF2=2L, 
+                                     minF3=0L, maxF3=0L, byF3=0L, minF4=0L, maxF4=0L, 
+                                     futureYears=def$futureYears, tradingCost=def$tradingCost, type="search", subtype="balanced", 
+                                     minTR=def$valueMinTR+.5, maxVol=def$valueMaxVol, maxDD2=def$valueMaxDD2, 
+                                     minTO=3.5, col=F, CPUnumber=def$CPUnumber, plotType="line", force=F) {
    totTime <- proc.time()
    print(paste0("strategy       |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
    
-   searchForOptimalMulti(inputStrategyName1=inputStrategyName1, inputStrategyName2=inputStrategyName2,
-                         inputStrategyName3=inputStrategyName3, inputStrategyName4=inputStrategyName4, 
-                         minF1=minF1, maxF1=maxF1, byF1=byF1, minF2=minF2, maxF2=maxF2, byF2=byF2, 
-                         minF3=minF3, maxF3=maxF3, byF3=byF3, minF4=minF4, maxF4=maxF4, 
-                         futureYears=futureYears, tradingCost=tradingCost, type=type, subtype=subtype,
-                         minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, 
-                         col=col, CPUnumber=CPUnumber, plotType=plotType, force=force) 
+   searchForOptimalCombined(inputStrategyName1=inputStrategyName1, inputStrategyName2=inputStrategyName2,
+                            inputStrategyName3=inputStrategyName3, inputStrategyName4=inputStrategyName4, 
+                            minF1=minF1, maxF1=maxF1, byF1=byF1, minF2=minF2, maxF2=maxF2, byF2=byF2, 
+                            minF3=minF3, maxF3=maxF3, byF3=byF3, minF4=minF4, maxF4=maxF4, 
+                            futureYears=futureYears, tradingCost=tradingCost, type=type, subtype=subtype,
+                            minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, 
+                            col=col, CPUnumber=CPUnumber, plotType=plotType, force=force) 
    print("")
    showSummaryForStrategy(def$typicalBalanced)
    

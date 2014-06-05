@@ -6,8 +6,9 @@ setPlottingDefaultValues <- function() {
    def$pngWidth  <<- 800
    def$pngHeight <<- 600
    
-   def$volMin <<- 12.5
-
+   def$minVol <<- 12.5
+   def$maxVol <<- 15
+   
    if (def$tradingCost==0.02)
    def$yStatsName <<- "netTR2"
    else if (def$tradingCost==0.04)
@@ -54,7 +55,7 @@ setPlottingDefaultValues <- function() {
    def$col6  <<- def$colReversal
    def$pch6  <<- 16L
    
-   # plotAllReturnsVsX(): multistrategies
+   # plotAllReturnsVsX(): combined strategies
    def$Msubtype1 <<- "value"
    def$Mcol1     <<- def$colValue
    def$Mpch1     <<- 15L
@@ -71,7 +72,7 @@ setPlottingDefaultValues <- function() {
    def$Stype    <<- "search"
    def$Scol     <<- NA # we need the subtype to set the color, we do that in the plotting function
    def$Spch     <<- 16L # default symbol
-   def$SpchM    <<- 15L # empty square for multistrategies
+   def$SpchM    <<- 15L # empty square for combined strategies
    
    def$lineCol   <<- def$colConstantAlloc
 }
@@ -460,14 +461,14 @@ plotAllReturnsVsSomeParameter <- function(type1=def$type1, col1=def$col1, pch1=d
         yFactor*subset(stats[, yStatsName], stats$type==type6), 
         pch=pch6, col=col6, xlab="", ylab="", xlim=xRange, ylim=yRange)
    ## Multistrategies:
-   points(xFactor*subset(stats[, xStatsName], (stats$type=="multi" & stats$subtype==Msubtype1) ), 
-        yFactor*subset(stats[, yStatsName], (stats$type=="multi" & stats$subtype==Msubtype1) ), 
+   points(xFactor*subset(stats[, xStatsName], (stats$type=="combined" & stats$subtype==Msubtype1) ), 
+        yFactor*subset(stats[, yStatsName], (stats$type=="combined" & stats$subtype==Msubtype1) ), 
         pch=Mpch1, col=Mcol1, xlab="", ylab="", xlim=xRange, ylim=yRange)
-   points(xFactor*subset(stats[, xStatsName], (stats$type=="multi" & stats$subtype==Msubtype2) ), 
-        yFactor*subset(stats[, yStatsName], (stats$type=="multi" & stats$subtype==Msubtype2) ), 
+   points(xFactor*subset(stats[, xStatsName], (stats$type=="combined" & stats$subtype==Msubtype2) ), 
+        yFactor*subset(stats[, yStatsName], (stats$type=="combined" & stats$subtype==Msubtype2) ), 
         pch=Mpch2, col=Mcol2, xlab="", ylab="", xlim=xRange, ylim=yRange)
-   points(xFactor*subset(stats[, xStatsName], (stats$type=="multi" & stats$subtype==Msubtype3) ), 
-        yFactor*subset(stats[, yStatsName], (stats$type=="multi" & stats$subtype==Msubtype3) ), 
+   points(xFactor*subset(stats[, xStatsName], (stats$type=="combined" & stats$subtype==Msubtype3) ), 
+        yFactor*subset(stats[, yStatsName], (stats$type=="combined" & stats$subtype==Msubtype3) ), 
         pch=Mpch3, col=Mcol3, xlab="", ylab="", xlim=xRange, ylim=yRange)
    ## Constant allocations:
    points(xFactor*subset(stats[, xStatsName], stats$type=="constantAlloc"), 

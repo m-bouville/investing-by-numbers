@@ -148,7 +148,7 @@ setDefaultValues <- function(force=F) {
 createStatsDF <- function() {
    stats <<- data.frame(strategy = character(), 
                         type = character(), # type: constant allocation, CAPE, SMA, mixed, etc.
-                        subtype = character(), # especially for multistrategy
+                        subtype = character(), # especially for combinedstrategy
                         TR = numeric(),  # average real total return (exponential regression)
                         netTR2 = numeric(),  # average real total return net of 2% of trading costs
                         netTR4 = numeric(),  # average real total return net of 4% of trading costs
@@ -181,8 +181,8 @@ createParametersDF <- function() {
                              name2 = character(), 
                              value2 = numeric(), 
                              
-                             inputStrategyName1 = character(), # for multi strategies: name of strategy used as input
-                             fraction1 = numeric(), # for multi strategies: fraction (between 0 and 100)
+                             inputStrategyName1 = character(), # for combined strategies: name of strategy used as input
+                             fraction1 = numeric(), # for combined strategies: fraction (between 0 and 100)
                              inputStrategyName2 = character(),
                              fraction2 = numeric(), 
                              inputStrategyName3 = character(),
@@ -335,13 +335,13 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
    print( c( "reversal time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
        
    time0 <- proc.time()
-   createMultiStrategy(inputStrategyName1=def$typicalCAPE, inputStrategyName2=def$typicalDetrended, "", "",
+   combineStrategies(inputStrategyName1=def$typicalCAPE, inputStrategyName2=def$typicalDetrended, "", "",
                        def$valueFractionCAPE, def$valueFractionDetrended, 0, 0, 
                        subtype="value", tradingCost=def$tradingCost, force=force)
    print( c( "value time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
-   createMultiStrategy(def$typicalSMA, def$typicalBoll, def$typicalMomentum, def$typicalReversal, 
+   combineStrategies(def$typicalSMA, def$typicalBoll, def$typicalMomentum, def$typicalReversal, 
                        def$technicalFractionSMA, def$technicalFractionBoll, 
                        def$technicalFractionMomentum, def$technicalFractionReversal, 
                        #medianAlloc=def$technicalMedianAlloc, interQuartileAlloc=def$technicalInterQuartileAlloc,
@@ -349,7 +349,7 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
    print( c( "technical time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
-   createMultiStrategy(def$typicalValue, def$typicalTechnical, "", "",
+   combineStrategies(def$typicalValue, def$typicalTechnical, "", "",
                        def$balancedFractionValue, def$balancedFractionTechnical, 0, 0, 
                        #medianAlloc=def$balancedMedianAlloc, interQuartileAlloc=def$balancedInterQuartileAlloc,
                        subtype="balanced", tradingCost=def$tradingCost, force=force)
