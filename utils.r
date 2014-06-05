@@ -421,7 +421,7 @@ showSummaryForStrategy <- function(strategyName, displayName="",
    DD2  <- stats$DD2[index]
    score<- stats$score[index] + 1.5*tradingCost*100
       
-   if (round(ret,1)%%1 == 0) retPad = "  "
+   if (round(ret,2)%%1 == 0) retPad = "  "
       else retPad = ""
    if (round(vol,1)%%1 == 0) volPad = "  "
       else volPad = ""
@@ -439,13 +439,13 @@ showSummaryForStrategy <- function(strategyName, displayName="",
       else DD2Pad = ""
      
    if(ret>minTR & vol<maxVol & DD2<maxDD2 & TO>minTO) {
-      print(paste0(displayName, " | ", round(ret,1), retPad, "% |   ", 
+      print(paste0(displayName, " | ", round(ret,2), retPad, "% |   ", 
                    round(med,1), medPad, "%,  ", round(five,1), fivePad, "% | ",
                    round(vol,1), volPad, "% |     ",
                    round(avgAlloc), "%, ", latestAllocPad, round(latestAlloc), "% | ",
                    TOpad, round(TO, 1), " | ",
                    round(DD2,2), DD2Pad, " | ", 
-                   round(score,1) ) )
+                   round(score,2) ) )
    }
 }
 
@@ -458,16 +458,17 @@ showSummaries <- function(futureYears=def$futureYears, tradingCost=def$tradingCo
    showSummaryForStrategy("stocks", displayName="stocks   ", futureYears=futureYears, tradingCost=0, force=force)
    
    if(detailed) {
-      showSummaryForStrategy(def$typicalCAPE,     displayName="CAPE10   ", futureYears=futureYears, tradingCost=tradingCost, force=force)
-      showSummaryForStrategy(def$typicalDetrended,displayName="detrended", futureYears=futureYears, tradingCost=tradingCost, force=force)
-      showSummaryForStrategy(def$typicalBoll,     displayName="Bollinger", futureYears=futureYears, tradingCost=tradingCost, force=force)
-      showSummaryForStrategy(def$typicalSMA,      displayName="SMA 12-1 ", futureYears=futureYears, tradingCost=tradingCost, force=force)   
-      showSummaryForStrategy(def$typicalMomentum, displayName="momentum ", futureYears=futureYears, tradingCost=tradingCost, force=force)
-      showSummaryForStrategy(def$typicalReversal, displayName="reversal ", futureYears=futureYears, tradingCost=tradingCost, force=force)
+      showSummaryForStrategy(def$typicalCAPE,      displayName="CAPE10    ", futureYears=futureYears, tradingCost=tradingCost, force=force)
+      showSummaryForStrategy(def$typicalDetrended1,displayName="detrended1", futureYears=futureYears, tradingCost=tradingCost, force=force)
+      showSummaryForStrategy(def$typicalDetrended2,displayName="detrended2", futureYears=futureYears, tradingCost=tradingCost, force=force)
+      showSummaryForStrategy(def$typicalBoll,      displayName="Bollinger ", futureYears=futureYears, tradingCost=tradingCost, force=force)
+      showSummaryForStrategy(def$typicalSMA,       displayName="SMA 12-1  ", futureYears=futureYears, tradingCost=tradingCost, force=force)   
+      showSummaryForStrategy(def$typicalMomentum,  displayName="momentum  ", futureYears=futureYears, tradingCost=tradingCost, force=force)
+      showSummaryForStrategy(def$typicalReversal,  displayName="reversal  ", futureYears=futureYears, tradingCost=tradingCost, force=force)
    }
-   showSummaryForStrategy(def$typicalValue,     displayName="value    ", futureYears=futureYears, tradingCost=tradingCost, force=force)
-   showSummaryForStrategy(def$typicalTechnical, displayName="technical", futureYears=futureYears, tradingCost=tradingCost, force=force)
-   showSummaryForStrategy(def$typicalBalanced,  displayName="balanced ", futureYears=futureYears, tradingCost=tradingCost, force=force)
+   showSummaryForStrategy(def$typicalValue,        displayName="value     ", futureYears=futureYears, tradingCost=tradingCost, force=force)
+   showSummaryForStrategy(def$typicalTechnical,    displayName="technical ", futureYears=futureYears, tradingCost=tradingCost, force=force)
+   showSummaryForStrategy(def$typicalBalanced,     displayName="balanced  ", futureYears=futureYears, tradingCost=tradingCost, force=force)
    
    print("")
 }

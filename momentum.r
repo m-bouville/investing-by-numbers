@@ -25,13 +25,13 @@ calcMomentum <- function(inputDF, inputName, avgOver=def$momentumAvgOver, moment
    for(i in 1:avgOver) { dat[i, momentumName] <<- NA }
    for(i in (avgOver+1):numData) 
       #dat[i, momentumName] <<- input[i] - input[i-avgOver]
-      dat[i, momentumName] <<- input[i] / input[i-avgOver] - 1
-       #dat[i, momentumName] <<- log( input[i] / input[i-avgOver] )
-## this is the slope from a linear fit:
-       #dat[i, momentumName] <<- regression( (i-avgOver):i, input[(i-avgOver):i] )[[2]]
-## this is the slope from an exponential fit:
-       #dat[i, momentumName] <<- exp( regression( (i-avgOver):i, log(input[(i-avgOver):i]) )[[2]] ) - 1
-## there is (surprisingly) little difference between all these versions
+      #dat[i, momentumName] <<- input[i] / input[i-avgOver] - 1
+      dat[i, momentumName] <<- log( input[i] / input[i-avgOver] )
+      ## this is the slope from a linear fit:
+      #dat[i, momentumName] <<- regression( (i-avgOver):i, input[(i-avgOver):i] )[[2]]
+      ## this is the slope from an exponential fit:
+      #dat[i, momentumName] <<- exp( regression( (i-avgOver):i, log(input[(i-avgOver):i]) )[[2]] ) - 1
+      ## there is (surprisingly) little difference between all these versions
 }
 
 
@@ -110,11 +110,11 @@ createMomentumStrategy <- function(inputDF=def$momentumInputDF, inputName=def$mo
    calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, force=force)
    stats$type[which(stats$strategy == strategyName)] <<- parameters$type[which(parameters$strategy == strategyName)]
    stats$subtype[which(stats$strategy == strategyName)] <<- parameters$subtype[which(parameters$strategy == strategyName)]
-#    calcTRnetOfTradingCost(strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)      
+   stats$subtype[which(stats$strategy == strategyName)] <<- parameters$subtype[which(parameters$strategy == strategyName)]
 }
 
 searchForOptimalMomentum <-function(inputDF="dat", inputName="TR", 
-                           minAvgOver=12L, maxAvgOver=12L, byAvgOver=3L, 
+                           minAvgOver=9L, maxAvgOver=15L, byAvgOver=3L, 
                            minBear=-60, maxBear=0, byBear=5, 
                            minBull=5, maxBull=30, byBull=5, 
                            futureYears=def$futureYears, tradingCost=def$tradingCost, type="search", 
@@ -122,7 +122,7 @@ searchForOptimalMomentum <-function(inputDF="dat", inputName="TR",
                            minTO=def$technicalMinTO, col=F, plotType="symbols", force=F) {
    
    lastTimePlotted <- proc.time()
-   print(paste0("strategy             |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
+   print(paste0("strategy              |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
 
    for ( avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver) ) 
       for ( bear in seq(minBear, maxBear, by=byBear) ) {     

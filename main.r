@@ -1,4 +1,18 @@
+############################################
+##                                        ##
+##         Investing by numbers           ##
+##   a quantitative trading strategy by   ##
+##         Mathieu Bouville, PhD          ##
+##      <mathieu.bouville@gmail.com>      ##
+##                                        ##
+############################################
+
+
 ### "http://mathieu.bouville.name/finance/CAPE/"
+
+
+
+
 
 # library(compiler)
 # enableJIT(1) # compiling just-in-time (results are not convincing, but worth a second try)
@@ -11,6 +25,7 @@ showToDoList <- function() {
    print(" - Plot future returns.")
    print(" - Split data between parameter optimization and testing.")
    print(" - Automate parameter search.")
+   print(" - Switch to ggplot2 for scatter plots.")
    print(" - Try to speed up code (especially parameter searches) through compiling and (or) parallelization.")
    print(" - Store constant allocations in csv file.")
    print("")
@@ -57,7 +72,7 @@ start(extrapolateDividends=T, # whether to extrapolate missing recent dividends 
       newcomer=F, # displays some information on the code
       force=T) # forces recalculations (useful when making modifications to the algorthm, but slower)
 
-plotAllReturnsVsTwo(col=F)
+plotAllReturnsVsFour()
 
 # plotAllReturnsVsFour()
 ## Zoomed-out version of the above plot:

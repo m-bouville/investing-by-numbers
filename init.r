@@ -22,7 +22,7 @@ start <- function(extrapolateDividends=T, # whether to extrapolate missing recen
    source("SMA.r")
    source("momentum.r")
    source("reversal.r")
-   source("multiStrategies.r")
+   source("combine.r")
    
    totTime <- proc.time()
    
@@ -106,6 +106,8 @@ start <- function(extrapolateDividends=T, # whether to extrapolate missing recen
    
    showSummaries()
    
+   makeStringsFactors()
+   
 #    print(proc.time() - totTime)
    print( paste0( "This took: ", 
                  round(summary(proc.time())[[3]] - totTime[[3]] , 0), " s, with about " , 
@@ -140,7 +142,7 @@ setDefaultValues <- function(force=F) {
    setSMAdefaultValues()
    setMomentumDefaultValues()
    setReversalDefaultValues()
-   setMultidefaultValues()
+   setCombinedDefaultValues()
    
    def$typicalStrategies <<- c(def$typicalBalanced, def$typicalTechnical, def$typicalValue, "stocks")
 }
@@ -286,6 +288,22 @@ checkXlsFileIsUpToDate <- function(fileName="data/ie_data.xls") {
    }
 }
 
+## for some columns in 'parameters' and 'stats', there are only a handful of possible values
+makeStringsFactors <- function() {
+   parameters$type      <<- as.factor(parameters$type) 
+   parameters$subtype   <<- as.factor(parameters$subtype)
+   parameters$inputDF   <<- as.factor(parameters$inputDF)
+   levels(parameters$inputDF) <<- c( "dat", "signal", "alloc", "TR", "next30yrs" ) 
+   
+   stats$type           <<- as.factor(stats$type) 
+   stats$subtype        <<- as.factor(stats$subtype)
+
+   ## To handle searches:
+   levels(parameters$subtype) <<- c(levels(parameters$type), levels(parameters$subtype))
+   levels(parameters$type) <<- c(levels(parameters$type), "search")   
+   levels(stats$type)      <<- c(levels(stats$type), levels(parameters$type))
+   levels(stats$subtype)   <<- c(levels(stats$subtype), levels(parameters$subtype))
+}
 
 # Generating typical strategies
 createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
@@ -299,11 +317,20 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
    print( c( "CAPE time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
 
    time0 <- proc.time()
-   createDetrendedStrategy(inputDF=def$detrendedInputDF, inputName=def$detrendedInputName, avgOver=def$detrendedAvgOver, 
-                           bearish=def$detrendedBearish, bullish=def$detrendedBullish, 
+   createDetrendedStrategy(inputDF=def$detrendedInputDF, inputName=def$detrendedInputName, 
+                           avgOver=def$detrendedAvgOver1, 
+                           bearish=def$detrendedBearish1, bullish=def$detrendedBullish1, 
                            signalMin=def$signalMin, signalMax=def$signalMax,
                            futureYears=def$futureYears, tradingCost=def$tradingCost, force=force)
-   print( c( "detrended time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
+   print( c( "detrended1 time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
+
+   time0 <- proc.time()
+   createDetrendedStrategy(inputDF=def$detrendedInputDF, inputName=def$detrendedInputName, 
+                           avgOver=def$detrendedAvgOver2, 
+                           bearish=def$detrendedBearish2, bullish=def$detrendedBullish2, 
+                           signalMin=def$signalMin, signalMax=def$signalMax,
+                           futureYears=def$futureYears, tradingCost=def$tradingCost, force=force)
+   print( c( "detrended2 time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
    createBollStrategy(inputDF=def$BollInputDF, inputName=def$BollInputName, avgOver=def$BollAvgOver, 
@@ -335,24 +362,25 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
    print( c( "reversal time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
        
    time0 <- proc.time()
-   combineStrategies(inputStrategyName1=def$typicalCAPE, inputStrategyName2=def$typicalDetrended, "", "",
-                       def$valueFractionCAPE, def$valueFractionDetrended, 0, 0, 
-                       subtype="value", tradingCost=def$tradingCost, force=force)
+   combineStrategies(inputStrategyName1=def$typicalCAPE, inputStrategyName2=def$typicalDetrended1, 
+                     inputStrategyName3=def$typicalDetrended2, "",
+                     def$valueFractionCAPE, def$valueFractionDetrended1, def$valueFractionDetrended2, 0, 
+                     type="combined", subtype="value", tradingCost=def$tradingCost, force=force)
    print( c( "value time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
    combineStrategies(def$typicalSMA, def$typicalBoll, def$typicalMomentum, def$typicalReversal, 
-                       def$technicalFractionSMA, def$technicalFractionBoll, 
-                       def$technicalFractionMomentum, def$technicalFractionReversal, 
-                       #medianAlloc=def$technicalMedianAlloc, interQuartileAlloc=def$technicalInterQuartileAlloc,
-                       subtype="technical", tradingCost=def$tradingCost, force=force)
+                     def$technicalFractionSMA, def$technicalFractionBoll, 
+                     def$technicalFractionMomentum, def$technicalFractionReversal, 
+                     type="combined", subtype="technical", 
+                     tradingCost=def$tradingCost, force=force)
    print( c( "technical time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
    combineStrategies(def$typicalValue, def$typicalTechnical, "", "",
-                       def$balancedFractionValue, def$balancedFractionTechnical, 0, 0, 
-                       #medianAlloc=def$balancedMedianAlloc, interQuartileAlloc=def$balancedInterQuartileAlloc,
-                       subtype="balanced", tradingCost=def$tradingCost, force=force)
+                     def$balancedFractionValue, def$balancedFractionTechnical, 0, 0, 
+                     type="combined", subtype="balanced", 
+                     tradingCost=def$tradingCost, force=force)
    print( c( "balanced time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )   
    
 }

@@ -1,7 +1,7 @@
 #default values of plotting parameters
 setPlottingDefaultValues <- function() {
    def$yTRmin<<- 7.25
-   def$yTRmax<<- 8.25
+   def$yTRmax<<- 8.5
    
    def$pngWidth  <<- 800
    def$pngHeight <<- 600
