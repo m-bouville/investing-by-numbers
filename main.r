@@ -23,7 +23,7 @@ source("init.r")       # loads data and initializes everything
 showToDoList <- function() {
    print("What's still left TO DO:")
    print(" - Plot future returns.")
-   print(" - Split data between parameter optimization and testing.")
+#   print(" - Split data between parameter optimization and testing.")
    print(" - Automate parameter search.")
    print(" - Switch to ggplot2 for scatter plots.")
    print(" - Try to speed up code (especially parameter searches) through compiling and (or) parallelization.")
@@ -57,20 +57,23 @@ showForNewcomer <- function() {
    print("The black square is a linear combination of the linear combinations (the most \'balanced\' strategy.")
    print("The green line corresponds to constant stock-bond allocations.")
    print("More specifically:")
+   
    showPlotLegend()
+   
+   showToDoList()
 }
-
 
 
 
 # showToDoList()
 
-start(extrapolateDividends=T, # whether to extrapolate missing recent dividends (or remove incomplete months)
-      smoothConstantAlloc=F, # calculates more constant-allocation portfolios, to get smoother curves in plots
-      downloadAndCheckAllFiles=F, # downloads data files even if they exist locally, to check whether they are up to date
-      otherAssetClasses=F, # loads gold and UK house prices
-      newcomer=F, # displays some information on the code
-      force=T) # forces recalculations (useful when making modifications to the algorthm, but slower)
+start(dataSplit="testing",       # "none" for all data, "search" and "testing" for half the data
+      extrapolateDividends=T,    # whether to extrapolate missing recent dividends (or remove incomplete months)
+      smoothConstantAlloc=T,     # calculates more constant-allocation portfolios, to get smoother curves in plots
+      downloadAndCheckAllFiles=F,# downloads data files even if they exist locally, to check whether they are up to date
+      otherAssetClasses=F,       # loads gold and UK house prices
+      newcomer=T,                # displays some information on the code
+      force=T)                   # forces recalculations (useful when making modifications to the algorthm, but slower)
 
 plotAllReturnsVsFour()
 

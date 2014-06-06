@@ -1,13 +1,18 @@
 #default values of plotting parameters
 setPlottingDefaultValues <- function() {
-   def$yTRmin<<- 7.25
-   def$yTRmax<<- 8.5
+   def$yTRmin<<- 7.
+   def$yTRmax<<- 9.5
    
    def$pngWidth  <<- 800
    def$pngHeight <<- 600
    
-   def$minVol <<- 12.5
-   def$maxVol <<- 15
+   def$minVol <<- 13
+   def$maxVol <<- 19
+   def$minDD2 <<- 1.2
+   def$maxDD2 <<- 2.
+   
+   def$plotEndYear <<- 2015
+   def$maxTR   <<- 10000
    
    if (def$tradingCost==0.02)
    def$yStatsName <<- "netTR2"
@@ -99,15 +104,15 @@ plotReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTec
                        stratName3=def$typicalValue, stratName4="stocks", 
                        col1=def$colBalanced, col2=def$colTechnical, col3=def$colValue, col4=def$colConstantAlloc, 
                        lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=2,
-                       startYear=def$startYear, endYear=2015, tradingCost=def$tradingCost, 
-                       minTR=.9, maxTR=10000, yLabel="", net=T, normalize=T,
+                       startYear=def$plotStartYear, endYear=def$plotEndYear, tradingCost=def$tradingCost, 
+                       minTR=.9, maxTR=def$maxTR, yLabel="", net=T, normalize=T,
                        pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, pngName="figures/return.png") {   
    
    if(pngOutput)
       png(file=pngName, width=pngWidth, height=pngHeight)
 
-   normDate <- (startYear-1871)*12+1
-   par(mar=c(2.5, 4, 1.5, 1.5))
+   normDate <- (startYear-def$dataStartYear)*12+1
+   par(mar=c(2.7, 4.2, 1.5, 1.5))
    xRange <- c(startYear, endYear)
    yRange <- c(minTR, maxTR)
    
@@ -198,14 +203,14 @@ plotAlloc <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTech
                       stratName3=def$typicalValue, stratName4="stocks", 
                       col1=def$colBalanced, col2=def$colTechnical, col3=def$colValue, col4=def$colConstantAlloc, 
                       lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=2,
-                      startYear=def$startYear, endYear=2014,
+                      startYear=def$plotStartYear, endYear=def$plotEndYear,
                       pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, pngName="figures/allocation.png") { 
    
    if(pngOutput)
       png(file=pngName, width=pngWidth, height=pngHeight)
 
-   normDate <- (startYear-1871)*12+1
-   par(mar=c(2.5, 4, 1.5, 1.5))
+   normDate <- (startYear-def$dataStartYear)*12+1
+   par(mar=c(2.7, 4.2, 1.5, 1.5))
    xRange <- c(startYear, endYear)
    yRange <- c(0, 100)
    
@@ -237,8 +242,8 @@ plotReturnAndAlloc <- function(stratName1=def$typicalBalanced, stratName2=def$ty
                                stratName3=def$typicalValue, stratName4="stocks", 
                                col1=def$colBalanced, col2=def$colTechnical, col3=def$colValue, col4=def$colConstantAlloc, 
                                lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=2,
-                               startYear=def$startYear, endYear=2015, tradingCost=def$tradingCost, 
-                               minTR=.9, maxTR=10000, yLabelReturn="", net=T, normalize=T,
+                               startYear=def$plotStartYear, endYear=def$plotEndYear, tradingCost=def$tradingCost, 
+                               minTR=.9, maxTR=def$maxTR, yLabelReturn="", net=T, normalize=T,
                                pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, pngName="figures/return_and_allocation.png") {
    if(pngOutput)
       png(file=pngName, width=pngWidth, height=pngHeight)
@@ -265,12 +270,12 @@ plotFutureReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typi
                        col1=def$colBalanced, col2=def$colTechnical, col3=def$colValue, col4=def$colConstantAlloc, 
                        lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=2,
                        futureYears=def$futureYears,
-                       startYear=def$startYear, endYear=2015, tradingCost=def$tradingCost, 
-                       minTR=.9, maxTR=10000, yLabel="", net=T, normalize=T) { 
+                       startYear=def$plotStartYear, endYear=def$plotEndYear, tradingCost=def$tradingCost, 
+                       minTR=.9, maxTR=def$maxTR, yLabel="", net=T, normalize=T) { 
    
    #    print(c(stratName2, stratName3, stratName4) )
-   normDate <- (startYear-1871)*12+1
-   par(mar=c(2.5, 4, 1.5, 1.5))
+   normDate <- (startYear-def$dataStartYear)*12+1
+   par(mar=c(2.7, 4.2, 1.5, 1.5))
    xRange <- c(startYear, endYear)
    yRange <- c(minTR, maxTR)
    
@@ -435,11 +440,10 @@ plotAllReturnsVsSomeParameter <- function(type1=def$type1, col1=def$col1, pch1=d
       Stype <- "p"
    else stop(searchPlotType, " is not a legitimate value for argument searchPlotType, only line, dots or symbols")
       
-
    
    xRange <- c(xMin, xMax)
    yRange <- c(yMin - 100*tradingCost/2, yMax - 100*tradingCost/4)
-   par( mar=c(4, 4, 1.5, 1.5) )
+   par( mar=c(4.2, 4.2, 1.5, 1.5) )
       
    plot(xFactor*subset(stats[, xStatsName], stats$type==type1), 
         yFactor*subset(stats[, yStatsName], stats$type==type1), 
@@ -521,7 +525,7 @@ plotAllReturnsVsDrawdown <- function(type1=def$type1, col1=def$col1, pch1=def$pc
                                      lineCol=def$lineCol, searchPlotType="dots",
                                      xFactor=1, xLabel="drawdowns",
                                      yStatsName=def$yStatsName, yFactor=100,
-                                     xMin=1.2, xMax=2., yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost,
+                                     xMin=def$minDD2, xMax=def$maxDD2, yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost,
                                      pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
                                      pngName="figures/return_vs_drawdown.png") { 
    
@@ -602,7 +606,7 @@ plotAllReturnsVsFour <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, 
                                  Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
                                  Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
                                  lineCol=def$lineCol, searchPlotType="dots",
-                                 xMinVol=def$minVol, xMaxVol=def$maxVol, xMinDD=1.2, xMaxDD=2., 
+                                 xMinVol=def$minVol, xMaxVol=def$maxVol, xMinDD2=def$minDD2, xMaxDD2=def$maxDD2, 
                                  xMinAlloc=40, xMaxAlloc=100, xMinTO=0, xMaxTO=100, 
                                  yStatsName=def$yStatsName, yFactor=100,
                                  yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost,
@@ -631,7 +635,7 @@ plotAllReturnsVsFour <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, 
                             Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
                             lineCol=lineCol, searchPlotType=searchPlotType,
                             yStatsName=yStatsName, yFactor=yFactor,
-                            xMin=xMinDD, xMax=xMaxDD, yMin=yMin, yMax=yMax, tradingCost=tradingCost) 
+                            xMin=xMinDD2, xMax=xMaxDD2, yMin=yMin, yMax=yMax, tradingCost=tradingCost) 
    
    plotAllReturnsVsAverageAlloc(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
                                 type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
@@ -669,7 +673,7 @@ plotAllReturnsVsTwo <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, t
                                 Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
                                 Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
                                 lineCol=def$lineCol, searchPlotType="dots",
-                                xMinVol=def$minVol, xMaxVol=def$maxVol, xMinDD=1.2, xMaxDD=2., 
+                                xMinVol=def$minVol, xMaxVol=def$maxVol, xMinDD2=def$minDD2, xMaxDD2=def$maxDD2, 
                                 xMinAlloc=40, xMaxAlloc=100, xMinTO=0, xMaxTO=100, 
                                 yStatsName=def$yStatsName, yFactor=100, col=T,
                                 yMin=def$yTRmin, yMax=def$yTRmax, tradingCost=def$tradingCost,
@@ -700,7 +704,7 @@ plotAllReturnsVsTwo <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, t
                             Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
                             lineCol=lineCol, searchPlotType=searchPlotType,
                             yStatsName=yStatsName, yFactor=yFactor,
-                            xMin=xMinDD, xMax=xMaxDD, yMin=yMin, yMax=yMax, tradingCost=tradingCost) 
+                            xMin=xMinDD2, xMax=xMaxDD2, yMin=yMin, yMax=yMax, tradingCost=tradingCost) 
    par(mfrow = c(1, 1))
    
    if(pngOutput) {

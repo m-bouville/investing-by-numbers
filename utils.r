@@ -236,8 +236,12 @@ calcSMAofStrategy <- function(inputStrategyName, avgOver=3L, futureYears=def$fut
 }
 
 ## Modern portfolio theory (Markowitz)
-# MPT <- function(x, y) { 
-#    a <- var(x)+2*cov(x,y) / (var(x)+var(y)-2*cov(x,y)
+# MPT <- function(input1, input2) { 
+#    var1 <- var(input1)
+#    var2 <- var(input2)
+#    covar <- cov(input1,input2)
+#    a <- (var2-covar) / (var1+var2-2*covar)
+#    print(c(var1, var2, covar))
 #    return( a )
 # }
 
@@ -320,7 +324,8 @@ calcTurnoverAndTRnetOfTradingCost <- function(strategyName, futureYears=def$futu
    #       print( c( "Time for turnover:", round(summary(proc.time())[[3]] - time1[[3]] , 2) ) )   
 }
 
-calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
+calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears, tradingCost=def$tradingCost, 
+                                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
    
    dateRange <- def$startIndex:numData
    if ( !(strategyName %in% stats$strategy) ) {
@@ -331,12 +336,13 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
    if(length(index) > 1) 
       stop("There are ", length(index), " entries for ", strategyName, " in stats$strategy.")
    
+   medianName <- paste0("median", futureYears)
+   fiveName <- paste0("five", futureYears)
+
    if ( is.na(stats$score[index]) | force) {
       # if data do not exist (we use 'score' to test this as it requires a lot of other data) yet or we force recalculation:   
       
       median_five <- calcStrategyFutureReturn(strategyName, futureYears, force=force)
-      medianName <- paste0("median", futureYears)
-      fiveName <- paste0("five", futureYears)
       stats[index, medianName]<<- median_five[[1]]
       stats[index, fiveName]  <<- median_five[[2]]
       
@@ -348,7 +354,8 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
       if ( length(indexPara) > 0 ) { # otherwise we are probably dealing with a constant allocation
          startIndex <- parameters$startIndex[indexPara]
          def$startIndex <<- max(def$startIndex, startIndex) # update def$startIndex if need be
-         def$startYear  <<- max(def$startYear, (startIndex-1)/12+1871 )
+         def$startYear  <<- max(def$startYear, (startIndex-1)/12+def$dataStartYear )
+         def$plotStartYear <<- max(def$plotStartYear, def$startYear)
       }
       dateRange <- def$startIndex:numData
       
@@ -386,23 +393,31 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
       else if(tradingCost == 0.04) 
          stats$netTR4[index] <<- stats$TR[index] - tradingCost/stats$turnover[index]
       else stop("No data frame \'netTR", round(tradingCost*100), "\' exists.")     
-      
-      stats$score[index] <<- 70* ( 2*stats$TR[index] - stats$volatility[index]/4 - stats$DD2[index]*2/300 
-                                   + stats[index, medianName] + stats[index, fiveName] 
-                                   - 3*tradingCost*(1/stats$turnover[index]-0.25) )
-      ## For constant allocations, the deiravtive of TR with respect to volatility is about 0.23 and 
-      ## with respect to DD^2 it is about 0.65%.
-      ## So for constant allocations: 2*TR - vol/4 - DD2*2/300 is about constant.
-      ## These 2 coefficients make it possible to 'convert' vol and DD2 into TR equivalents.
    }
+   stats$score[index] <<- 70 * (   coeffTR  * (stats$TR[index] - 0.07)
+                                 - coeffVol * (stats$volatility[index] - 0.14)
+                                 - coeffDD2 * (stats$DD2[index] - 1.5) / 100
+                                 + stats[index, medianName] + stats[index, fiveName] 
+                                 - (coeffTR+2)*tradingCost * (1/stats$turnover[index]-1/4) ) + 2
+   ## For constant allocations, the derivative of TR with respect to volatility is about 0.23 and 
+   ## with respect to DD^2 it is about 0.65%.
+   ## So for constant allocations: 2*TR - vol/4 - DD2*2/300 is about constant.
+   ## These 2 coefficients make it possible to 'convert' vol and DD2 into TR equivalents.
+   ## I subtract off constants to reduce the variation of the score when coefficients change
 }
 
 showSummaryForStrategy <- function(strategyName, displayName="", 
                                    futureYears=def$futureYears, tradingCost=def$tradingCost, 
-                                   minTR=0, maxVol=20, maxDD2=5, minTO=0, force=F) {
+                                   minTR=0, maxVol=Inf, maxDD2=Inf, minTO=0, minScore=-Inf, 
+                                   coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
    
-   if ( !(strategyName %in% stats$strategy) | force) 
-      calcStatisticsForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force) 
+   if ( !(strategyName %in% stats$strategy) ) 
+      calcStatisticsForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
+                                coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=T) 
+   else  # if force==F then we only recalculate the score (quick)
+      calcStatisticsForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
+                                coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
+
    index <- which(stats$strategy == strategyName)
    medianName <- paste0("median", futureYears)
    fiveName <- paste0("five", futureYears)
@@ -438,7 +453,7 @@ showSummaryForStrategy <- function(strategyName, displayName="",
    if ((10*round(DD2,2))%%1 == 0) DD2Pad = " "
       else DD2Pad = ""
      
-   if(ret>minTR & vol<maxVol & DD2<maxDD2 & TO>minTO) {
+   if(ret>minTR & vol<maxVol & DD2<maxDD2 & TO>minTO & score>minScore) {
       print(paste0(displayName, " | ", round(ret,2), retPad, "% |   ", 
                    round(med,1), medPad, "%,  ", round(five,1), fivePad, "% | ",
                    round(vol,1), volPad, "% |     ",
@@ -449,26 +464,40 @@ showSummaryForStrategy <- function(strategyName, displayName="",
    }
 }
 
-showSummaries <- function(futureYears=def$futureYears, tradingCost=def$tradingCost, detailed=T, force=F) {
+showSummaries <- function(futureYears=def$futureYears, tradingCost=def$tradingCost, 
+                          coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, detailed=T, force=F) {
    # force pertains only to showSummaryForStrategy, not to calc...StrategyReturn (these are all set to F)
 
    print(paste0("* Statistics of the strategies (trading costs = ", round(100*tradingCost,2), "% per year of turnover):"))
-   print(paste0("strategy  |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score") )
+   print(paste0("strategy   |  TR   |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score") )
 
-   showSummaryForStrategy("stocks", displayName="stocks   ", futureYears=futureYears, tradingCost=0, force=force)
+   showSummaryForStrategy("stocks", displayName="stocks    ", futureYears=futureYears, tradingCost=0, 
+                          coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    
    if(detailed) {
-      showSummaryForStrategy(def$typicalCAPE,      displayName="CAPE10    ", futureYears=futureYears, tradingCost=tradingCost, force=force)
-      showSummaryForStrategy(def$typicalDetrended1,displayName="detrended1", futureYears=futureYears, tradingCost=tradingCost, force=force)
-      showSummaryForStrategy(def$typicalDetrended2,displayName="detrended2", futureYears=futureYears, tradingCost=tradingCost, force=force)
-      showSummaryForStrategy(def$typicalBoll,      displayName="Bollinger ", futureYears=futureYears, tradingCost=tradingCost, force=force)
-      showSummaryForStrategy(def$typicalSMA,       displayName="SMA 12-1  ", futureYears=futureYears, tradingCost=tradingCost, force=force)   
-      showSummaryForStrategy(def$typicalMomentum,  displayName="momentum  ", futureYears=futureYears, tradingCost=tradingCost, force=force)
-      showSummaryForStrategy(def$typicalReversal,  displayName="reversal  ", futureYears=futureYears, tradingCost=tradingCost, force=force)
+      showSummaryForStrategy(def$typicalCAPE1,     displayName="CAPE10 1  ", futureYears=futureYears, tradingCost=tradingCost, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+      showSummaryForStrategy(def$typicalCAPE2,     displayName="CAPE10 2  ", futureYears=futureYears, tradingCost=tradingCost, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+      showSummaryForStrategy(def$typicalDetrended1,displayName="detrended1", futureYears=futureYears, tradingCost=tradingCost, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+      showSummaryForStrategy(def$typicalDetrended2,displayName="detrended2", futureYears=futureYears, tradingCost=tradingCost, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+      showSummaryForStrategy(def$typicalBoll,      displayName="Bollinger ", futureYears=futureYears, tradingCost=tradingCost, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+      showSummaryForStrategy(def$typicalSMA,       displayName="SMA       ", futureYears=futureYears, tradingCost=tradingCost, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)   
+      showSummaryForStrategy(def$typicalMomentum,  displayName="momentum  ", futureYears=futureYears, tradingCost=tradingCost, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+      showSummaryForStrategy(def$typicalReversal,  displayName="reversal  ", futureYears=futureYears, tradingCost=tradingCost, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    }
-   showSummaryForStrategy(def$typicalValue,        displayName="value     ", futureYears=futureYears, tradingCost=tradingCost, force=force)
-   showSummaryForStrategy(def$typicalTechnical,    displayName="technical ", futureYears=futureYears, tradingCost=tradingCost, force=force)
-   showSummaryForStrategy(def$typicalBalanced,     displayName="balanced  ", futureYears=futureYears, tradingCost=tradingCost, force=force)
+   showSummaryForStrategy(def$typicalValue,        displayName="value     ", futureYears=futureYears, tradingCost=tradingCost, 
+                          coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+   showSummaryForStrategy(def$typicalTechnical,    displayName="technical ", futureYears=futureYears, tradingCost=tradingCost, 
+                          coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+   showSummaryForStrategy(def$typicalBalanced,     displayName="balanced  ", futureYears=futureYears, tradingCost=tradingCost, 
+                          coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    
    print("")
 }

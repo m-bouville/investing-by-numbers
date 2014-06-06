@@ -1,19 +1,24 @@
 
 #default values of parameters
 setCAPEdefaultValues <- function() {
-   def$CAPEyears     <<- 10
-   def$CAPEcheat     <<- 2
-   def$CAPEbearish   <<- 20
-   def$CAPEbullish   <<- 12
-   def$CAPEavgOver   <<- 30
-   def$initialOffset <<- (def$CAPEyears-def$CAPEcheat)*12 + def$CAPEavgOver
+   def$CAPEyears    <<- 10
+   def$CAPEcheat    <<- 2
    
-#    def$CAPEmedianAlloc <<- 90
-#    def$CAPEinterQuartileAlloc <<- def$interQuartileAlloc
-
-   def$typicalCAPE    <<- paste0("CAPE", def$CAPEyears, "_", def$CAPEcheat, "avg", def$CAPEavgOver, "__", 
-                                    def$CAPEbearish, "_", def$CAPEbullish)
+   ## CAPE strategy in stocks 90% of the time, just dodging the worst bubbles
+   def$CAPEavgOver1 <<- 33
+   def$CAPEbearish1 <<- 21
+   def$CAPEbullish1 <<- 21
+   def$typicalCAPE1 <<- paste0("CAPE", def$CAPEyears, "_", def$CAPEcheat, "avg", def$CAPEavgOver1, "__", 
+                                def$CAPEbearish1, "_", def$CAPEbullish1)
    
+   ## CAPE strategy with lower stock allocation (and vol and DD)
+   def$CAPEavgOver2 <<- 27
+   def$CAPEbearish2 <<- 25
+   def$CAPEbullish2 <<- 10
+   def$typicalCAPE2 <<- paste0("CAPE", def$CAPEyears, "_", def$CAPEcheat, "avg", def$CAPEavgOver2, "__", 
+                                def$CAPEbearish2, "_", def$CAPEbullish2)
+   
+   def$initialOffset <<- (def$CAPEyears-def$CAPEcheat)*12 + max(def$CAPEavgOver1, def$CAPEavgOver2)
    #def$CAPEstrategies <<- c("CAPE10_2avg24_15_15", "CAPE10_2avg24_16_20", "CAPE10_2avg24_15_15", "CAPE10_16_24")
 }
 
@@ -60,7 +65,8 @@ createCAPEstrategy <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver
                                bearish=def$CAPEbearish, bullish=def$CAPEbullish, 
                                signalMin=def$signalMin, signalMax=def$signalMax,
                                strategyName="", type="CAPE", 
-                               futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
+                               futureYears=def$futureYears, tradingCost=def$tradingCost, 
+                               coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
 
    CAPEname <- paste0("CAPE", years, "_", cheat, "avg", avgOver)
    if (!(CAPEname %in% colnames(dat)))
@@ -68,8 +74,10 @@ createCAPEstrategy <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver
    startIndex <- (years-cheat)*12 + avgOver + 1
    
    if(strategyName=="") strategyName <- paste0(CAPEname, "__", bearish, "_", bullish)
+   if (bearish==bullish) bullish = bearish - 1e-3 # bear==bull creates problems
    
-   if (!(strategyName %in% colnames(TR)) | !(strategyName %in% colnames(alloc)) | force) { # if data do not exist yet or we force recalculation:   
+   ## if data do not exist yet or we force recalculation:
+   if (!(strategyName %in% colnames(TR)) | !(strategyName %in% colnames(alloc)) | force) {   
       calcCAPEsignal(CAPEname, bearish=bearish, bullish=bullish, signalMin=signalMin, signalMax=signalMax,
                      startIndex=startIndex, strategyName=strategyName)
       calcAllocFromSignal(strategyName)
@@ -94,22 +102,22 @@ createCAPEstrategy <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver
       parameters$startIndex[index] <<- startIndex
       parameters$bearish[index]    <<- bearish
       parameters$bullish[index]    <<- bullish      
-#       parameters$medianAlloc[index]<<-  medianAlloc
-#       parameters$interQuartileAlloc[index] <<-  interQuartileAlloc
       parameters$avgOver[index]    <<-  avgOver   
    }
-   calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, force=force)
+   calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    stats$type[which(stats$strategy == strategyName)] <<- parameters$type[which(parameters$strategy == strategyName)]
-#   calcTRnetOfTradingCost(strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)      
+   stats$subtype[which(stats$strategy == strategyName)] <<- parameters$subtype[which(parameters$strategy == strategyName)]
 }
 
 
 searchForOptimalCAPE <-function(minYears=10, maxYears=10, byYears=0, minCheat=2, maxCheat=2, byCheat=0, 
-                                minAvgOver=30, maxAvgOver=30, byAvgOver=0, 
-                                minBear=16, maxBear=24, byBear=2, minBull=8, maxBull=16, byBull=2, 
+                                minAvgOver=12, maxAvgOver=36, byAvgOver=12, 
+                                minBear=16, maxBear=24, byBear=2, minDelta=0, maxDelta=5, byDelta=1, 
                                 futureYears=def$futureYears, tradingCost=def$tradingCost, 
-                                minTR=def$valueMinTR, maxVol=def$valueMaxVol, maxDD2=def$valueMaxDD2, 
-                                minTO=def$valueMinTO, CPUnumber=def$CPUnumber, force=F) {
+                                minTR=0, maxVol=20, maxDD2=5, minTO=5, minScore=13,
+                                coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
+                                CPUnumber=def$CPUnumber, col=F, plotType="symbols", force=F) {
    
    lastTimePlotted <- proc.time()
    print(paste0("strategy            |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
@@ -120,32 +128,56 @@ searchForOptimalCAPE <-function(minYears=10, maxYears=10, byYears=0, minCheat=2,
          for (avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver)) {
             calcAvgCAPE(years=years, cheat=cheat, avgOver=avgOver)
             for ( bear in seq(minBear, maxBear, by=byBear) ) {      
-               for ( bull in seq(minBull, maxBull, by=byBull) ) {
-                  if (bull < bear + 1e-3 ) {
-                     strategyName <- paste0("CAPE", years, "_", cheat, "avg", avgOver, "_", bear, "_", bull)
-                     if (bull > bear - 1e-3 ) bull = bear - 1e-3 # bear=bull creates problems
-                     
-                     createCAPEstrategy(years=years, cheat=cheat, avgOver=avgOver, strategyName=strategyName, 
-                                        bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
-                                        type="search", futureYears=futureYears, force=force)
-                     showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
-                                            minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, force=F)
-                  }
+               for ( delta in seq(minDelta, maxDelta, by=byDelta) ) {
+                  bull = bear - delta
+                  strategyName <- paste0("CAPE", years, "_", cheat, "avg", avgOver, "__", bear, "_", bull)
+                  
+                  createCAPEstrategy(years=years, cheat=cheat, avgOver=avgOver, strategyName=strategyName, 
+                                     bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
+                                     type="search", futureYears=futureYears, force=force)
+                  showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
+                                         minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, 
+                                         minScore=minScore, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=F)
                }
                if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > 5 ) { # we replot only if it's been a while
-                  plotAllReturnsVsTwo(col=T)
+                  plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
                   lastTimePlotted <- proc.time()
                }
             }
          }
       }
    print("")
-   showSummaryForStrategy(def$typicalCAPE)
-   plotAllReturnsVsTwo(col=T)
+   showSummaryForStrategy(def$typicalCAPE1, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
+   showSummaryForStrategy(def$typicalCAPE2, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
+   plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
 }
 
 
-searchForOptimalMetaCAPE <-function(stratName1=def$CAPEstrategies[[1]], stratName2=def$CAPEstrategies[[2]], stratName3=def$CAPEstrategies[[3]], stratName4="",
+searchForTwoOptimalCAPE <-function(plotType="symbols", force=F) {
+   
+   searchForOptimalCAPE(minAvgOver=24, maxAvgOver=48, byAvgOver=3, 
+                        minBear=18, maxBear=24, byBear=1, 
+                        minDelta=0, maxDelta=2, byDelta=.5, 
+                        coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, minScore=18, 
+                        plotType=plotType, force=force)
+   
+   ## Using a greater penalty for volatility and drawdowns
+   ## (and using parameters more likely to work under such conditions)
+   searchForOptimalCAPE(minAvgOver=18, maxAvgOver=30, byAvgOver=3, 
+                        minBear=18, maxBear=26, byBear=1, 
+                        minDelta=8, maxDelta=16, byDelta=1, 
+                        coeffVol=2*def$coeffVol, coeffDD2=2*def$coeffDD2, 
+                        maxVol=17, minScore=13, 
+                        plotType=plotType, force=force)   
+}
+
+
+
+
+
+
+searchForOptimalMetaCAPE <-function(stratName1=def$CAPEstrategies[[1]], stratName2=def$CAPEstrategies[[2]], 
+                                    stratName3=def$CAPEstrategies[[3]], stratName4="",
                             minF1=20, maxF1=80, dF1=20, minF2=minF1, maxF2=maxF1, dF2=dF1, minF3=minF1, maxF3=maxF1, 
                             futureYears=def$FutureYears, tradingCost=def$TradingCost, cutoffScore=17, force=F) {
 
@@ -160,7 +192,8 @@ searchForOptimalMetaCAPE <-function(stratName1=def$CAPEstrategies[[1]], stratNam
          if ((f3 > minF3 - 1e-6) & (f3 < maxF3 + 1e-6)) {
             calcMultiStrategyReturn(name1=stratName1, name2=stratName2, name3=stratName3, name4=stratName4, 
                                     f1/100, f2/100, f3/100, f4/100, strategyName=strategyName, 10*12, delta="", force=force)
-            showSummaryStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, cutoffScore=cutoffScore, displayName=displayName, force=force)
+            showSummaryStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
+                                cutoffScore=cutoffScore, displayName=displayName, force=force)
          }
       }
    showSummaryStrategy("CAPE10avg24",  futureYears=futureYears, tradingCost=tradingCost, displayName="CAPE10  ", force=F)
@@ -169,20 +202,26 @@ searchForOptimalMetaCAPE <-function(stratName1=def$CAPEstrategies[[1]], stratNam
 
 
 #Plotting (obsolete)
-plotCAPEreturn <- function(stratName1=def$CAPEstrategies[[1]], stratName2=def$CAPEstrategies[[2]], stratName3=def$CAPEstrategies[[3]], stratName4=def$CAPEstrategies[[4]], 
+plotCAPEreturn <- function(stratName1=def$CAPEstrategies[[1]], stratName2=def$CAPEstrategies[[2]], 
+                           stratName3=def$CAPEstrategies[[3]], stratName4=def$CAPEstrategies[[4]], 
                            startYear=1885, endYear=2014, minTR=.9, maxTR=10000, normalize=T, showAlloc=T) {
    plotReturn(stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4, 
               startYear=startYear, endYear=endYear, minTR=minTR, maxTR=maxTR, normalize=normalize, showAlloc=showAlloc)
 }
 
-plotCAPEfutureReturn <- function(stratName1=def$CAPEstrategies[[1]], stratName2=def$CAPEstrategies[[2]], stratName3=def$CAPEstrategies[[3]], stratName4=def$CAPEstrategies[[4]], 
-                                 years=def$FutureYears, startYear=1885, endYear=2014-years, minTR=0, maxTR=.2, normalize=F, showAlloc=F) {
+plotCAPEfutureReturn <- function(stratName1=def$CAPEstrategies[[1]], stratName2=def$CAPEstrategies[[2]], 
+                                 stratName3=def$CAPEstrategies[[3]], stratName4=def$CAPEstrategies[[4]], 
+                                 years=def$FutureYears, startYear=1885, endYear=2014-years, 
+                                 minTR=0, maxTR=.2, normalize=F, showAlloc=F) {
    plotFutureReturn(stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4,
-                    years=years, startYear=startYear, endYear=endYear, minTR=minTR, maxTR=maxTR, normalize=normalize, showAlloc=showAlloc)
+                    years=years, startYear=startYear, endYear=endYear, minTR=minTR, maxTR=maxTR, 
+                    normalize=normalize, showAlloc=showAlloc)
 }
 
-plotCAPEbothReturns <- function(stratName1=def$CAPEstrategies[[1]], stratName2=def$CAPEstrategies[[2]], stratName3=def$CAPEstrategies[[3]], stratName4=def$CAPEstrategies[[4]], 
+plotCAPEbothReturns <- function(stratName1=def$CAPEstrategies[[1]], stratName2=def$CAPEstrategies[[2]], 
+                                stratName3=def$CAPEstrategies[[3]], stratName4=def$CAPEstrategies[[4]], 
                             years=def$FutureYears, startYear=1885, endYear=2014, minTR1=.9, maxTR1=10000, minTR2=0, maxTR2=.2) {
    plotBothReturns(stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4,
-                               years=years, startYear=startYear, endYear=endYear, minTR1=minTR1, maxTR1=maxTR1, minTR2=minTR2, maxTR2=maxTR2) 
+                               years=years, startYear=startYear, endYear=endYear, 
+                   minTR1=minTR1, maxTR1=maxTR1, minTR2=minTR2, maxTR2=maxTR2) 
 }

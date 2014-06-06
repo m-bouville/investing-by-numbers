@@ -5,12 +5,10 @@ setReversalDefaultValues <- function() {
    def$reversalInputDF       <<- "dat"
    def$reversalInputName     <<- "TR"
    def$reversalAvgOver       <<- 9L
-   def$reversalReturnToMean  <<- 10
-   def$reversalBearish       <<- -70
-   def$reversalBullish       <<- -60
+   def$reversalReturnToMean  <<- 14
+   def$reversalBearish       <<- -50
+   def$reversalBullish       <<- -50
    
-#    def$reversalMedianAlloc        <<- 99
-#    def$reversalInterQuartileAlloc <<- 10
    def$typicalReversal       <<- paste0("reversal_", def$reversalInputName, "_", 
                                         def$reversalAvgOver, "__", def$reversalReturnToMean, "_", 
                                         -def$reversalBearish, "_", -def$reversalBullish)
@@ -38,26 +36,12 @@ calcReversalSignal <- function(rawSignal,
                                signalMin=def$signalMin, signalMax=def$signalMax,
                                strategyName, startIndex=2*def$reversalAvgOver+1) {
    
-#    reversalName <- paste0("reversal_", inputName, "_", avgOver)
-#    if (!reversalName %in% colnames(dat)) 
-#       calcReversal(inputDF=inputDF, inputName=inputName, avgOver=avgOver, reversalName=reversalName)
    bearish=bearish/100
    bullish=bullish/100
 
    addNumColToSignal(strategyName)
    calcSignalForStrategy(strategyName, input=rawSignal, bearish=bearish, bullish=bullish,
                          signalMin=signalMin, signalMax=signalMax, startIndex=startIndex ) 
-   
-#    bearish <- quantile(rawSignal, 0.75, na.rm=T)[[1]] # backwards compared to others (high is good)
-#    bullish <- quantile(rawSignal, 0.25, na.rm=T)[[1]]
-# 
-#    if (interQuartileAlloc==100) interQuartileAlloc <- 100-1e-3
-#    
-#    b <- tan(pi*(medianAlloc/100-.5))
-#    tan2A <- tan(pi*interQuartileAlloc/100)
-#    a <- sqrt(1/tan2A^2 + 1 + b^2) - 1/tan2A
-#    
-#    signal[, strategyName] <<- a * ( 2 * (rawSignal-bullish) / (bearish-bullish) - 1 ) + b
 }
 
 
@@ -71,10 +55,13 @@ createReversalStrategy <- function(inputDF=def$reversalInputDF, inputName=def$re
                                    bearish=def$momentumBearish, bullish=def$momentumBullish, 
                                    signalMin=def$signalMin, signalMax=def$signalMax,
                                    strategyName="", type="reversal", 
-                                   futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
+                                   futureYears=def$futureYears, tradingCost=def$tradingCost, 
+                                   coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
+
    reversalName <- paste0("reversal_", inputName, "_", avgOver)
    if (strategyName=="") 
       strategyName <- paste0(reversalName, "__", returnToMean, "_", -bearish, "_", -bullish)
+   if (bearish==bullish) bullish = bearish + 1e-3 # bear==bull creates problems
    
    if (!(strategyName %in% colnames(TR)) | force) { # if data do not exist yet or we force recalculation:   
       if (!reversalName %in% colnames(dat)) 
@@ -128,13 +115,12 @@ createReversalStrategy <- function(inputDF=def$reversalInputDF, inputName=def$re
       parameters$startIndex[index]  <<- startIndex
       parameters$bearish[index]    <<- bearish
       parameters$bullish[index]    <<- bullish  
-      #       parameters$medianAlloc[index] <<- medianAlloc
-#       parameters$interQuartileAlloc[index] <<- interQuartileAlloc
       parameters$avgOver[index]     <<- avgOver
       parameters$name1[index]       <<- "returnToMean"
       parameters$value1[index]      <<- returnToMean      
    }
-   calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, force=force)
+   calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    stats$type[which(stats$strategy == strategyName)] <<- parameters$type[which(parameters$strategy == strategyName)]
    stats$subtype[which(stats$strategy == strategyName)] <<- parameters$subtype[which(parameters$strategy == strategyName)]
 }
@@ -142,30 +128,28 @@ createReversalStrategy <- function(inputDF=def$reversalInputDF, inputName=def$re
 
 searchForOptimalReversal <-function(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
                                     minAvgOver=9L, maxAvgOver=9L, byAvgOver=3L, 
-                                    minRTM=10, maxRTM=10, byRTM=10,
-                                    minBear=-180, maxBear=-0, byBear=10, 
-                                    minBull=-100, maxBull=0, byBull=10, 
+                                    minRTM=10, maxRTM=20, byRTM=5,
+                                    minBear=-80, maxBear=-0, byBear=10, 
+                                    minDelta=0, maxDelta=20, byDelta=5, 
                                     futureYears=def$futureYears, tradingCost=def$tradingCost, 
-                                    minTR=def$technicalMinTR, maxVol=def$technicalMaxVol, maxDD2=2.2, 
-                                    minTO=def$technicalMinTO, col=F, plotType="symbols", force=F) {
+                                    minTR=0, maxVol=20, maxDD2=5, minTO=1, minScore=16,
+                                    col=F, plotType="symbols", force=F) {
    lastTimePlotted <- proc.time()  
    print(paste0("strategy                 |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
 
    for ( avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver) ) 
       for ( RTM in seq(minRTM, maxRTM, by=byRTM) ) 
          for ( bear in seq(minBear, maxBear, by=byBear) ) {     
-            for ( bull in seq(minBull, maxBull, by=byBull) ) {
-               if (bear < bull - 1e-3 ) 
-               {
-                  strategyName <- paste0("reversal_", inputName, "_", avgOver, "__", 
-                                         RTM, "_", -bear, "_", -bull)
-                  
-                  createReversalStrategy(inputDF=inputDF, inputName=inputName, avgOver=avgOver, returnToMean=RTM, 
-                                         bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
-                                         strategyName=strategyName, force=force)                  
-                  showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
-                                         minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, force=F)
-               }
+            for ( delta in seq(minDelta, maxDelta, by=byDelta) ) {
+               bull = bear + delta
+               strategyName <- paste0("reversal_", inputName, "_", avgOver, "__", 
+                                      RTM, "_", -bear, "_", -bull)
+               
+               createReversalStrategy(inputDF=inputDF, inputName=inputName, avgOver=avgOver, returnToMean=RTM, 
+                                      bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
+                                      strategyName=strategyName, force=force)                  
+               showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
+                                      minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, force=F)
             }
          if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > 5 ) { # we replot only if it's been a while
             plotAllReturnsVsTwo(col=col, searchPlotType=plotType)

@@ -1,14 +1,12 @@
 #default values of parameters:
 setMomentumDefaultValues <- function() {
-   def$momentumInputDF           <<- "dat"
-   def$momentumInputName         <<- "TR"
-   def$momentumAvgOver           <<- 12L
-   def$momentumBearish          <<- -30
-   def$momentumBullish          <<- 10
-   #    def$momentumMedianAlloc       <<- 95
-#    def$momentumInterQuartileAlloc<<- 15
-   def$typicalMomentum           <<- paste0("momentum_", def$momentumInputName, "_", def$momentumAvgOver, "__", 
-                                            -def$momentumBearish, "_", def$momentumBullish)
+   def$momentumInputDF   <<- "dat"
+   def$momentumInputName <<- "TR"
+   def$momentumAvgOver   <<-  12L
+   def$momentumBearish   <<- -25L
+   def$momentumBullish   <<- -25L
+   def$typicalMomentum   <<- paste0("momentum_", def$momentumInputName, "_", def$momentumAvgOver, "__", 
+                                    -def$momentumBearish, "_", def$momentumBullish)
 }
 
 
@@ -31,7 +29,8 @@ calcMomentum <- function(inputDF, inputName, avgOver=def$momentumAvgOver, moment
       #dat[i, momentumName] <<- regression( (i-avgOver):i, input[(i-avgOver):i] )[[2]]
       ## this is the slope from an exponential fit:
       #dat[i, momentumName] <<- exp( regression( (i-avgOver):i, log(input[(i-avgOver):i]) )[[2]] ) - 1
-      ## there is (surprisingly) little difference between all these versions
+
+   ## there is (surprisingly) little difference between all these versions
 }
 
 
@@ -48,19 +47,9 @@ calcMomentumSignal <- function(inputDF=def$momentumInputDF, inputName=def$moment
    
    bearish=bearish/100
    bullish=bullish/100
-   
-#    bearish <- quantile(dat[, momentumName], 0.75, na.rm=T)[[1]] # backwards compared to others (high is good)
-#    bullish <- quantile(dat[, momentumName], 0.25, na.rm=T)[[1]]
-# 
-#    if (interQuartileAlloc==100) interQuartileAlloc <- 100-1e-3
-#    
-#    b <- tan(pi*(medianAlloc/100-.5))
-#    tan2A <- tan(pi*interQuartileAlloc/100)
-#    a <- sqrt(1/tan2A^2 + 1 + b^2) - 1/tan2A
-#    
-#    signal[, strategyName] <<- a * ( 2 * (dat[, momentumName]-bullish) / (bearish-bullish) - 1 ) + b
-calcSignalForStrategy(strategyName, input=dat[, momentumName], bearish=bearish, bullish=bullish,
-                      signalMin=signalMin, signalMax=signalMax, startIndex=avgOver+1 ) 
+
+   calcSignalForStrategy(strategyName, input=dat[, momentumName], bearish=bearish, bullish=bullish,
+                         signalMin=signalMin, signalMax=signalMax, startIndex=avgOver+1 ) 
 }
 
 
@@ -68,9 +57,11 @@ createMomentumStrategy <- function(inputDF=def$momentumInputDF, inputName=def$mo
                                    avgOver=def$momentumAvgOver, 
                                    bearish=def$momentumBearish, bullish=def$momentumBullish, 
                                    signalMin=def$signalMin, signalMax=def$signalMax,
-                                   strategyName="", type="", futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
+                                   strategyName="", type="", futureYears=def$futureYears, tradingCost=def$tradingCost, 
+                                   coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
    if (strategyName=="") 
       strategyName <- paste0("momentum_", inputName, "_", avgOver, "__", -bearish, "_", bullish)
+   if (bearish==bullish) bullish = bearish + 1e-3 # bear==bull creates problems
    
    if (!(strategyName %in% colnames(TR)) | force) { # if data do not exist yet or we force recalculation:   
       calcMomentumSignal(inputDF=inputDF, inputName=inputName, avgOver=avgOver, 
@@ -89,54 +80,50 @@ createMomentumStrategy <- function(inputDF=def$momentumInputDF, inputName=def$mo
       }
       index <- which(parameters$strategy == strategyName)
       
-      parameters$strategy[index]    <<- strategyName
+      parameters$strategy[index]   <<- strategyName
       if (type=="search") {
-         parameters$type[index]        <<- "search"
-         parameters$subtype[index]     <<- "momentum"        
+         parameters$type[index]    <<- "search"
+         parameters$subtype[index] <<- "momentum"        
       } else {
-         parameters$type[index]        <<- "momentum"
-         parameters$subtype[index]     <<- inputName
+         parameters$type[index]    <<- "momentum"
+         parameters$subtype[index] <<- inputName
       }
-      parameters$inputDF[index]     <<- inputDF
-      parameters$inputName[index]   <<- inputName
-      parameters$startIndex[index]  <<- avgOver+1
+      parameters$inputDF[index]    <<- inputDF
+      parameters$inputName[index]  <<- inputName
+      parameters$startIndex[index] <<- avgOver+1
       parameters$bearish[index]    <<- bearish
       parameters$bullish[index]    <<- bullish  
-#       parameters$medianAlloc[index] <<-  medianAlloc
-#       parameters$interQuartileAlloc[index] <<-  interQuartileAlloc
-      parameters$avgOver[index]     <<-  avgOver
+      parameters$avgOver[index]    <<-  avgOver
       
    }
-   calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, force=force)
+   calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    stats$type[which(stats$strategy == strategyName)] <<- parameters$type[which(parameters$strategy == strategyName)]
-   stats$subtype[which(stats$strategy == strategyName)] <<- parameters$subtype[which(parameters$strategy == strategyName)]
    stats$subtype[which(stats$strategy == strategyName)] <<- parameters$subtype[which(parameters$strategy == strategyName)]
 }
 
 searchForOptimalMomentum <-function(inputDF="dat", inputName="TR", 
                            minAvgOver=9L, maxAvgOver=15L, byAvgOver=3L, 
-                           minBear=-60, maxBear=0, byBear=5, 
-                           minBull=5, maxBull=30, byBull=5, 
+                           minBear=-60L, maxBear= 0L, byBear=10L, 
+                           minDelta=0, maxDelta=50, byDelta=10, 
                            futureYears=def$futureYears, tradingCost=def$tradingCost, type="search", 
-                           minTR=def$technicalMinTR, maxVol=def$technicalMaxVol, maxDD2=def$technicalMaxDD2, 
-                           minTO=def$technicalMinTO, col=F, plotType="symbols", force=F) {
+                           minTR=0, maxVol=20, maxDD2=5, minTO=1, minScore=13,
+                           col=F, plotType="symbols", force=F) {
    
    lastTimePlotted <- proc.time()
-   print(paste0("strategy              |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
+   print(paste0("strategy              |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score") )
 
    for ( avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver) ) 
       for ( bear in seq(minBear, maxBear, by=byBear) ) {     
-         for ( bull in seq(minBull, maxBull, by=byBull) ) {
-            if (bear < bull - 1e-3 ) 
-            {
-               strategyName <- paste0("momentum_", inputName, "_", avgOver, "__", -bear, "_", bull)
-               
-               createMomentumStrategy(inputDF=inputDF, inputName=inputName, avgOver=avgOver, type="search",
-                                      bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
-                                      strategyName=strategyName, force=force)                  
-               showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
-                                      minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, force=F)
-            }
+         for ( delta in seq(minDelta, maxDelta, by=byDelta) ) {
+            bull = bear + delta
+            strategyName <- paste0("momentum_", inputName, "_", avgOver, "__", -bear, "_", bull)
+            
+            createMomentumStrategy(inputDF=inputDF, inputName=inputName, avgOver=avgOver, type="search",
+                                   bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
+                                   strategyName=strategyName, force=force)                  
+            showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
+                                   minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, force=F)
          }
          if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > 5 ) { # we replot only if it's been a while
             plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
@@ -147,6 +134,8 @@ searchForOptimalMomentum <-function(inputDF="dat", inputName="TR",
    showSummaryForStrategy(def$typicalMomentum)
 plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
 }
+
+
 
 
 # No longer works (based on obsolete data structure)

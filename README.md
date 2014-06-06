@@ -1,17 +1,13 @@
-Investing by numbers
-=====================
+Investing by numbers  --  Mathieu Bouville, PhD
+===============================================
 
-The world of investing has many tribes: 
-some buy and hold,
-others pick stocks (which takes time and skill, and incurs trading costs). 
-The coolest kids on the block are into day-trading (which is time-consuming and more lucrative for the intermediaries than for the traders themselves). The latter kind of speculation generally relies on charts (hence "chartism"). Part of it is magic and superstition, part of it is mathematical tools. The mathematical strategies that are objective can be tested, i.e. we can see what would have happened had we applied them in the past. 
+The world of investing has many tribes: some buy and hold, others pick stocks (which takes time and skill, and incurs trading costs). The coolest kids on the block are into day-trading (which is time-consuming and more lucrative for the intermediaries than for the traders themselves). The latter kind of speculation generally relies on charts (hence "chartism"). Part of it is magic and superstition, part of it is mathematical tools. The mathematical strategies that are objective can be backtested, i.e. we can see what would have happened had we applied them in the past. 
 
 
 ### Keeping it slow
 A key characteristic of any strategy is its time scale. A strategy that can tell that the stock market is overpriced may need years to be proven right: in the nineties the market was more overpriced than in 1929, but it stayed overpriced for years before crashing. Such strategies will necessarily trading infrequently, making their move and waiting to be proven right (eventually).
 
 Some indicators aim at telling that the market is in a trend (up or down). If one expects the market to keep trending up one buys, if one expects a downward trend one sells. Such trends can exist over minutes or years. Trading on the shorter time scales is a full-time activity.
-
 
 
 ### Anybody can use it...
@@ -23,6 +19,7 @@ We focus on time scales of years, which essentially means investing in stocks ex
 - one needs to act only infrequently (this is far from a full-time activity),
 - there are no asset classes other than stocks and bonds,
 - the strategies use only data that are publically available.
+
 
 ### ... but not anybody can create it
 Coming up with the strategies on the other hand requires more: 
@@ -42,11 +39,12 @@ The price-to-earnings ratio (P/E) is a common tool for valuing a stock or a grou
 
 The cyclically adjusted P/E (CAPE) is simply a P/E ratio calculated using a longer-term historical number, for instance the average earnings over the past ten years. The idea is that such a number gives a reasonable idea of what the earnings will be over an economic cycle. When the CAPE is high, stocks are deemed expensive, and cheap when the CAPE is low. The CAPE was at or above 30 for three months in 1929, and we all know what followed. It was even above 40 in 1999 and 2000!
 
-The current project is based on something I did some time ago, based intially on CAPE strategies. So you can look at http://mathieu.bouville.name/finance/CAPE/ for a more extensive introdction to the subject.
+The current project is based on something I did some time ago, based initially on CAPE strategies. So you can look at http://mathieu.bouville.name/finance/CAPE/ for a more extensive introduction to the subject.
 
 
 ### Detrended price
 We calculate a long-term trend (exponential regression) for the stock prices and compare the current price to this trend. Is the current price much higher than we would expect? This would be cause for caution. If stock prices are much lower than their long-term trend we conclude that they are cheap and buy.
+
 
 ### Final remarks
 A drawback of these strategies is that they may require to stay out of the stock market for over a decade. And I am not sure whether one would have the nerve to try to beat stocks by shunning them for so long. 
@@ -83,7 +81,7 @@ They have three sources:
 This last reason explains why the trading costs used in the code may seem too high.
 
 
-## Multi-strategy
+## Combining strategies
 I take a weighted average of the best CAPE strategy and the best detrended strategy to get a new strategy. Likewise I take a weighted average of Bollinger, SMA and momentum strategies. I then take again an average to obtain a 'balanced' strategy, which is the best of the whole bunch.
 
 
@@ -139,12 +137,12 @@ The 'parameters' dataframe contains the parameters used to generate the strategi
 
 ### Miscellaneous
 - 'numData' is the number of months in the data (and often the last index in ranges and loops). Currently at 1720.
-- 'def' stores a bunch of default values for function arguments as well as for parameters. It is created by setDefaultValues() in init.
+- 'def' stores a bunch of default values for function arguments as well as for parameters. It is created by setDefaultValues() in init.r.
 
 
 ## How allocation and return are calculated
 The figure https://github.com/m-bouville/investing-by-numbers/blob/master/figures/structure.jpg shows the sequence for a given strategy:
-- To create a new strategy a function with a name like createXstrategy() is called; the necessary parameters are passed as arguments. For instance: for CAPE, it will be createCAPEstrategy(), found in CAPE.r.
+- A function with a name like createXstrategy() is called; the necessary parameters are passed as arguments. For instance: for CAPE, it will be createCAPEstrategy(), found in CAPE.r.
 - With some strategies, the data have to be preprocessed. In the case of the CAPE strategy, for instance, a column named 'CAPE10_2avg30' will be added to the 'dat' dataframe.
 - A signal (a column in the dataframe 'signal') is created based on the algorithm for the strategy and parameters for that strategy. This is done by the function calcXsignal() in the strategy R file (e.g. calcCAPEsignal() found in CAPE.r).
 - An allocation (a column in the dataframe 'alloc') is generated from the signal (this has no parameter) by the function calcAllocFromSignal(), found in utils.r.
@@ -153,46 +151,32 @@ The figure https://github.com/m-bouville/investing-by-numbers/blob/master/figure
 
 
 ### Combining strategies
-In multiStrategies.r, one can put together several strategies based on a weighted average of their 'signal'. 
+In combine.r, one can put together several strategies based on a weighted average of their 'signal'. 
 
 In practice, this is done hierarchically: we combine value strategies with value strategies, and technical strategies with technical strategies. Then we combine the 2 resulting strategies to make up a 'balanced' strategy.
 
 
 ## Preliminary results
-Here are preliminary results (compared to stocks), in 'table' form:
+The parameters are optimized using data from 1871 to 1942:
+- https://github.com/m-bouville/investing-by-numbers/blob/master/figures/return_and_allocation-1871_1942.png
+- https://github.com/m-bouville/investing-by-numbers/blob/master/figures/return_vs_four-1871_1942.png
 
-strategy  |  TR  | vol.  |alloc: avg, now|TO yrs| DD^2| 
-
-stocks    | 6.5% | 18.7% |    100%, 100% |  Inf | 4.2 | 
-
-CAPE10    | 7.4% | 14.1% |     50%,   1% |  9.1 | 1.6 |
-
-detrended | 7  % | 13.9% |     48%,  98% | 14.7 | 1.4 | 
-
-Bollinger | 7.2% | 14  % |     74%,  99% |  1.3 | 1.6 | 
-
-SMA 12-1  | 6.7% | 13.3% |     70%,  93% |  1.1 | 1.3 | 
-
-momentum  | 6.6% | 14.4% |     77%,  97% |  1.5 | 1.8 | 
-
-reversal  | 7.2% | 14.5% |     76%,  99% |  1.7 | 1.8 | 
-
-value     | 7.2% | 13.9% |     47%,   1% | 12.6 | 1.5 | 
-
-technical | 6.9% | 13.8% |     74%,  97% |  1.3 | 1.5 | 
-
-balanced  | 7  % | 13.8% |     51%,   2% |  4.8 | 1.5 | 
-
-TR: total return (net of trading costs), vol: volatility, TO: turnover (in years), DD^2: sum of the squares of the magnitude of drawdowns
-
-These figures may also help:
-- https://github.com/m-bouville/investing-by-numbers/blob/master/figures/net%20return%20and%20alloc.png
-- https://github.com/m-bouville/investing-by-numbers/blob/master/figures/net%20return%20vs%20four%20-%20zoomed%20out.png
-- https://github.com/m-bouville/investing-by-numbers/blob/master/figures/net%20return%20vs%20four%20-%20zoomed%20in.png
+Then tested between 1942 and 2014:
+- https://github.com/m-bouville/investing-by-numbers/blob/master/figures/return_and_allocation-1942_2014.png
+- https://github.com/m-bouville/investing-by-numbers/blob/master/figures/return_vs_four-1942_2014.png
 
 
+Color codes:
+- CAPE:      cyan
+- detrended: skyblue
+- momentum:  orange
+- SMA:       pink
+- Bollinger: magenta
+- reversal:  yellow
 
-### Issues
-https://github.com/m-bouville/investing-by-numbers/blob/master/figures/net%20return%20vs%20volatility%20-%20balanced%20-%20weird%20behavior.png shows that the weighted average between two strategies does not behave at all as expected.
+combined strategies (squares):
+- value:     blue
+- technical: red
+- balanced:  black
 
-showToDoList() (in main.r) shows some of what is left to do.
+constant-allocation stock-bond profolios: green line

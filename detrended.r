@@ -3,15 +3,17 @@ setDetrendedDefaultValues <- function() {
    def$detrendedInputDF           <<- "dat"
    def$detrendedInputName         <<- "TR"
    
-   def$detrendedAvgOver1           <<- 30L
-   def$detrendedBearish1           <<-  5
-   def$detrendedBullish1           <<-  0
+   ## detrended strategy in stocks 90% of the time, just dodging the worst bubbles
+   def$detrendedAvgOver1           <<- 33L
+   def$detrendedBearish1           <<- 30
+   def$detrendedBullish1           <<- 30
    def$typicalDetrended1           <<- paste0("detrended_", def$detrendedInputName, "_avg", def$detrendedAvgOver1, "__", 
                                              def$detrendedBearish1, "_", def$detrendedBullish1)
    
-   def$detrendedAvgOver2           <<- 42L
-   def$detrendedBearish2           <<- 20
-   def$detrendedBullish2           <<-  5
+   ## detrended strategy with lower stock allocation (and vol and DD)
+   def$detrendedAvgOver2           <<- 24L
+   def$detrendedBearish2           <<- 40
+   def$detrendedBullish2           <<-  0
    def$typicalDetrended2           <<- paste0("detrended_", def$detrendedInputName, "_avg", def$detrendedAvgOver2, "__", 
                                               def$detrendedBearish2, "_", def$detrendedBullish2)
 }
@@ -50,12 +52,6 @@ CalcDetrendedSignal <- function(inputDF=def$detrendedInputDF, inputName=def$detr
                                 bearish=def$detrendedBearish, bullish=def$detrendedBullish, 
                                 signalMin=def$signalMin, signalMax=def$signalMax, strategyName, avgOver) {
    
-#    if (interQuartileAlloc==100) interQuartileAlloc <- 100-1e-3
-#    
-#    b <- tan(pi*(medianAlloc/100-.5))
-#    tan2A <- tan(pi*interQuartileAlloc/100)
-#    a <- sqrt(1/tan2A^2 + 1 + b^2) - 1/tan2A
-   
    detrendedName <- paste0("detrended_", inputName)
 #   if (!detrendedName %in% colnames(dat)) 
    {
@@ -65,13 +61,6 @@ CalcDetrendedSignal <- function(inputDF=def$detrendedInputDF, inputName=def$detr
             calcAvgDetrended(detrendedName, avgOver)
           detrendedName <- paste0(detrendedName, "_avg", avgOver)
       }
-#       
-#       addNumColToSignal(strategyName)
-#       
-#       bearish <- quantile(dat[, detrendedName], 0.25, na.rm=T)[[1]]
-#       bullish <- quantile(dat[, detrendedName], 0.75, na.rm=T)[[1]]
-#       
-#       signal[, strategyName] <<- a * ( 2 * (dat[, detrendedName]bullish) / (bearishbullish) - 1 ) + b
    }
 
 bearish=bearish/100
@@ -87,12 +76,14 @@ createDetrendedStrategy <- function(inputDF=def$detrendedInputDF, inputName=def$
                                     bearish=def$detrendedBearish, bullish=def$detrendedBullish, 
                                     signalMin=def$signalMin, signalMax=def$signalMax,
                                     strategyName="",  type="detrended",
-                                    futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {   
+                                    futureYears=def$futureYears, tradingCost=def$tradingCost, 
+                                    coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {   
    if (strategyName=="") {
       if( is.numeric(avgOver) )
          strategyName <- paste0("detrended_", inputName, "_avg", avgOver, "__", bearish, "_", bullish)
       else strategyName <- paste0("detrended_", inputName, "__", bearish, "_", bullish)
    }
+   if (bullish == bearish) bullish = bearish - 1e-3 # bearish=bullish creates problems
    
    if (!(strategyName %in% colnames(TR)) | force) { # if data do not exist yet or we force recalculation:   
       CalcDetrendedSignal(inputDF=inputDF, inputName=inputName, bearish=bearish, bullish=bullish, 
@@ -125,7 +116,8 @@ createDetrendedStrategy <- function(inputDF=def$detrendedInputDF, inputName=def$
       parameters$bearish[index]    <<- bearish
       parameters$bullish[index]    <<- bullish      
    }
-   calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, force=force)
+   calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    stats$type[which(stats$strategy == strategyName)] <<- parameters$type[which(parameters$strategy == strategyName)]
    stats$subtype[which(stats$strategy == strategyName)] <<- parameters$subtype[which(parameters$strategy == strategyName)]
 #    calcTRnetOfTradingCost(strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)      
@@ -133,13 +125,13 @@ createDetrendedStrategy <- function(inputDF=def$detrendedInputDF, inputName=def$
 
 
 searchForOptimalDetrended <- function(inputDF=def$detrendedInputDF, inputName=def$detrendedInputName, 
-                                      minAvgOver=18, maxAvgOver=48, byAvgOver=6, 
+                                      minAvgOver=24, maxAvgOver=42, byAvgOver=6, 
                                       minBear=20, maxBear=50, byBear=10, 
-                                      minBull=-40, maxBull=0, byBull=10, 
+                                      minBull=-40, maxBull=20, byBull=10, 
                                       futureYears=def$futureYears, tradingCost=def$tradingCost, 
-                                      minTR=def$valueMinTR, maxVol=def$valueMaxVol, maxDD2=def$valueMaxDD2, 
-                                      minTO=def$valueMinTO, col=F, plotType="symbols", 
-                                      CPUnumber=def$CPUnumber, force=F) {
+                                      minTR=0, maxVol=20, maxDD2=5, minTO=5, minScore=16, 
+                                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, col=F, 
+                                      plotType="symbols", CPUnumber=def$CPUnumber, force=F) {
    
    print(paste0("strategy                  |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score") )
    detrendedName <- paste0("detrended_", inputName)
@@ -149,23 +141,45 @@ searchForOptimalDetrended <- function(inputDF=def$detrendedInputDF, inputName=de
       calcAvgDetrended(detrendedName, avgOver=avgOver)
       for ( bear in seq(minBear, maxBear, by=byBear) ) {      
          for ( bull in seq(minBull, maxBull, by=byBull) ) {
-            if (bull < bear - 1e-3 ) {
+            if (bull < bear + 1e-3 ) {
                strategyName <- paste0(detrendedName, "_avg", avgOver, "__", bear, "_", bull)
-#                if (bull > bear - 1e-3 ) bull = bear - 1e-3 # bear=bull creates problems
+               if (bull == bear) bull = bear - 1e-3 # bear=bull creates problems
                
                createDetrendedStrategy(inputDF=inputDF, inputName=inputName, avgOver=avgOver, strategyName=strategyName, 
                                        bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
                                        type="search", futureYears=futureYears, force=force)
                
                showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
-                                      minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, force=F)
+                                      minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, 
+                                      minScore=minScore, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=F)
             }
          }
          plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
       }
    }
    print("")
-   showSummaryForStrategy(def$typicalDetrended)
+   showSummaryForStrategy(def$typicalDetrended1, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
+   showSummaryForStrategy(def$typicalDetrended2, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
    plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
 }
+
+
+searchForTwoOptimalDetrended <-function(plotType="symbols", force=F) {
    
+   searchForOptimalDetrended(minAvgOver=24, maxAvgOver=42, byAvgOver=3, 
+                             minBear=20, maxBear=40, byBear=5, 
+                             minBull=20, maxBull=35, byBull=5,
+                             coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, minScore=17, 
+                             plotType=plotType, force=force)
+   
+   ## Using a greater penalty for volatility and drawdowns
+   ## (and using parameters more likely to work under such conditions)
+   searchForOptimalDetrended(minAvgOver=18, maxAvgOver=30, byAvgOver=3, 
+                             minBear=20,  maxBear=55, byBear=10, 
+                             minBull=-10, maxBull=30, byBull=10,
+                             coeffVol=3*def$coeffVol, coeffDD2=3*def$coeffDD2, 
+                             maxVol=17, minScore=14.5, 
+                             plotType=plotType, force=force)
+   
+}
+
