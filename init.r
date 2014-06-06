@@ -21,7 +21,7 @@ start <- function(dataSplit="none", # "none" for all data, "search" and "testing
    source("detrended.r")
    source("Bollinger.r")
    source("SMA.r")
-   source("momentum.r")
+   #source("momentum.r") # I cannot get it to work well enough to be competitive
    source("reversal.r")
    source("combine.r")
    
@@ -149,7 +149,7 @@ setDefaultValues <- function(force=F) {
    setDetrendedDefaultValues()
    setBollDefaultValues()
    setSMAdefaultValues()
-   setMomentumDefaultValues()
+   #setMomentumDefaultValues()
    setReversalDefaultValues()
    setCombinedDefaultValues()
    
@@ -402,13 +402,13 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)   
    print( c( "SMA time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
-   time0 <- proc.time()
-   createMomentumStrategy(def$momentumInputDF, def$momentumInputName, def$momentumAvgOver, 
-                          bearish=def$momentumBearish, bullish=def$momentumBullish, 
-                          signalMin=def$signalMin, signalMax=def$signalMax,
-                          futureYears=def$futureYears, tradingCost=def$tradingCost, 
-                          coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force) 
-   print( c( "momentum time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
+#    time0 <- proc.time()
+#    createMomentumStrategy(def$momentumInputDF, def$momentumInputName, def$momentumAvgOver, 
+#                           bearish=def$momentumBearish, bullish=def$momentumBullish, 
+#                           signalMin=def$signalMin, signalMax=def$signalMax,
+#                           futureYears=def$futureYears, tradingCost=def$tradingCost, 
+#                           coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force) 
+#    print( c( "momentum time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
    createReversalStrategy(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
@@ -429,9 +429,9 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
    print( c( "value time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
-   combineStrategies(def$typicalSMA, def$typicalBoll, def$typicalMomentum, def$typicalReversal, 
+   combineStrategies(def$typicalSMA, def$typicalBoll, def$typicalReversal, "",
                      def$technicalFractionSMA, def$technicalFractionBoll, 
-                     def$technicalFractionMomentum, def$technicalFractionReversal, 
+                     def$technicalFractionReversal, 0,
                      type="combined", subtype="technical", 
                      tradingCost=def$tradingCost, 
                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)

@@ -67,9 +67,9 @@ showForNewcomer <- function() {
 
 # showToDoList()
 
-start(dataSplit="testing",       # "none" for all data, "search" and "testing" for half the data
+start(dataSplit="search",          # "none" for all data, "search" and "testing" for half the data
       extrapolateDividends=T,    # whether to extrapolate missing recent dividends (or remove incomplete months)
-      smoothConstantAlloc=T,     # calculates more constant-allocation portfolios, to get smoother curves in plots
+      smoothConstantAlloc=F,     # calculates more constant-allocation portfolios, to get smoother curves in plots (slower)
       downloadAndCheckAllFiles=F,# downloads data files even if they exist locally, to check whether they are up to date
       otherAssetClasses=F,       # loads gold and UK house prices
       newcomer=T,                # displays some information on the code

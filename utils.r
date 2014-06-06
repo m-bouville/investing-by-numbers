@@ -487,8 +487,8 @@ showSummaries <- function(futureYears=def$futureYears, tradingCost=def$tradingCo
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
       showSummaryForStrategy(def$typicalSMA,       displayName="SMA       ", futureYears=futureYears, tradingCost=tradingCost, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)   
-      showSummaryForStrategy(def$typicalMomentum,  displayName="momentum  ", futureYears=futureYears, tradingCost=tradingCost, 
-                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+#       showSummaryForStrategy(def$typicalMomentum,  displayName="momentum  ", futureYears=futureYears, tradingCost=tradingCost, 
+#                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
       showSummaryForStrategy(def$typicalReversal,  displayName="reversal  ", futureYears=futureYears, tradingCost=tradingCost, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    }

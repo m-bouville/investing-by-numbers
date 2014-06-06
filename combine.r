@@ -1,13 +1,13 @@
 #default values of parameters:
 setCombinedDefaultValues <- function() {
-   def$valueMaxVol     <<- 14.5
-   def$technicalMaxVol <<- 14.5
-   def$valueMaxDD2     <<- 2
-   def$technicalMaxDD2 <<- 1.8
-   def$valueMinTO      <<- 8
-   def$technicalMinTO  <<- 1.3
-   def$valueMinTR      <<- 6.5
-   def$technicalMinTR  <<- 6.5
+#    def$valueMaxVol     <<- 14.5
+#    def$technicalMaxVol <<- 14.5
+#    def$valueMaxDD2     <<- 2
+#    def$technicalMaxDD2 <<- 1.8
+#    def$valueMinTO      <<- 8
+#    def$technicalMinTO  <<- 1.3
+#    def$valueMinTR      <<- 6.5
+#    def$technicalMinTR  <<- 6.5
    
    ## All strategies get at least 12%, so the combined strategy actually include all four contributions
    ## (this is to avoid idiosyncrasies: if what was the best strategy when fitting is bad when testing, 
@@ -20,12 +20,12 @@ setCombinedDefaultValues <- function() {
    def$typicalValue               <<- paste0("value_", def$valueFractionCAPE1, "_", def$valueFractionCAPE2, "_", 
                                              def$valueFractionDetrended1, "_", def$valueFractionDetrended2)
    
-   def$technicalFractionSMA      <<- 12
-   def$technicalFractionBoll     <<- 20
-   def$technicalFractionMomentum <<- 12
-   def$technicalFractionReversal <<- 56
-   def$typicalTechnical          <<- paste0("technical_", def$technicalFractionSMA, "_", def$technicalFractionBoll, "_", 
-                                            def$technicalFractionMomentum, "_", def$technicalFractionReversal)
+   def$technicalFractionSMA      <<- 16
+   def$technicalFractionBoll     <<- 24
+   #def$technicalFractionMomentum <<- 12
+   def$technicalFractionReversal <<- 60
+   def$typicalTechnical          <<- paste0("technical_", def$technicalFractionSMA, "_", def$technicalFractionBoll,
+                                            "_", def$technicalFractionReversal)
    
    def$balancedFractionValue     <<- 67
    def$balancedFractionTechnical <<- 33
@@ -210,9 +210,9 @@ searchForOptimalValue <- function(inputStrategyName1=def$typicalCAPE1, inputStra
 
 
 searchForOptimalTechnical <- function(inputStrategyName1=def$typicalSMA, inputStrategyName2=def$typicalBoll, 
-                                      inputStrategyName3=def$typicalMomentum, inputStrategyName4=def$typicalReversal, 
-                                      minF1=12L, maxF1=70L, byF1=8L, minF2=12L, maxF2=70L, byF2=8L, 
-                                      minF3=12L, maxF3=70L, byF3=8L, minF4=12L, maxF4=70L, 
+                                      inputStrategyName3=def$typicalReversal, inputStrategyName4="", 
+                                      minF1=12L, maxF1=80L, byF1=4L, minF2=12L, maxF2=80L, byF2=4L, 
+                                      minF3=12L, maxF3=80L, byF3=4L, minF4=0L, maxF4=0L, 
                                       futureYears=def$futureYears, tradingCost=def$tradingCost, 
                                       type="search", subtype="technical",
                                       minTR=0, maxVol=20, maxDD2=2, minTO=1, minScore=17,
@@ -236,7 +236,7 @@ searchForOptimalBalanced <- function(inputStrategyName1=def$typicalValue, inputS
                                      minF1=0L, maxF1=100L, byF1=4L, minF2=0L, maxF2=100L, byF2=4L, 
                                      minF3=0L, maxF3=0L, byF3=0L, minF4=0L, maxF4=0L, 
                                      futureYears=def$futureYears, tradingCost=def$tradingCost, type="search", subtype="balanced", 
-                                     minTR=6, maxVol=20, maxDD2=2, minTO=3.5, minScore=17,
+                                     minTR=5, maxVol=20, maxDD2=2.5, minTO=3., minScore=17,
                                      col=F, CPUnumber=def$CPUnumber, plotType="line", force=F) {
    totTime <- proc.time()
    print(paste0("strategy         |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
