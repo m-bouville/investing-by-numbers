@@ -5,17 +5,17 @@ setCAPEdefaultValues <- function() {
    def$CAPEcheat    <<- 2
    
    ## CAPE strategy in stocks 90% of the time, just dodging the worst bubbles
-   def$CAPEavgOver1 <<- 33
+   def$CAPEavgOver1 <<- 35
    def$CAPEbearish1 <<- 21
    def$CAPEbullish1 <<- 21
-   def$typicalCAPE1 <<- paste0("CAPE", def$CAPEyears, "_", def$CAPEcheat, "avg", def$CAPEavgOver1, "__", 
+   def$typicalCAPE1 <<- paste0("CAPE", def$CAPEyears, "avg", def$CAPEavgOver1, "__", 
                                 def$CAPEbearish1, "_", def$CAPEbullish1)
    
    ## CAPE strategy with lower stock allocation (and vol and DD)
-   def$CAPEavgOver2 <<- 27
-   def$CAPEbearish2 <<- 25
-   def$CAPEbullish2 <<- 10
-   def$typicalCAPE2 <<- paste0("CAPE", def$CAPEyears, "_", def$CAPEcheat, "avg", def$CAPEavgOver2, "__", 
+   def$CAPEavgOver2 <<- 32
+   def$CAPEbearish2 <<- 17.2
+   def$CAPEbullish2 <<- 17.2
+   def$typicalCAPE2 <<- paste0("CAPE", def$CAPEyears, "avg", def$CAPEavgOver2, "__", 
                                 def$CAPEbearish2, "_", def$CAPEbullish2)
    
    def$initialOffset <<- (def$CAPEyears-def$CAPEcheat)*12 + max(def$CAPEavgOver1, def$CAPEavgOver2)
@@ -25,7 +25,7 @@ setCAPEdefaultValues <- function() {
 
 ## calculating CAPE
 calcCAPE <- function(years=def$CAPEyears, cheat=def$CAPEcheat) {
-  CAPEname <- paste0("CAPE", years, "_", cheat)
+  CAPEname <- paste0("CAPE", years)
   addNumColToDat(CAPEname)
   months <- 12*years
   for(i in 1:(months-12*cheat)) { dat[i, CAPEname] <<- NA }
@@ -38,7 +38,7 @@ calcCAPE <- function(years=def$CAPEyears, cheat=def$CAPEcheat) {
 
 ## Average CAPE over 'avgOver' months
 calcAvgCAPE <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver=def$CAPEavgOver) {
-   CAPEname <- paste0("CAPE", years, "_", cheat)
+   CAPEname <- paste0("CAPE", years)
    if (!(CAPEname %in% colnames(dat))) 
       calcCAPE(years=years, cheat=cheat)
    avgCAPEname <- paste0(CAPEname,"avg",avgOver)
@@ -68,9 +68,9 @@ createCAPEstrategy <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver
                                futureYears=def$futureYears, tradingCost=def$tradingCost, 
                                coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
 
-   CAPEname <- paste0("CAPE", years, "_", cheat, "avg", avgOver)
+   CAPEname <- paste0("CAPE", years, "avg", avgOver)
    if (!(CAPEname %in% colnames(dat)))
-      calcAvgCAPE(years=years, cheat=cheat, avgOver=avgOver)     
+      calcAvgCAPE(years=years, cheat=cheat, avgOver=avgOver)
    startIndex <- (years-cheat)*12 + avgOver + 1
    
    if(strategyName=="") strategyName <- paste0(CAPEname, "__", bearish, "_", bullish)
@@ -94,10 +94,10 @@ createCAPEstrategy <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver
       
       parameters$strategy[index]   <<- strategyName
       if (type=="search") {
-         parameters$type[index]        <<- "search"
-         parameters$subtype[index]     <<- "CAPE"        
+         parameters$type[index]    <<- "search"
+         parameters$subtype[index] <<- "CAPE"        
       } else {
-         parameters$type[index]        <<- "CAPE"
+         parameters$type[index]    <<- "CAPE"
       }
       parameters$startIndex[index] <<- startIndex
       parameters$bearish[index]    <<- bearish
@@ -111,26 +111,26 @@ createCAPEstrategy <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver
 }
 
 
-searchForOptimalCAPE <-function(minYears=10, maxYears=10, byYears=0, minCheat=2, maxCheat=2, byCheat=0, 
-                                minAvgOver=12, maxAvgOver=36, byAvgOver=12, 
-                                minBear=16, maxBear=24, byBear=2, minDelta=0, maxDelta=5, byDelta=1, 
+searchForOptimalCAPE <-function(minYears=10, maxYears=10, byYears=0, cheat=2, 
+                                minAvgOver=12L, maxAvgOver=36L, byAvgOver=12L, 
+                                minBear=16L, maxBear=24L,  byBear=2L, 
+                                minDelta=0L, maxDelta=5L, byDelta=1L, 
                                 futureYears=def$futureYears, tradingCost=def$tradingCost, 
                                 minTR=0, maxVol=20, maxDD2=5, minTO=5, minScore=13,
                                 coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
                                 CPUnumber=def$CPUnumber, col=F, plotType="symbols", force=F) {
    
    lastTimePlotted <- proc.time()
-   print(paste0("strategy            |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
+   print(paste0("strategy           |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
 
-   for (years in seq(minYears, maxYears, by=byYears)) 
-      for (cheat in seq(minCheat, maxCheat, by=byCheat)) {
+   for (years in seq(minYears, maxYears, by=byYears)) {
          calcCAPE(years=years, cheat=cheat)
          for (avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver)) {
             calcAvgCAPE(years=years, cheat=cheat, avgOver=avgOver)
             for ( bear in seq(minBear, maxBear, by=byBear) ) {      
                for ( delta in seq(minDelta, maxDelta, by=byDelta) ) {
                   bull = bear - delta
-                  strategyName <- paste0("CAPE", years, "_", cheat, "avg", avgOver, "__", bear, "_", bull)
+                  strategyName <- paste0("CAPE", years, "avg", avgOver, "__", bear, "_", bull)
                   
                   createCAPEstrategy(years=years, cheat=cheat, avgOver=avgOver, strategyName=strategyName, 
                                      bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
@@ -155,19 +155,22 @@ searchForOptimalCAPE <-function(minYears=10, maxYears=10, byYears=0, minCheat=2,
 
 searchForTwoOptimalCAPE <-function(plotType="symbols", force=F) {
    
-   searchForOptimalCAPE(minAvgOver=24, maxAvgOver=48, byAvgOver=3, 
-                        minBear=18, maxBear=24, byBear=1, 
-                        minDelta=0, maxDelta=2, byDelta=.5, 
-                        coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, minScore=18, 
+   ## What turns out to work best:
+   ## a small value of delta, which means a strategy that is either all in or all out;
+   ## a high value of the threshold (21), which leads to a high average stock allocation.
+   searchForOptimalCAPE(minAvgOver=24L, maxAvgOver=48L, byAvgOver=3L, 
+                        minBear=18L, maxBear=24L, byBear=1L, 
+                        minDelta=0, maxDelta=2, byDelta=1, 
+                        coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, minScore=14.5, 
                         plotType=plotType, force=force)
    
-   ## Using a greater penalty for volatility and drawdowns
-   ## (and using parameters more likely to work under such conditions)
-   searchForOptimalCAPE(minAvgOver=18, maxAvgOver=30, byAvgOver=3, 
-                        minBear=18, maxBear=26, byBear=1, 
-                        minDelta=8, maxDelta=16, byDelta=1, 
-                        coeffVol=2*def$coeffVol, coeffDD2=2*def$coeffDD2, 
-                        maxVol=17, minScore=13, 
+   ## Using a large penalty for drawdowns to get parameters corresponding to 
+   ## the outgrowth (see figure) of DD2 = 1 and net return = 7.4%
+   searchForOptimalCAPE(minAvgOver=30L, maxAvgOver=36L, byAvgOver=2L, 
+                        minBear=15L, maxBear=20L, byBear=1L, 
+                        minDelta=0, maxDelta=2, byDelta=1, 
+                        coeffVol=def$coeffVol, coeffDD2=10*def$coeffDD2, 
+                        maxDD2=1.1, minTR=6.8, minScore=15, 
                         plotType=plotType, force=force)   
 }
 

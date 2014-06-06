@@ -10,19 +10,18 @@ setCombinedDefaultValues <- function() {
 #    def$technicalMinTR  <<- 6.5
    
    ## All strategies get at least 12%, so the combined strategy actually include all four contributions
-   ## (this is to avoid idiosyncrasies: if what was the best strategy when fitting is bad when testing, 
-   ## other strategies can counterbalance it to an extent)
+   ## (this is to avoid idiosyncrasies: if what was the best strategy when fitting 
+   ## is bad when testing, then other strategies can counterbalance it to an extent)
    ## It turns out that detrended1 is the best of the four
    def$valueFractionCAPE1         <<- 16
-   def$valueFractionCAPE2         <<- 12
-   def$valueFractionDetrended1    <<- 60
+   def$valueFractionCAPE2         <<- 16
+   def$valueFractionDetrended1    <<- 56
    def$valueFractionDetrended2    <<- 12
    def$typicalValue               <<- paste0("value_", def$valueFractionCAPE1, "_", def$valueFractionCAPE2, "_", 
                                              def$valueFractionDetrended1, "_", def$valueFractionDetrended2)
    
    def$technicalFractionSMA      <<- 16
    def$technicalFractionBoll     <<- 24
-   #def$technicalFractionMomentum <<- 12
    def$technicalFractionReversal <<- 60
    def$typicalTechnical          <<- paste0("technical_", def$technicalFractionSMA, "_", def$technicalFractionBoll,
                                             "_", def$technicalFractionReversal)
@@ -186,8 +185,8 @@ searchForOptimalCombined <- function(inputStrategyName1, inputStrategyName2, inp
 
 searchForOptimalValue <- function(inputStrategyName1=def$typicalCAPE1, inputStrategyName2=def$typicalCAPE2, 
                                   inputStrategyName3=def$typicalDetrended1, inputStrategyName4=def$typicalDetrended2, 
-                                  minF1=8L, maxF1=100L, byF1=8L, minF2=8L, maxF2=100L, byF2=8L, 
-                                  minF3=8L, maxF3=100L, byF3=8L, minF4=8L, maxF4=100L, 
+                                  minF1=12L, maxF1=100L, byF1=8L, minF2=12L, maxF2=100L, byF2=8L, 
+                                  minF3=12L, maxF3=100L, byF3=8L, minF4=12L, maxF4=100L, 
                                   futureYears=def$futureYears, tradingCost=def$tradingCost, 
                                   type="search", subtype="value",
                                   minTR=0, maxVol=20, maxDD2=2, minTO=4, minScore=17,

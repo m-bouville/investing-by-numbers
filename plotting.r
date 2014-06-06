@@ -3,8 +3,8 @@ setPlottingDefaultValues <- function() {
    def$yTRmin<<- 7.
    def$yTRmax<<- 9.5
    
-   def$pngWidth  <<- 800
-   def$pngHeight <<- 600
+   def$pngWidth  <<- 1024
+   def$pngHeight <<- 768
    
    def$minVol <<- 13
    def$maxVol <<- 19
@@ -87,7 +87,7 @@ plotAssetClassesReturn <- function(stratName1="stocks",       col1=def$colConsta
                                    stratName2="bonds",        col2="darkgreen",          lwd2=2,
                                    stratName3="UKhousePrice", col3="grey",               lwd3=2,
                                    stratName4="gold",         col4="gold",               lwd4=2, 
-                                   startYear=1975.25, endYear=2014, 
+                                   startYear=1975.25, endYear=def$plotEndYear, 
                                    yLabel="", net=F, minTR=.5, maxTR=15,
                                    pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, pngName="figures/asset_classes_returns.png") {
 
