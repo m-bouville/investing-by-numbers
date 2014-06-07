@@ -23,8 +23,10 @@ source("init.r")       # loads data and initializes everything
 showToDoList <- function() {
    print("What's still left TO DO:")
    print(" - Plot future returns.")
+   print(" - Improve CAPE strategy results.")
+   print(" - Change (how?) the way 2 strategies are combined.")
    print(" - Automate parameter search.")
-   print(" - Switch to ggplot2 for scatter plots.")
+   print(" - Switch to ggplot2 for scatter plots?")
    print(" - Try to speed up code (especially parameter searches) through compiling and (or) parallelization.")
    print(" - Store constant allocations in csv file.")
    print("")
@@ -68,7 +70,7 @@ showForNewcomer <- function() {
 
 start(dataSplit="testing",          # "none" for all data, "search" and "testing" for half the data
       extrapolateDividends=T,    # whether to extrapolate missing recent dividends (or remove incomplete months)
-      smoothConstantAlloc=T,     # calculates more constant-allocation portfolios, to get smoother curves in plots (slower)
+      smoothConstantAlloc=F,     # calculates more constant-allocation portfolios, to get smoother curves in plots (slower)
       downloadAndCheckAllFiles=F,# downloads data files even if they exist locally, to check whether they are up to date
       otherAssetClasses=F,       # loads gold and UK house prices
       newcomer=T,                # displays some information on the code

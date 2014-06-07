@@ -75,13 +75,9 @@ start <- function(dataSplit="none", # "none" for all data, "search" and "testing
    message("Creating constant-allocation stock-bond strategies.") 
    if(smoothConstantAlloc)
       constAllocList <- seq(100, 0, by=-5)
-   else {
-      if (def$tradingCost==0.02)
-         constAllocList <- c(100, 95, 90, 85, 0)
-      else if (def$tradingCost==0.04)
-         constAllocList <- c(100, 90, 80, 70, 60, 0)
-   }
-      invisible ( lapply( constAllocList, function(alloc) createConstAllocStrategy(
+   else 
+      constAllocList <- c(100, 90, 80, 70, 60, 0)
+   invisible ( lapply( constAllocList, function(alloc) createConstAllocStrategy(
       alloc, futureYears=def$futureYears, tradingCost=def$tradingCost, force=force) ) )
    print( c( "constant allocation time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
@@ -207,30 +203,39 @@ splitData <- function(dataSplit, force) {
       dat <<- dat[1:numData, ] # we keep only the first half
       def$plotEndYear <<- round( (numData-1)/12 + def$dataStartYear )
       
-      def$maxTR <<- 200
+      def$maxTR  <<- 200
+      def$yTRmin <<- 7.5
+      def$yTRmax <<- 10
+      def$maxVol <<- 20
       def$minDD2 <<- 0.6
-      def$maxDD2 <<- 1.6
+      def$maxDD2 <<- 1.8
       def$coeffDD2 <<- def$coeffDD2 * 2 # DD2 is half as big with half as many years, hence the rescaling
       
       if (!force)
          warning("When switching to \'search\' from a complete data set or from \'testing\', 
               it is recommended to run \'start\' with \'force=T\'.")
-   } else if (dataSplit == "testing") {
+   } 
+   else if (dataSplit == "testing") {
       startIndex <- ( numData %/% 24 ) * 12 + 1
       dat <<- dat[startIndex:numData, ] # we keep only the second half
       numData <<- numData - startIndex + 1
       def$dataStartYear  <<- (startIndex-1)/12+def$dataStartYear
       def$plotStartYear  <<- def$dataStartYear + def$startIndex %/% 12 + 1
 
-      def$maxTR <<- 200
-      def$minDD2 <<- 0.6
-      def$maxDD2 <<- 1.6
+      def$maxTR  <<- 100
+      def$yTRmin <<- 5
+      def$yTRmax <<- 8
+      def$minVol <<- 11
+      def$maxVol <<- 17.5
+      def$minDD2 <<- 0
+      def$maxDD2 <<- 1.2
       def$coeffDD2 <<- def$coeffDD2 * 2 # DD2 is half as big with half as many years, hence the rescaling
       
       if (!force)
          warning("When switching to \'testing\' from a complete data set or from \'search\', 
               it is recommended to run \'start\' with \'force=T\'.")
-   } else if (dataSplit != "none")
+   } 
+   else if (dataSplit != "none")
       warning(dataSplit, " is not a valid value for \'dataSplit\': choose one of \'none\', \'search\' or \'testing\'.")
 }
 
@@ -310,7 +315,6 @@ checkXlsFileIsUpToDate <- function(fileName="data/ie_data.xls") {
    library(XLConnect) # to handle xls file
    wk <- loadWorkbook("ie_data-remote.xls")  # this is the local file
    remoteVersion <- readWorksheet(wk, sheet="Data", startRow=8)
-   file.remove("ie_data-remote.xls") 
    
    lastLine <- dim(remoteVersion)[1] 
    remoteMessage1 <- as.character(remoteVersion$P[lastLine])
@@ -320,15 +324,16 @@ checkXlsFileIsUpToDate <- function(fileName="data/ie_data.xls") {
    if (localMessage1 == remoteMessage1 & localMessage2 == remoteMessage2 & localMessage3 == remoteMessage3)
       print(paste("The file", fileName, "is up to date.") )
    else {
-      if (localMessage1 != remoteMessage1)
-         print(paste0("On the remote xls file \'", remoteMessage1, 
-                      "\', whereas on the local file \'", localMessage1, "\'."))
-      if (localMessage2 != remoteMessage2)
-         print(paste0("On the remote xls file \'", remoteMessage2, 
-                      "\', whereas on the local file \'", localMessage2, "\'."))
-#       if (localMessage3 != remoteMessage3)
-#          print(paste0("On the remote xls file ", remoteMessage3, ", whereas on the local file ", localMessage3))
+      file.copy("ie_data-remote.xls", fileName, overwrite=T)
+      print(paste("The file", fileName, "has been updated.") )
+#       if (localMessage1 != remoteMessage1)
+#          print(paste0("On the remote xls file \'", remoteMessage1, 
+#                       "\', whereas on the local file \'", localMessage1, "\'."))
+#       if (localMessage2 != remoteMessage2)
+#          print(paste0("On the remote xls file \'", remoteMessage2, 
+#                       "\', whereas on the local file \'", localMessage2, "\'."))
    }
+   file.remove("ie_data-remote.xls") 
 }
 
 ## for some columns in 'parameters' and 'stats', there are only a handful of possible values
@@ -351,7 +356,7 @@ makeStringsFactors <- function() {
 # Generating typical strategies
 createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
    message("Creating entries for the typical strategies")
-
+   
    time0 <- proc.time()
    createCAPEstrategy(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver=def$CAPEavgOver1, 
                       bearish=def$CAPEbearish1, bullish=def$CAPEbullish1, 
@@ -359,7 +364,7 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
                       futureYears=def$futureYears, tradingCost=def$tradingCost, 
                       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
    print( c( "CAPE1 time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
-
+   
    time0 <- proc.time()
    createCAPEstrategy(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver=def$CAPEavgOver2, 
                       bearish=def$CAPEbearish2, bullish=def$CAPEbullish2, 
@@ -376,7 +381,7 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
                            futureYears=def$futureYears, tradingCost=def$tradingCost, 
                            coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
    print( c( "detrended1 time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
-
+   
    time0 <- proc.time()
    createDetrendedStrategy(inputDF=def$detrendedInputDF, inputName=def$detrendedInputName, 
                            avgOver=def$detrendedAvgOver2, 
@@ -402,13 +407,6 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)   
    print( c( "SMA time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
-#    time0 <- proc.time()
-#    createMomentumStrategy(def$momentumInputDF, def$momentumInputName, def$momentumAvgOver, 
-#                           bearish=def$momentumBearish, bullish=def$momentumBullish, 
-#                           signalMin=def$signalMin, signalMax=def$signalMax,
-#                           futureYears=def$futureYears, tradingCost=def$tradingCost, 
-#                           coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force) 
-#    print( c( "momentum time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
    createReversalStrategy(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
@@ -418,29 +416,29 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
                           futureYears=def$futureYears, tradingCost=def$tradingCost, 
                           coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force) 
    print( c( "reversal time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
-       
+   
    time0 <- proc.time()
    combineStrategies(inputStrategyName1=def$typicalCAPE1, inputStrategyName2=def$typicalCAPE2, 
                      inputStrategyName3=def$typicalDetrended1, inputStrategyName4=def$typicalDetrended2,
                      def$valueFractionCAPE1, def$valueFractionCAPE2, 
                      def$valueFractionDetrended1, def$valueFractionDetrended2,
-                     type="combined", subtype="value", tradingCost=def$tradingCost, 
+                     type="combined", subtype="value", combineMode="weighted", tradingCost=def$tradingCost, 
                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
    print( c( "value time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
    combineStrategies(def$typicalSMA, def$typicalBoll, def$typicalReversal, "",
                      def$technicalFractionSMA, def$technicalFractionBoll, 
-                     def$technicalFractionReversal, 0,
-                     type="combined", subtype="technical", 
+                     def$technicalFractionReversal, 0, 
+                     type="combined", subtype="technical", combineMode="weighted",
                      tradingCost=def$tradingCost, 
                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
    print( c( "technical time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
    combineStrategies(def$typicalValue, def$typicalTechnical, "", "",
-                     def$balancedFractionValue, def$balancedFractionTechnical, 0, 0, 
-                     type="combined", subtype="balanced", 
+                     def$balancedFractionValue, def$balancedFractionTechnical, 0, 0,
+                     type="combined", subtype="balanced", combineMode="weighted",
                      tradingCost=def$tradingCost, 
                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
    print( c( "balanced time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )   

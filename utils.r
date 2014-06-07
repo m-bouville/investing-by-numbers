@@ -125,6 +125,9 @@ createConstAllocStrategy <- function(stockAllocation = 70L, strategyName="",
       else { strategyName <- paste0("constantAlloc", stockAllocation, "_", 100-stockAllocation) }
    } 
 
+   addNumColToSignal(strategyName)
+   signal[, strategyName] <<- stockAllocation/100
+      
    TRconstAllocName <- calcTRconstAlloc(stockAllocation=stockAllocation, strategyName=strategyName, force=force) 
    
    if ( !(strategyName %in% stats$strategy) ) {
@@ -267,7 +270,7 @@ calcTRnetOfTradingCost <- function(strategyName, futureYears=def$futureYears, tr
    } else {
       if (tradingCost == 0.02) {
          if (!(strategyName %in% colnames(netTR2)) | force) {
-            startIndex <- parameters$startIndex[which(parameters$strategy == strategyName)]
+            startIndex <- parameters$startIndex[which(parameters$strategy == strategyName)]      
             netTR2[1 : (startIndex-1), strategyName] <<- NA
             netTR2[startIndex, strategyName] <<- 1
             for(i in (startIndex+1):numData) netTR2[i, strategyName] <<- netTR2[i-1, strategyName] * 

@@ -31,10 +31,6 @@ calcCombinedStrategySignal_weighted <- function(inputStrategyName1, inputStrateg
                                                 fraction1, fraction2, fraction3, fraction4, 
                                                 strategyName, force=F) {
    
-#    if (!is.numeric(fraction1)) fraction1 <- 100 - fraction2 - fraction3 - fraction4
-#    if (!is.numeric(fraction2)) fraction2 <- 100 - fraction1 - fraction3 - fraction4
-#    if (!is.numeric(fraction3)) fraction3 <- 100 - fraction1 - fraction2 - fraction4
-#    if (!is.numeric(fraction4)) fraction4 <- 100 - fraction1 - fraction2 - fraction3
    sumCoeff <- fraction1 + fraction2 + fraction3 + fraction4
    if (abs(sumCoeff-1)>1e-6) stop(paste("Sum of coefficients must be 1, not", sumCoeff))
    
@@ -75,42 +71,19 @@ calcCombinedStrategySignal_or <- function(inputStrategyName1, inputStrategyName2
    if (!(strategyName %in% colnames(signal)) | force) { # if data do not exist yet or we force recalculation:   
       addNumColToSignal(strategyName)
       
-      ## The signal is calculated as (x*|x| + y*|y|) / (|x| + |y|)
-      ## This corresponds to a weighted average where each input is its own weight, e.g. weight of x is |x| / (|x|+|y|)
-      ## If x>=0 and y>=0 then signal = (x^2 + y^2) / (x + y)
-      ## If y==0 then signal = x
-      ## If x==y then signal = x = y
-      #       if(inputStrategyName4 == "") {
-      #          if(inputStrategyName3 == "") # with only 2 input strategies
-      #             signal[, strategyName] <<- ( signal[, inputStrategyName1]*abs(signal[, inputStrategyName1]) +
-      #                                             signal[, inputStrategyName2]*abs(signal[, inputStrategyName2]) ) /
-      #             ( abs(signal[, inputStrategyName1]) + abs(signal[, inputStrategyName2]) )
-      #          else # with only the first three input strategies  
-      #             signal[, strategyName] <<- ( signal[, inputStrategyName1]*abs(signal[, inputStrategyName1]) +
-      #                                             signal[, inputStrategyName2]*abs(signal[, inputStrategyName2]) +
-      #                                             signal[, inputStrategyName3]*abs(signal[, inputStrategyName3]) ) /
-      #             ( abs(signal[, inputStrategyName1]) + abs(signal[, inputStrategyName2]) + abs(signal[, inputStrategyName3]) )
-      #       }
-      #       else # with all four input strategies
-      #          signal[, strategyName] <<- ( signal[, inputStrategyName1]*abs(signal[, inputStrategyName1]) +
-      #                                          signal[, inputStrategyName2]*abs(signal[, inputStrategyName2]) +
-      #                                          signal[, inputStrategyName3]*abs(signal[, inputStrategyName3]) +
-      #                                          signal[, inputStrategyName4]*abs(signal[, inputStrategyName4]) ) /
-      #          ( abs(signal[, inputStrategyName1]) + abs(signal[, inputStrategyName2]) + 
-      #               abs(signal[, inputStrategyName3]) + abs(signal[, inputStrategyName4]) )
-      #    }
-      
       if(inputStrategyName4 == "") {
          if(inputStrategyName3 == "") # with only 2 input strategies
             for (i in 1:numData) 
                signal[i, strategyName] <<- max( signal[i, inputStrategyName1], signal[i, inputStrategyName2] )
          else # with only the first three input strategies  
-            signal[i, strategyName] <<- max( signal[i, inputStrategyName1], 
-                                             signal[i, inputStrategyName2], signal[i, inputStrategyName3] )
+            for (i in 1:numData) 
+               signal[i, strategyName] <<- max( signal[i, inputStrategyName1], 
+                                                signal[i, inputStrategyName2], signal[i, inputStrategyName3] )
       }
       else # with all four input strategies
-         signal[i, strategyName] <<- max( signal[i, inputStrategyName1], signal[i, inputStrategyName2], 
-                                          signal[i, inputStrategyName3], signal[i, inputStrategyName4] )
+         for (i in 1:numData) 
+            signal[i, strategyName] <<- max( signal[i, inputStrategyName1], signal[i, inputStrategyName2], 
+                                             signal[i, inputStrategyName3], signal[i, inputStrategyName4] )
       
       for (i in 1:numData)
          signal[i, strategyName] <<- max( min(signal[i, strategyName], def$signalMax), def$signalMin)
@@ -136,25 +109,83 @@ calcCombinedStrategySignal_and <- function(inputStrategyName1, inputStrategyName
             for (i in 1:numData) 
                signal[i, strategyName] <<- min( signal[i, inputStrategyName1], signal[i, inputStrategyName2] )
          else # with only the first three input strategies  
-            signal[i, strategyName] <<- min( signal[i, inputStrategyName1], 
-                                             signal[i, inputStrategyName2], signal[i, inputStrategyName3] )
+            for (i in 1:numData) 
+               signal[i, strategyName] <<- min( signal[i, inputStrategyName1], 
+                                                signal[i, inputStrategyName2], signal[i, inputStrategyName3] )
       }
       else # with all four input strategies
-         signal[i, strategyName] <<- min( signal[i, inputStrategyName1], signal[i, inputStrategyName2], 
-                                          signal[i, inputStrategyName3], signal[i, inputStrategyName4] )
+         for (i in 1:numData) 
+            signal[i, strategyName] <<- min( signal[i, inputStrategyName1], signal[i, inputStrategyName2], 
+                                             signal[i, inputStrategyName3], signal[i, inputStrategyName4] )
       
       for (i in 1:numData)
          signal[i, strategyName] <<- max( min(signal[i, strategyName], def$signalMax), def$signalMin)
    }
 }
    
+## Combine the signals of (exactly) 2 strategies dynamically.
+## The output signal moves towards the input instead of being set to it
+calcCombinedStrategySignal_dynamic <- function(inputStrategyName1, inputStrategyName2,
+                                           strategyName, speed, force=F) {   
+   
+   requireColInSignal(inputStrategyName1)
+   requireColInSignal(inputStrategyName2)
+   
+   if (!(strategyName %in% colnames(signal)) | force) { # if data do not exist yet or we force recalculation:      
+      ## Find which strategy is slower and which faster
+      if(stats$turnover[ which(stats$strategy == inputStrategyName1) ] > 
+            stats$turnover[ which(stats$strategy == inputStrategyName2) ]) {
+         slowStrat <- alloc[, inputStrategyName1]
+         fastStrat <- alloc[, inputStrategyName2]      
+      } else {
+         slowStrat <- alloc[, inputStrategyName2]
+         fastStrat <- alloc[, inputStrategyName1]      
+      }     
+      
+      addNumColToSignal(strategyName)
+      startIndex <- max( sum(is.na(slowStrat)), sum(is.na(fastStrat)) ) + 1
+      signal[1:(startIndex-1), strategyName] <<- NA
+      signal[startIndex, strategyName] <<- ( slowStrat[startIndex] + fastStrat[startIndex] ) / 2
+      target <- NULL # which strategy we move towards
+      speed <- speed/100
+      
+      for (i in (startIndex+1):numData) {
+         minimum <- min( slowStrat[i], fastStrat[i] )
+         maximum <- max( slowStrat[i], fastStrat[i] )
+         #          print (c(i, minimum, maximum, signal[i-1, strategyName]))
+         if( signal[i-1, strategyName] < minimum) { # if below both, increase the value of the signal
+            signal[i, strategyName] <<- minimum + 1e-6 # add a bit to avoid pinning
+            target <- NULL
+         }
+         #signal[i-1, strategyName] - 0.2 * (signal[i-1, strategyName]-minimum)
+         else if( signal[i-1, strategyName] > maximum) { # if above both, decrease the value of the signal
+            signal[i, strategyName] <<- maximum - 1e-6 # add a bit to avoid pinning
+            target <- NULL
+         }
+         #signal[i-1, strategyName] - 0.2 * (signal[i-1, strategyName]-maximum)
+         else { # if between them, go towards the one that moved away
+            if( is.null(target) ) { # if there is no target yet and we need one: we set one
+               if (abs(fastStrat[i]-signal[i-1, strategyName]) >= abs(slowStrat[i]-signal[i-1, strategyName]) )
+                  target <- "fast" # the strategy that moved away is the fast one: it is now our target
+               else target <- "slow"
+            }
+            if (target == "fast")
+               signal[i, strategyName] <<- signal[i-1, strategyName] + speed * (fastStrat[i]-signal[i-1, strategyName])
+            else if (target == "slow")
+               signal[i, strategyName] <<- signal[i-1, strategyName] + speed * (slowStrat[i]-signal[i-1, strategyName])
+            else stop(target, " is not a valid value for \'target\'.")
+            #          signal[i, strategyName] <<- max(min(signal[i, strategyName], maximum), minimum)
+         }
+      }
+   }
+}
+
 
 ## Combine the signals of up to 4 strategies
 calcCombinedStrategySignal <- function(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
                                        fraction1, fraction2, fraction3, fraction4, 
-                                       strategyName, subtype, combineMode="weighted", force=F) {
+                                       strategyName, subtype, combineMode="weighted", speed="", force=F) {
    
-#    print(combineMode)
    if (combineMode=="weighted")   
       calcCombinedStrategySignal_weighted(inputStrategyName1, inputStrategyName2, 
                                           inputStrategyName3, inputStrategyName4, 
@@ -168,13 +199,19 @@ calcCombinedStrategySignal <- function(inputStrategyName1, inputStrategyName2, i
       calcCombinedStrategySignal_and(inputStrategyName1, inputStrategyName2, 
                                      inputStrategyName3, inputStrategyName4, 
                                      strategyName=strategyName, force)
+   else if (combineMode=="dynamic") {
+      if (inputStrategyName3=="" & inputStrategyName4=="")
+         calcCombinedStrategySignal_dynamic(inputStrategyName1, inputStrategyName2, 
+                                            strategyName=strategyName, speed=speed, force)
+      else stop("Only two strategies can be used with combineMode==\'dynamic\'.")
+   }
    else stop(combineMode, " is not a valid value for combineMode.")
 }
 
 
 combineStrategies <- function(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
-                              fraction1=25, fraction2=25, fraction3=25, fraction4="", 
-                              strategyName="", type="combined", subtype, combineMode="weighted",
+                              fraction1=25, fraction2=25, fraction3=25, fraction4=25, 
+                              strategyName="", type="combined", subtype, combineMode="weighted", speed=0,
                               futureYears=def$futureYears, tradingCost=def$tradingCost, 
                               coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
    
@@ -193,13 +230,15 @@ combineStrategies <- function(inputStrategyName1, inputStrategyName2, inputStrat
          strategyName <- paste0(subtype, "_or") 
       else if (combineMode=="and") 
          strategyName <- paste0(subtype, "_and")      
+      else if (combineMode=="dynamic") 
+         strategyName <- paste0(subtype, "_dyn", speed)      
    }
    
    if (!(strategyName %in% colnames(alloc)) | force) {   
       calcCombinedStrategySignal(inputStrategyName1=inputStrategyName1, inputStrategyName2=inputStrategyName2, 
                                  inputStrategyName3=inputStrategyName3, inputStrategyName4=inputStrategyName4, 
                                  fraction1=fraction1/100, fraction2=fraction2/100, fraction3=fraction3/100, fraction4=fraction4/100, 
-                                 strategyName=strategyName, subtype=subtype, combineMode=combineMode, force=force)
+                                 strategyName=strategyName, subtype=subtype, combineMode=combineMode, speed=speed, force=force)
       calcAllocFromSignal(strategyName)
    }
    
@@ -250,12 +289,37 @@ searchForOptimalCombined <- function(inputStrategyName1, inputStrategyName2, inp
                                      minF1=minF1, maxF1=maxF1, byF1=byF1, minF2=minF2, maxF2=maxF2, byF2=byF2, 
                                      minF3=minF3, maxF3=maxF3, byF3=byF3, minF4=minF4, maxF4=maxF4,
                                      futureYears=def$futureYears, tradingCost=def$tradingCost, 
-                                     type="search", subtype,
+                                     type="search", subtype, speed=0,
                                      minTR=0, maxVol=20, maxDD2=5, minTO=0, minScore=0, 
                                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
                                      CPUnumber=def$CPUnumber, plotType="dots", col, combineMode="weighted", force=F) {
   
    lastTimePlotted <- proc.time()
+   
+   if (combineMode=="or" | combineMode=="all" ) {
+      combineStrategies(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
+                        strategyName=paste0(subtype,"_or"), type=type, subtype=subtype, combineMode="or", force=force)   
+      showSummaryForStrategy(strategyName=paste0(subtype,"_or"), futureYears=futureYears, tradingCost=tradingCost, 
+                             minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=F)
+   }
+   
+   if (combineMode=="and" | combineMode=="all" ) {
+      combineStrategies(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
+                        strategyName=paste0(subtype,"_and"), type=type, subtype=subtype, combineMode="and", force=force)   
+      showSummaryForStrategy(strategyName=paste0(subtype,"_and"), futureYears=futureYears, tradingCost=tradingCost, 
+                             minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=F)
+   }
+
+   if (combineMode=="dynamic" | combineMode=="all" ) {
+      combineStrategies(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
+                        strategyName=paste0(subtype,"_dyn",speed), type=type, subtype=subtype, 
+                        combineMode="dynamic", speed=speed, force=force)   
+      showSummaryForStrategy(strategyName=paste0(subtype,"_dyn",speed), futureYears=futureYears, tradingCost=tradingCost, 
+                             minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=F)
+   }
    
    if (combineMode=="weighted" | combineMode=="all" )
       for(f1 in seq(minF1, maxF1, by=byF1)) 
@@ -283,24 +347,9 @@ searchForOptimalCombined <- function(inputStrategyName1, inputStrategyName2, inp
                }
             }
          }
-   
-   if (combineMode=="or" | combineMode=="all" ) {
-      combineStrategies(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
-                        strategyName=paste0(subtype,"_or"), type=type, subtype=subtype, combineMode="or", force=force)   
-      showSummaryForStrategy(strategyName=paste0(subtype,"_or"), futureYears=futureYears, tradingCost=tradingCost, 
-                             minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
-                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=F)
-   }
-   
-   if (combineMode=="and" | combineMode=="all" ) {
-      combineStrategies(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
-                        strategyName=paste0(subtype,"_and"), type=type, subtype=subtype, combineMode="and", force=force)   
-      showSummaryForStrategy(strategyName=paste0(subtype,"_and"), futureYears=futureYears, tradingCost=tradingCost, 
-                             minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
-                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=F)
-   }
-   
-   plotAllReturnsVsTwo(col=col, searchPlotType=plotType) 
+   ## we replot only if we have not just plotted (literally) a second ago
+   if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > 1 ) 
+      plotAllReturnsVsTwo(col=col, searchPlotType=plotType) 
 }
 
 
@@ -311,10 +360,10 @@ searchForOptimalValue <- function(inputStrategyName1=def$typicalCAPE1, inputStra
                                   futureYears=def$futureYears, tradingCost=def$tradingCost, 
                                   type="search", subtype="value",
                                   minTR=0, maxVol=20, maxDD2=2, minTO=4, minScore=17,
-                                  col=F, CPUnumber=def$CPUnumber, plotType="dots", combineMode="weighted", force=F) {
+                                  col=F, CPUnumber=def$CPUnumber, plotType="dots", combineMode="all", force=F) {
 
-   print("While you are waiting, here are the four strategies being used.")
-   plotReturnAndAlloc(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4)
+#    print("While you are waiting, here are the four strategies being used.")
+#    plotReturnAndAlloc(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4)
    
    print(paste0("strategy        |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score") )
    searchForOptimalCombined(inputStrategyName1=inputStrategyName1, inputStrategyName2=inputStrategyName2,
@@ -338,7 +387,7 @@ searchForOptimalTechnical <- function(inputStrategyName1=def$typicalSMA, inputSt
                                       futureYears=def$futureYears, tradingCost=def$tradingCost, 
                                       type="search", subtype="technical",
                                       minTR=7, maxVol=17, maxDD2=1.4, minTO=1, minScore=17.2,
-                                      col=F, CPUnumber=def$CPUnumber, plotType="dots", combineMode="weighted", force=F) {
+                                      col=F, CPUnumber=def$CPUnumber, plotType="dots", combineMode="all", force=F) {
    
    print(paste0("strategy              |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
    searchForOptimalCombined(inputStrategyName1=inputStrategyName1, inputStrategyName2=inputStrategyName2,
@@ -357,17 +406,19 @@ searchForOptimalBalanced <- function(inputStrategyName1=def$typicalValue, inputS
                                      inputStrategyName3="", inputStrategyName4="", 
                                      minF1=0L, maxF1=100L, byF1=4L, minF2=0L, maxF2=100L, byF2=4L, 
                                      minF3=0L, maxF3=0L, byF3=0L, minF4=0L, maxF4=0L, 
-                                     futureYears=def$futureYears, tradingCost=def$tradingCost, type="search", subtype="balanced", 
+                                     futureYears=def$futureYears, tradingCost=def$tradingCost, 
+                                     type="search", subtype="balanced", speed=0,
                                      minTR=5, maxVol=20, maxDD2=2.5, minTO=3., minScore=17,
                                      col=F, CPUnumber=def$CPUnumber, plotType="line", combineMode="weighted", force=F) {
    totTime <- proc.time()
-   print(paste0("strategy         |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
+   print(paste0("strategy         |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score") )
    
    searchForOptimalCombined(inputStrategyName1=inputStrategyName1, inputStrategyName2=inputStrategyName2,
                             inputStrategyName3=inputStrategyName3, inputStrategyName4=inputStrategyName4, 
                             minF1=minF1, maxF1=maxF1, byF1=byF1, minF2=minF2, maxF2=maxF2, byF2=byF2, 
                             minF3=minF3, maxF3=maxF3, byF3=byF3, minF4=minF4, maxF4=maxF4, 
-                            futureYears=futureYears, tradingCost=tradingCost, type=type, subtype=subtype,
+                            futureYears=futureYears, tradingCost=tradingCost, 
+                            type=type, subtype=subtype, speed=speed,
                             minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore,
                             col=col, CPUnumber=CPUnumber, plotType=plotType, combineMode=combineMode, force=force) 
    print("")
