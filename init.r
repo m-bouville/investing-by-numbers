@@ -1,3 +1,14 @@
+############################################
+##                                        ##
+##         Investing by numbers           ##
+##   a quantitative trading strategy by   ##
+##         Mathieu Bouville, PhD          ##
+##      <mathieu.bouville@gmail.com>      ##
+##                                        ##
+##           init.r loads data            ##
+##       and initializes everything       ##
+##                                        ##
+############################################
 
 
 
@@ -5,14 +16,16 @@
 start <- function(dataSplit="none", # "none" for all data, "search" and "testing" for half the data
                   extrapolateDividends=T, # whether to extrapolate missing recent dividends (or remove incomplete months)
                   smoothConstantAlloc=F, # calculates more constant-allocation portfolios, to get smoother curves in plots
-                  downloadAndCheckAllFiles=F, # downloads data files even if they exist locally, to check whether they are up to date
+                  downloadAndCheckAllFiles=F, # downloads data files even if they exist locally,
+                                              # to check whether they are up to date
                   otherAssetClasses=F, # loads gold and UK house prices
                   newcomer=F, # displays some information on the code
                   force=F) {
    
-   if(!file.exists("utils.r")) stop("Use \'setwd()\' to change the working directory to that containing the data.")
+   if(!file.exists("utils.r")) 
+      stop("Use \'setwd()\' to change the working directory to that containing the data.")
 
-   source("utils.r")      # general functions (i.e. those not search in another file)
+   source("utils.r")      # general functions (i.e. those not in another file)
    source("DD.r")         # drawdowns
    source("plotting.r")   # various functions that generate plots
    
@@ -27,7 +40,7 @@ start <- function(dataSplit="none", # "none" for all data, "search" and "testing
    
    totTime <- proc.time()
    
-   setDefaultValues(force=force)
+   setDefaultValues(dataSplit=dataSplit, force=force)
    
    ## if data frame does not exist, or is incomplete (had been used for search or testing), 
    ## or if we want to force the loading: we load the xls file
@@ -36,7 +49,8 @@ start <- function(dataSplit="none", # "none" for all data, "search" and "testing
       message("Then we will also load a list of drawdowns, of gold prices and of UK house prices.")
       message("After that, we will create the basic data structures and calculate some basic strategies.")
       message()
-      #if (!constAlloc) message("If you want stock-bond constant allocations to be created and their statistics to be calculated, run \'start(constAlloc=T)\'.")
+      #if (!constAlloc) message("If you want stock-bond constant allocations to be created 
+#       and their statistics to be calculated, run \'start(constAlloc=T)\'.")
       loadData(downloadAndCheckAllFiles=downloadAndCheckAllFiles)
    }
    
@@ -46,17 +60,32 @@ start <- function(dataSplit="none", # "none" for all data, "search" and "testing
    if (!exists("alloc") | force) alloc  <<- data.frame(date = dat$date, numericDate = dat$numericDate)
    if (!exists("TR")    | force) TR     <<- data.frame(date = dat$date, numericDate = dat$numericDate, stocks = dat$TR)
 
-   if ( def$tradingCost==0.02 & (!exists("netTR2") | force) )
-      netTR2 <<- data.frame(date = dat$date, numericDate = dat$numericDate)
-   else if ( def$tradingCost==0.04 & (!exists("netTR4") | force) )
-      netTR4 <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+#    if ( def$tradingCost==0.02 & (!exists("netTR2") | force) )
+#       netTR2 <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+#    else if ( def$tradingCost==0.04 & (!exists("netTR4") | force) )
+#       netTR4 <<- data.frame(date = dat$date, numericDate = dat$numericDate)
    
-   if ( (def$futureYears==10) & (!exists("next10yrs") | force) )
+   if ( (def$futureYears==10) & (!exists("next10yrs") | force) ) {
       next10yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
-   else if ( (def$futureYears==20) & (!exists("next20yrs") | force) )
+#       if ( def$tradingCost==0.02 & (!exists("next10yrs_net2") | force) )
+#          next10yrs_net2 <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+#       else if ( def$tradingCost==0.04 & (!exists("next10yrs_net4") | force) )
+#          next10yrs_net4 <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+   }
+   else if ( (def$futureYears==20) & (!exists("next20yrs") | force) ) {
       next20yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
-   else if ( (def$futureYears==30) & (!exists("next30yrs") | force) )
+#       if ( def$tradingCost==0.02 & (!exists("next20yrs_net2") | force) )
+#          next20yrs_net2 <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+#       else if ( def$tradingCost==0.04 & (!exists("next20yrs_net4") | force) )
+#          next20yrs_net4 <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+   }
+   else if ( (def$futureYears==30) & (!exists("next30yrs") | force) ) {
       next30yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+#       if ( def$tradingCost==0.02 & (!exists("next30yrs_net2") | force) )
+#          next30yrs_net2 <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+#       else if ( def$tradingCost==0.04 & (!exists("next30yrs_net4") | force) )
+#          next30yrs_net4 <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+   }
    
    if (!exists("DD") | force) loadDDlist(force=force) # loading the dates of major drawdowns
    if (!exists("stats") | force)  createStatsDF()   
@@ -76,7 +105,7 @@ start <- function(dataSplit="none", # "none" for all data, "search" and "testing
    if(smoothConstantAlloc)
       constAllocList <- seq(100, 0, by=-5)
    else 
-      constAllocList <- c(100, 90, 80, 70, 60, 0)
+      constAllocList <- c(100, 80, 60, 45, 30, 0)
    invisible ( lapply( constAllocList, function(alloc) createConstAllocStrategy(
       alloc, futureYears=def$futureYears, tradingCost=def$tradingCost, force=force) ) )
    print( c( "constant allocation time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
@@ -118,13 +147,20 @@ start <- function(dataSplit="none", # "none" for all data, "search" and "testing
 }
 
 
-setDefaultValues <- function(force=F) {
+setDefaultValues <- function(dataSplit, force=F) {
    if (!exists("def") | force) def <<- list()
    
    def$futureYears   <<- 20L    # default value for the number of years over which future returns are calculated
-   message("default futureYears: ", def$futureYears)
-   def$tradingCost   <<- 2/100 # default value for the trading costs
+   message("default riskAsCosts: ", def$futureYears)
+   def$tradingCost   <<- 0.5/100 # default value for the trading costs
    message("default tradingCost: ", def$tradingCost*100, "% / per year of turnover")
+   if(dataSplit=="testing") {
+      def$riskAsCost <<- 0
+      message("default riskAsCost set to 0 for \'testing\' phase.")      
+   } else {
+      def$riskAsCost   <<- 1.5/100 # default value for the trading costs
+      message("default riskAsCost: ", def$tradingCost*100, "% / per year of turnover")
+   }      
    
    def$dataStartYear <<- 1871
    def$startIndex    <<- round(10.5*12+1)
@@ -137,8 +173,8 @@ setDefaultValues <- function(force=F) {
    def$coeffVol      <<- 1/4
    def$coeffDD2      <<- 2/3
    
-   def$signalMin <<- -0.2
-   def$signalMax <<-  1.2
+   def$signalMin     <<- -0.2
+   def$signalMax     <<-  1.2
    
    setPlottingDefaultValues()
    setCAPEdefaultValues()
@@ -157,8 +193,9 @@ createStatsDF <- function() {
                         type = character(), # type: constant allocation, CAPE, SMA, mixed, etc.
                         subtype = character(), # especially for combinedstrategy
                         TR = numeric(),  # average real total return (exponential regression)
-                        netTR2 = numeric(),  # average real total return net of 2% of trading costs
-                        netTR4 = numeric(),  # average real total return net of 4% of trading costs
+                        netTR0.5 = numeric(),  # average real total return net of 0.5% of trading costs
+                        netTR2 = numeric(),  # average real total return net of 2% of costs (trading + risk)
+                        netTR4 = numeric(),  # average real total return net of 4% of costs (trading + risk)
                         volatility = numeric(), 
                         avgStockAlloc = numeric(), # average allocation to stocks
                         latestStockAlloc = numeric(), # allocation to stocks as of the last date of the data
@@ -197,6 +234,7 @@ createParametersDF <- function() {
                              stringsAsFactors=F)
 }
 
+
 splitData <- function(dataSplit, force) {
    if (dataSplit == "search") {
       numData <<- numData %/% 2
@@ -223,8 +261,8 @@ splitData <- function(dataSplit, force) {
       def$plotStartYear  <<- def$dataStartYear + def$startIndex %/% 12 + 1
 
       def$maxTR  <<- 100
-      def$yTRmin <<- 5
-      def$yTRmax <<- 8
+      def$yTRmin <<- 4.4
+      def$yTRmax <<- 9
       def$minVol <<- 11
       def$maxVol <<- 17.5
       def$minDD2 <<- 0
