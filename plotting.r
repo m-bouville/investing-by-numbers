@@ -117,31 +117,33 @@ plotAssetClassesReturn <- function(stratName1="stocks",       col1=def$colConsta
 plotSomeSortOfReturn <- function(returnDF1, returnDF2, returnDF3, returnDF4,
                                  stratName1, stratName2, stratName3, stratName4,
                                  col1, col2, col3, col4, lwd1, lwd2, lwd3, lwd4,
-                                 startYear, endYear, minTR, maxTR, yLabel) {   
-   
+                                 startYear, endYear, minTR, maxTR, yLabel, yLog) {      
 
    par(mar=c(2.7, 4.2, 1.5, 1.5))
    xRange <- c(startYear, endYear)
    yRange <- c(minTR, maxTR)
+   if (yLog) 
+      logAxis<-"y"
+   else logAxis<-""
             
    if( !is.null(returnDF1) ) {   
       plot(TR$numericDate, returnDF1, col=col1, xlab="", ylab=yLabel, 
-           log="y", type="l", lwd=lwd1, xlim=xRange, ylim=yRange)
+           log=logAxis, type="l", lwd=lwd1, xlim=xRange, ylim=yRange)
       par(new=T)
    }
    if( !is.null(returnDF2) ) {   
       plot(TR$numericDate, returnDF2, col=col2, xlab="", ylab="", 
-           log="y", type="l", lwd=lwd2, xlim=xRange, ylim=yRange)
+           log=logAxis, type="l", lwd=lwd2, xlim=xRange, ylim=yRange)
       par(new=T)
    }  
    if( !is.null(returnDF3) ) {   
       plot(TR$numericDate, returnDF3, col=col3, xlab="", ylab="", 
-           log="y", type="l", lwd=lwd3, xlim=xRange, ylim=yRange)
+           log=logAxis, type="l", lwd=lwd3, xlim=xRange, ylim=yRange)
       par(new=T)
    }
    if( !is.null(returnDF4) ) {   
       plot(TR$numericDate, returnDF4, col=col4, xlab="", ylab="", 
-           log="y", type="l", lwd=lwd4, xlim=xRange, ylim=yRange)
+           log=logAxis, type="l", lwd=lwd4, xlim=xRange, ylim=yRange)
    }
    legend( "topleft", c(stratName1,stratName2,stratName3,stratName4), 
           bty="n", lwd=c(lwd1, lwd2, lwd3, lwd4), lty = c(1,1,1,1), 
@@ -195,8 +197,8 @@ plotReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTec
                         stratName1=stratName1, stratName2=stratName2, 
                         stratName3=stratName3, stratName4=stratName4,
                         col1=col1, col2=col2, col3=col3, col4=col4, lwd1=lwd1, lwd2=lwd2, lwd3=lwd3, lwd4=lwd4,
-                        startYear=startYear, endYear=endYear, minTR=minTR, maxTR=maxTR, yLabel=yLabel)  
-      
+                        startYear=startYear, endYear=endYear, minTR=minTR, maxTR=maxTR, 
+                        yLabel=yLabel, yLog=T) 
    
    if(pngOutput) {
       dev.off()
@@ -281,74 +283,74 @@ plotReturnAndAlloc <- function(stratName1=def$typicalBalanced, stratName2=def$ty
 
 plotFutureReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTechnical, 
                              stratName3=def$typicalValue, stratName4="stocks", 
+                             futureYears=def$futureYears,
                              col1=def$colBalanced, col2=def$colTechnical, 
                              col3=def$colValue, col4=def$colConstantAlloc, 
                              lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=2,
-                             futureYears=def$futureYears,
-                             startYear=def$plotStartYear, endYear=def$plotEndYear, tradingCost=def$tradingCost, 
-                             minTR=0, maxTR=.2, yLabel="", net=T, normalize=T,
+                             startYear=def$plotStartYear, endYear=def$plotEndYear, 
+                             tradingCost=def$tradingCost, riskAsCost=def$riskAsCost,
+                             minTR="", maxTR="", yLabel="", 
+                             startIndex=def$startIndex, net=T, normalize=F,
                              pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
                              pngName="figures/future_return.png") { 
    
    if(pngOutput)
       png(file=pngName, width=pngWidth, height=pngHeight)
-   
+          
+   costs <- (tradingCost+riskAsCost)
    if ( yLabel=="" ) {
-      if( tradingCost==0 )  # trading cost = 0: gross returns
-         yLabel <- paste0("annualized future return (%) over ", futureYears, " years, GROSS of trading costs")
-      else if( tradingCost>0 ) # trading cost > 0: net returns
-         yLabel <- paste0("annualized future return (%) over ", futureYears, 
-                          " years, net of trading costs of ", round(tradingCost*100), "%")   
-      else # no notion of trading cost (e.g. for asset classes)
-         yLabel <- paste0("annualized future return (%) over ", futureYears, " years")
+      if( costs==0 )  # cost = 0: gross returns
+         yLabel <- paste0("annual return (%) over next ", futureYears, " years, GROSS of costs")
+      else if( costs>0 ) # cost > 0: net returns
+         yLabel <- paste0("annual return (%) over next ", futureYears, 
+                          " years, net of costs of ", round(costs*100, 1), "%")   
+      else # no notion of cost (e.g. for asset classes)
+         yLabel <- paste0("annual return (%) over next ", futureYears, " years")
    }
    
    normDate <- (startYear-def$dataStartYear)*12+1
    
-   returnDF1 <- numeric(numData)
-   returnDF2 <- numeric(numData)
-   returnDF3 <- numeric(numData)
-   returnDF4 <- numeric(numData)
-   returnDF  <- c(returnDF1,  returnDF2,  returnDF3,  returnDF4)
-   stratName <- c(stratName1, stratName2, stratName3, stratName4)
+   stratNames <- c(stratName1, stratName2, stratName3, stratName4)
    
-   if(tradingCost==0) net<-F
-   
-   if(net) {      
-      if (tradingCost == 0.02) {
-         if (!stratName1 %in% colnames(netTR2)) calcTRnetOfTradingCost(stratName1)
-         if (!stratName2 %in% colnames(netTR2)) calcTRnetOfTradingCost(stratName2)
-         if (!stratName3 %in% colnames(netTR2)) calcTRnetOfTradingCost(stratName3)
-         if (!stratName4 %in% colnames(netTR2)) calcTRnetOfTradingCost(stratName4)
-         returnDF <- sapply( stratName, function(col) netTR2[, col] )
-      } 
-      else if(tradingCost == 0.04)  {
-         if (!stratName1 %in% colnames(netTR4)) calcTRnetOfTradingCost(stratName1)
-         if (!stratName2 %in% colnames(netTR4)) calcTRnetOfTradingCost(stratName2)
-         if (!stratName3 %in% colnames(netTR4)) calcTRnetOfTradingCost(stratName3)
-         if (!stratName4 %in% colnames(netTR4)) calcTRnetOfTradingCost(stratName4)
-         returnDF <- sapply( stratName, function(col) netTR4[, col] )
-      } 
-      else stop("No data frame \'netTR", round(tradingCost*100,1), "\' exists.")      
-   } else 
-      returnDF <- sapply( stratName, function(col) TR[, col] )
-   
-   
-   if (normalize) {
-      returnDF[, 1] <- returnDF[, 1] / returnDF[normDate, 1]
-      returnDF[, 2] <- returnDF[, 2] / returnDF[normDate, 2]
-      returnDF[, 3] <- returnDF[, 3] / returnDF[normDate, 3]
-      returnDF[, 4] <- returnDF[, 4] / returnDF[normDate, 4]
+   if (futureYears==10) {
+      returnDF <- 100 * next10yrs[, stratNames]
+      if (minTR=="") minTR <- -5
+      if (maxTR=="") maxTR <- 20
+   } else if (futureYears==20) {
+      returnDF <- 100 * next20yrs[, stratNames]
+      if (minTR=="") minTR <-  0
+      if (maxTR=="") maxTR <- 16
+   } else if (futureYears==30) {
+      returnDF <- 100 * next30yrs[, stratNames]
+      if (minTR=="") minTR <-  3
+      if (maxTR=="") maxTR <- 13
    }
    
+   if(net & costs>0) # reduce TR because of costs
+      for (strat in 1:4) {
+         index <- which(stats$strategy == stratNames[strat])
+         TOcost <- costs/12/stats$turnover[index]
+         for (i in startIndex:numData)
+            returnDF[i, strat] <- returnDF[i, strat] * exp(-TOcost*(i-startIndex))
+      }
+   
+   if (normalize) 
+      lapply( 1:4, function(i) returnDF[, i] <<- returnDF[, i] / returnDF[normDate, i] )
+   
+   ## adjust endYear based on non-NA data
+   i <- (endYear-def$dataStartYear)*12+1
+   while ( sum(is.na(returnDF[i, ])) > 0 ) 
+   i <- i-1
+   endYear <- round( (i-1)/12 + def$dataStartYear ) + 1
+   print(startYear)
    
    plotSomeSortOfReturn(returnDF1=returnDF[, 1], returnDF2=returnDF[, 2], 
                         returnDF3=returnDF[, 3], returnDF4=returnDF[, 4],
                         stratName1=stratName1, stratName2=stratName2, 
                         stratName3=stratName3, stratName4=stratName4,
                         col1=col1, col2=col2, col3=col3, col4=col4, lwd1=lwd1, lwd2=lwd2, lwd3=lwd3, lwd4=lwd4,
-                        startYear=startYear, endYear=endYear, minTR=minTR, maxTR=maxTR, yLabel=yLabel)  
-   
+                        startYear=startYear, endYear=endYear, minTR=minTR, maxTR=maxTR, 
+                        yLabel=yLabel, yLog=F) 
    
    if(pngOutput) {
       dev.off()
