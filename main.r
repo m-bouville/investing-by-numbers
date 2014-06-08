@@ -11,18 +11,11 @@
 ### "http://mathieu.bouville.name/finance/CAPE/"
 
 
-
-
-
-# library(compiler)
-# enableJIT(1) # compiling just-in-time (results are not convincing, but worth a second try)
-
 source("init.r")       # loads data and initializes everything
 
 
 showToDoList <- function() {
    print("What's still left TO DO:")
-   print(" - Plot future returns.")
    print(" - Improve CAPE strategy results.")
    print(" - Change (how?) the way 2 strategies are combined.")
    print(" - Automate parameter search.")
@@ -41,7 +34,6 @@ showUsefulFunctions <- function() {
    print("plotAllReturnsVsTwo(col=T), # 'col' switches between the two plots on a row or column")
    print("plotReturnAndAlloc()")
    print("plotAssetClassesReturn()")
-   plotAllReturnsVsTwo(col=F)
    print("showPlotLegend()")
    print("## Searching the parameter space:")
    print("searchForOptimalBalanced() # for instance.")
@@ -68,7 +60,7 @@ showForNewcomer <- function() {
 
 # showToDoList()
 
-start(dataSplit="testing",          # "none" for all data, "search" and "testing" for half the data
+start(dataSplit="none",          # "none" for all data, "search" and "testing" for half the data
       extrapolateDividends=T,    # whether to extrapolate missing recent dividends (or remove incomplete months)
       smoothConstantAlloc=F,     # calculates more constant-allocation portfolios, to get smoother curves in plots (slower)
       downloadAndCheckAllFiles=F,# downloads data files even if they exist locally, to check whether they are up to date

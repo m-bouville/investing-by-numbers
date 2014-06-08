@@ -63,22 +63,16 @@ The basic idea is to see whether the price is much higher than it was recently i
 ### Simple moving averages (SMA)
 A simple moving average over a year is simply the average price over the past year. If the current price is higher then prices are currently going up, which is used as indication of a bull market.
 
-### Momentum
-This compares the current price to the price a year ago, again to spot a trend.
-
 ### Reversal
-The trend reversal strategy does not find out whether prices are going up (time to be in the market), or going down (we should be out of the market).
-Instead it finds out whether a rise or fall is starting.
-So when the signal is positive, instead of _setting_ the allocation to a high value, we _increase_ its value.
-For this reason the algorithm is rather different from other strategies.
+The trend reversal strategy does not find out whether prices are going up (time to be in the market), or going down (we should be out of the market). Instead it finds out whether a rise or fall is starting. So when the signal is positive, instead of _setting_ the allocation to a high value, we _increase_ its value. For this reason the algorithm is rather different from other strategies.
 
-### A note on trading costs
-They have three sources:
-- buying and selling assets costs money;
-- buying and selling assets takes time, and strategies that trade often require more sustained attention (even when not actually trading);
-- a strategy that trades more is more likely to need up-to-date information (whereas a strategy like CAPE that turns its portfolio once in a decade can afford to use data that are a month old), and in historical testing it is not always easy to tell what precise information was available at the time -- so we penalize heavy-trading strategies because of the extra risk, not just the extra cost.
+### A tale of two costs
+The variable 'tradingCost' is meant to account for direct (and less direct) costs of trading:
+- buying and selling assets costs money,
+- buying and selling assets takes time,
+- strategies that trade often require more sustained attention (even when not actually trading).
 
-This last reason explains why the trading costs used in the code may seem too high.
+'riskAsCost' accounts for the fact that a strategy that trades more is more likely to need up-to-date information (whereas a strategy like CAPE that turns its portfolio once in a decade can afford to use data that are a month old), and in historical testing it is not always easy to tell what precise information was available at the time -- so we penalize heavy-trading strategies because of the extra risk, not just the extra cost.
 
 
 ## Combining strategies
@@ -115,24 +109,22 @@ The data are initially loaded into a dataframe named 'dat'. Everything this data
 - some data calculated for the strategy, such as CAPE or moving averages.
 
 
-### 'signal', 'alloc', 'TR' and 'netTR2' dataframes
+### 'signal', 'alloc' and 'TR' dataframes
 In all three, each row corresponds to a month and each column to a strategy. The signal is a number representing the opinion of the strategy, it is a sort of precursor to the stock allocation; the big difference being that the allocation has to be between 0 and 1. 
 
 The reason for this extra step is that an allocation of 0 does not tell us whether the strategy is simply bearish at the time or extremely bearish. So the average allocation between 2 strategies at 0% and 40% would be 20% even if the former is super pessimistic. With 'signal' on the other hand, one strategy could count as -40% and the other as 40%, with an average of 0% -- accounting for the difference between a mild pessimism and an extreme one.
-
-'TR' stores the value of the investment with time. And 'netTR2' is 'TR' net of 2% of trading costs (because we demand that strategies that trade more also earn more).
 
 
 ### 'stats' and 'parameters' dataframes
 The 'stats' dataframe contains the summary of statistics for the strategies. It is filled by calcStatisticsForStrategy() and its contents displayed by showSummaryForStrategy(); the function showSummaries() displays the statistics of the basic strategies in one go (all three functions are in utils.r). It has column names like:
 - 'TR', the average real total return;
-- 'netTR2', the average real total return, net of 2% of trading costs;
+- 'netTR2', the average real total return, net of 2% of costs (tradingCost + riskAsCost) - because we demand that strategies that trade more also earn more, as said before;
 - 'volatility';
 - 'avgStockAlloc' and 'latestStockAlloc', the latter indicating what the strategy says we should be doing now;
 - 'turnover' (in years) and its inverse 'invTurnover' (used in plots);
 - 'DD2' is the sum of the squares of the drawdowns (i.e. price drops).
 
-The 'parameters' dataframe contains the parameters used to generate the strategies.  This is mostly for the record and is not commonly read. Note that the strategy names themselves include the values of the main parameters, e.g. 'CAPE10_2avg30__90_95'.
+The 'parameters' dataframe contains the parameters used to generate the strategies.  This is mostly for the record and is not commonly read. Note that the strategy names themselves include the values of the main parameters, e.g. 'CAPE10_avg30__90_95'.
 
 
 ### Miscellaneous
@@ -156,7 +148,7 @@ In combine.r, one can put together several strategies based on a weighted averag
 In practice, this is done hierarchically: we combine value strategies with value strategies, and technical strategies with technical strategies. Then we combine the 2 resulting strategies to make up a 'balanced' strategy.
 
 
-## Preliminary results
+## Results
 The parameters are optimized using data from 1871 to 1942:
 - https://github.com/m-bouville/investing-by-numbers/blob/master/figures/return_and_allocation-1871_1942.png
 - https://github.com/m-bouville/investing-by-numbers/blob/master/figures/return_vs_four-1871_1942.png
@@ -166,17 +158,22 @@ Then tested between 1942 and 2014:
 - https://github.com/m-bouville/investing-by-numbers/blob/master/figures/return_vs_four-1942_2014.png
 
 
-Color codes:
+### Color codes for the plots
 - CAPE:      cyan
 - detrended: skyblue
-- momentum:  orange
 - SMA:       pink
 - Bollinger: magenta
-- reversal:  yellow
+- reversal:  orange
 
 combined strategies (squares):
 - value:     blue
 - technical: red
 - balanced:  black
 
-constant-allocation stock-bond profolios: green line
+constant-allocation stock-bond portfolios: green line
+
+
+### Discussion
+The whole point of splitting data between a search for optimal parameters and testing is that what looked like the best strategy may in fact be due to a strange turn of event which made us create a great strategy for too specific a situation. The test between 1942 and 2014 shows that value strategies fare a lot less well than from 1871 to 1942. So the masochism worked just fine.
+
+The reason why the value strategies fall harder than technical strategies is that they turn their portfolio infrequently. Sixty years of data for a strategy with a natural cycle time of twenty years means that we fit to only three cycles. In a sense there are more data available for technical strategies, not in terms of number of years but in terms of number of cycles.
