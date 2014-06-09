@@ -72,7 +72,9 @@ The variable 'tradingCost' is meant to account for direct (and less direct) cost
 - buying and selling assets takes time,
 - strategies that trade often require more sustained attention (even when not actually trading).
 
-'riskAsCost' accounts for the fact that a strategy that trades more is more likely to need up-to-date information (whereas a strategy like CAPE that turns its portfolio once in a decade can afford to use data that are a month old), and in historical testing it is not always easy to tell what precise information was available at the time -- so we penalize heavy-trading strategies because of the extra risk, not just the extra cost.
+'riskAsCost' accounts for the fact that a strategy that trades more is more likely to need up-to-date information (whereas a strategy like CAPE that turns its portfolio once in a decade can afford to use data that are a month old), and in historical testing it is not always easy to tell what precise information was available at the time -- so we penalize heavy-trading strategies because of the extra risk, not just the extra cost. 
+
+Since the latter is not an actual cost, it is used only in the parameter search. When plotting the results, only 'tradingCost' is included.
 
 
 ## Combining strategies
