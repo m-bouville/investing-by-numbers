@@ -7,7 +7,7 @@
 ##         Mathieu Bouville, PhD          ##
 ##      <mathieu.bouville@gmail.com>      ##
 ##                                        ##
-##     CAPE.r generates the strategy      ##
+##      CAPE.r generates a strategy       ##
 ##    based on the cyclically adjusted    ##
 ##     price-to-earnings ratio (CAPE)     ##
 ##                                        ##
@@ -81,7 +81,7 @@ createCAPEstrategy <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver
                                bearish=def$CAPEbearish, bullish=def$CAPEbullish, 
                                signalMin=def$signalMin, signalMax=def$signalMax,
                                strategyName="", type="CAPE", 
-                               futureYears=def$futureYears, tradingCost=def$tradingCost, 
+                               futureYears=def$futureYears, costs=def$tradingCost, 
                                coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
 
    CAPEname <- paste0("CAPE", years, "avg", avgOver)
@@ -118,9 +118,9 @@ createCAPEstrategy <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver
       parameters$startIndex[index] <<- startIndex
       parameters$bearish[index]    <<- bearish
       parameters$bullish[index]    <<- bullish      
-      parameters$avgOver[index]    <<-  avgOver   
+      parameters$avgOver[index]    <<- avgOver   
    }
-   calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, 
+   calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, costs=costs,
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    stats$type[which(stats$strategy == strategyName)] <<- parameters$type[which(parameters$strategy == strategyName)]
    stats$subtype[which(stats$strategy == strategyName)] <<- parameters$subtype[which(parameters$strategy == strategyName)]
@@ -131,7 +131,7 @@ searchForOptimalCAPE <-function(minYears=10, maxYears=10, byYears=0, cheat=2,
                                 minAvgOver=12L, maxAvgOver=36L, byAvgOver=12L, 
                                 minBear=16L, maxBear=24L,  byBear=2L, 
                                 minDelta=0L, maxDelta=5L, byDelta=1L, 
-                                futureYears=def$futureYears, tradingCost=def$tradingCost, 
+                                futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
                                 minTR=0, maxVol=20, maxDD2=5, minTO=5, minScore=13,
                                 coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
                                 CPUnumber=def$CPUnumber, col=F, plotType="symbols", force=F) {
@@ -151,7 +151,7 @@ searchForOptimalCAPE <-function(minYears=10, maxYears=10, byYears=0, cheat=2,
                   createCAPEstrategy(years=years, cheat=cheat, avgOver=avgOver, strategyName=strategyName, 
                                      bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
                                      type="search", futureYears=futureYears, force=force)
-                  showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
+                  showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
                                          minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, 
                                          minScore=minScore, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=F)
                }
@@ -191,44 +191,60 @@ searchForTwoOptimalCAPE <-function(plotType="symbols", force=F) {
 }
 
 
-## Plotting 
 plotFutureReturnVsCAPE <- function(CAPEname1=paste0("CAPE", def$CAPEyears),
                                    CAPEname2=paste0("CAPE", def$CAPEyears, "avg", def$CAPEavgOver1),
                                    #CAPEname2=paste0("CAPE", def$CAPEyears, "avg", def$CAPEavgOver2),
-                                   col1="blue", col2="red", showFit=T,
-                                   futureYears=def$futureYears, minTR="", maxTR="", 
+                                   col1="blue", col2="red", showFit=T, complete=T,
+                                   futureYears=def$futureYears, 
+                                   minCAPE=1.5, maxCAPE=44, minTR="", maxTR="", 
                                    pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
-                                   pngName="figures/future_return_vs_CAPE.png") {
+                                   pngName=paste0("figures/return_over_next_", futureYears, "_years_vs_CAPE.png") ) {
    
    if(pngOutput)
       png(file=pngName, width=pngWidth, height=pngHeight)
    
    para <- parametrizeFutureReturnPlot("", yLabel="", futureYears, minTR, maxTR) 
-   yLabel <- para[[1]]; minTR <- as.numeric(para[[2]]); maxTR <- as.numeric(para[[3]])
+   yLabel <- paste("stock", para[[1]]); minTR <- as.numeric(para[[2]]); maxTR <- as.numeric(para[[3]])
          
    if (futureYears==10) 
       returnVect <- 100 * next10yrs[, "stocks"]
    else if (futureYears==20) 
       returnVect <- 100 * next20yrs[, "stocks"]
    else if (futureYears==30) 
-      returnVect <- 100 * next30yrs[, "stocks"]  
+      returnVect <- 100 * next30yrs[, "stocks"]
+   
+   dateRange <- 1:numData
+   if ( complete ) {
+      ## adjust dateRange based on complete data
+      i <- 1
+      while ( ( CAPEname1 != "" && is.na(dat[i, CAPEname2]) ) | 
+              ( CAPEname2 != "" && is.na(dat[i, CAPEname2]) ) |
+                is.na(returnVect[i]) ) 
+         i <- i+1
+      j <- numData
+      while ( ( CAPEname1 != "" && is.na(dat[j, CAPEname2]) ) | 
+              ( CAPEname2 != "" && is.na(dat[j, CAPEname2]) ) |
+                is.na(returnVect[j]) ) 
+         j <- j-1
+      dateRange <- i:j
+   }
    
    par(mar=c(4.2, 4.2, 1.5, 1.5))
-   xRange <- c(5, 25)
+   xRange <- c(minCAPE, maxCAPE)
    yRange <- c(minTR, maxTR)
    
    if( CAPEname1 != "" ) {   
-      plot(dat[, CAPEname1], returnVect, col=col1, xlim=xRange, ylim=yRange, xlab="CAPE", ylab=yLabel)
+      plot(dat[dateRange, CAPEname1], returnVect[dateRange], col=col1, xlim=xRange, ylim=yRange, xlab="CAPE", ylab=yLabel)
       if (showFit) {
-         fit1 <- lm(dat[, CAPEname1] ~ returnVect, na.action=na.omit)
+         fit1 <- lm( returnVect[dateRange] ~ dat[dateRange, CAPEname1], na.action=na.omit)
          abline(fit1, col=col1)
       }
       par(new=T)
    }
    if( CAPEname2 != "" ) {
-      plot(dat[, CAPEname2], returnVect, col=col2, xlim=xRange, ylim=yRange, xlab="", ylab="")
+      plot(dat[dateRange, CAPEname2], returnVect[dateRange], col=col2, xlim=xRange, ylim=yRange, xlab="", ylab="")
       if (showFit) {
-         fit2 <- lm(dat[, CAPEname2] ~ returnVect, na.action=na.omit)
+         fit2 <- lm( returnVect[dateRange] ~ dat[dateRange, CAPEname2], na.action=na.omit)
          abline(fit2, col=col2)
       }
    }
@@ -245,48 +261,28 @@ plotFutureReturnVsCAPE <- function(CAPEname1=paste0("CAPE", def$CAPEyears),
 
 
 
-## obsolete
+## OBSOLETE
 searchForOptimalMetaCAPE <-function(stratName1=def$CAPEstrategies[[1]], stratName2=def$CAPEstrategies[[2]], 
                                     stratName3=def$CAPEstrategies[[3]], stratName4="",
                             minF1=20, maxF1=80, dF1=20, minF2=minF1, maxF2=maxF1, dF2=dF1, minF3=minF1, maxF3=maxF1, 
                             futureYears=def$FutureYears, tradingCost=def$TradingCost, cutoffScore=17, force=F) {
 
-   for(f1 in seq(minF1, maxF1, by=dF1)) 
-      for(f2 in seq(minF2, maxF2, by=dF2)) {
-         f4 <- 0   
-         f3 <- round(100 - f1 - f2)
-         #name = paste0("metaCAPE", "_", f1, "_", f2, "_", f3, "_",  f4)
-         displayName <- paste0(f1, "_", f2, "_", f3)
-         strategyName <- paste0("metaCAPE", displayName)
-         #print(name)
-         if ((f3 > minF3 - 1e-6) & (f3 < maxF3 + 1e-6)) {
-            calcMultiStrategyReturn(name1=stratName1, name2=stratName2, name3=stratName3, name4=stratName4, 
-                                    f1/100, f2/100, f3/100, f4/100, strategyName=strategyName, 10*12, delta="", force=force)
-            showSummaryStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
-                                cutoffScore=cutoffScore, displayName=displayName, force=force)
-         }
-      }
-   showSummaryStrategy("CAPE10avg24",  futureYears=futureYears, tradingCost=tradingCost, displayName="CAPE10  ", force=F)
-   showSummaryStrategy("balanced40_25_10_25", futureYears=futureYears, tradingCost=tradingCost, displayName="balanced", force=F)
+#    for(f1 in seq(minF1, maxF1, by=dF1)) 
+#       for(f2 in seq(minF2, maxF2, by=dF2)) {
+#          f4 <- 0   
+#          f3 <- round(100 - f1 - f2)
+#          #name = paste0("metaCAPE", "_", f1, "_", f2, "_", f3, "_",  f4)
+#          displayName <- paste0(f1, "_", f2, "_", f3)
+#          strategyName <- paste0("metaCAPE", displayName)
+#          #print(name)
+#          if ((f3 > minF3 - 1e-6) & (f3 < maxF3 + 1e-6)) {
+#             calcMultiStrategyReturn(name1=stratName1, name2=stratName2, name3=stratName3, name4=stratName4, 
+#                                     f1/100, f2/100, f3/100, f4/100, strategyName=strategyName, 10*12, delta="", force=force)
+#             showSummaryStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
+#                                 cutoffScore=cutoffScore, displayName=displayName, force=force)
+#          }
+#       }
+#    showSummaryStrategy("CAPE10avg24",  futureYears=futureYears, tradingCost=tradingCost, displayName="CAPE10  ", force=F)
+#    showSummaryStrategy("balanced40_25_10_25", futureYears=futureYears, tradingCost=tradingCost, displayName="balanced", force=F)
 }
 
-
-## Plotting (obsolete)
-plotCAPEreturn <- function(stratName1=def$CAPEstrategies[[1]], stratName2=def$CAPEstrategies[[2]], 
-                           stratName3=def$CAPEstrategies[[3]], stratName4=def$CAPEstrategies[[4]], 
-                           startYear=1885, endYear=2014, minTR=.9, maxTR=10000, normalize=T, showAlloc=T) {
-   plotReturn(stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4, 
-              startYear=startYear, endYear=endYear, minTR=minTR, maxTR=maxTR, normalize=normalize, showAlloc=showAlloc)
-}
-
-
-
-
-plotCAPEbothReturns <- function(stratName1=def$CAPEstrategies[[1]], stratName2=def$CAPEstrategies[[2]], 
-                                stratName3=def$CAPEstrategies[[3]], stratName4=def$CAPEstrategies[[4]], 
-                            years=def$FutureYears, startYear=1885, endYear=2014, 
-                            minTR1=.9, maxTR1=10000, minTR2=0, maxTR2=.2) {
-   plotBothReturns(stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4,
-                               years=years, startYear=startYear, endYear=endYear, 
-                   minTR1=minTR1, maxTR1=maxTR1, minTR2=minTR2, maxTR2=maxTR2) 
-}

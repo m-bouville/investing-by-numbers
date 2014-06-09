@@ -1,5 +1,19 @@
 
 
+############################################
+##                                        ##
+##         Investing by numbers           ##
+##   a quantitative trading strategy by   ##
+##         Mathieu Bouville, PhD          ##
+##      <mathieu.bouville@gmail.com>      ##
+##                                        ##
+##    reversal.r generates a strategy     ##
+##        based on trend reversal         ##
+##   (essentially a second derivative)    ##
+##                                        ##
+############################################
+
+
 #default values of parameters:
 setReversalDefaultValues <- function() {
    def$reversalInputDF       <<- "dat"
@@ -55,7 +69,7 @@ createReversalStrategy <- function(inputDF=def$reversalInputDF, inputName=def$re
                                    bearish=def$momentumBearish, bullish=def$momentumBullish, 
                                    signalMin=def$signalMin, signalMax=def$signalMax,
                                    strategyName="", type="reversal", 
-                                   futureYears=def$futureYears, tradingCost=def$tradingCost, 
+                                   futureYears=def$futureYears, costs=def$tradingCost, 
                                    coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
 
    reversalName <- paste0("reversal_", inputName, "_", avgOver)
@@ -119,7 +133,7 @@ createReversalStrategy <- function(inputDF=def$reversalInputDF, inputName=def$re
       parameters$name1[index]       <<- "returnToMean"
       parameters$value1[index]      <<- returnToMean      
    }
-   calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, 
+   calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, costs=costs,
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    stats$type[which(stats$strategy == strategyName)] <<- parameters$type[which(parameters$strategy == strategyName)]
    stats$subtype[which(stats$strategy == strategyName)] <<- parameters$subtype[which(parameters$strategy == strategyName)]
@@ -131,7 +145,7 @@ searchForOptimalReversal <-function(inputDF=def$reversalInputDF, inputName=def$r
                                     minRTM=10, maxRTM=20, byRTM=5,
                                     minBear=-80, maxBear=-0, byBear=10, 
                                     minDelta=0, maxDelta=20, byDelta=5, 
-                                    futureYears=def$futureYears, tradingCost=def$tradingCost, 
+                                    futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
                                     minTR=0, maxVol=20, maxDD2=5, minTO=1, minScore=16,
                                     col=F, plotType="symbols", force=F) {
    lastTimePlotted <- proc.time()  
@@ -148,7 +162,7 @@ searchForOptimalReversal <-function(inputDF=def$reversalInputDF, inputName=def$r
                createReversalStrategy(inputDF=inputDF, inputName=inputName, avgOver=avgOver, returnToMean=RTM, 
                                       bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
                                       strategyName=strategyName, force=force)                  
-               showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
+               showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
                                       minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, force=F)
             }
          if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > 5 ) { # we replot only if it's been a while

@@ -1,3 +1,18 @@
+
+############################################
+##                                        ##
+##         Investing by numbers           ##
+##   a quantitative trading strategy by   ##
+##         Mathieu Bouville, PhD          ##
+##      <mathieu.bouville@gmail.com>      ##
+##                                        ##
+##       SMA.r generates a strategy       ##
+##        based on the crossing of        ##
+##      simple moving averages (SMAs)     ##
+##                                        ##
+############################################
+
+
 #default values of parameters:
 setSMAdefaultValues <- function() {
    def$SMAinputDF          <<- "dat"
@@ -45,7 +60,7 @@ calcSMAsignal <- function(SMAname1, SMAname2,
 createSMAstrategy <- function(inputDF="dat", inputName="TR", SMA1=def$SMA1, SMA2=def$SMA2, 
                               bearish=def$detrendedBearish, bullish=def$detrendedBullish, 
                               signalMin=def$signalMin, signalMax=def$signalMax,
-                              strategyName="", type="", futureYears=def$futureYears, tradingCost=def$tradingCost, 
+                              strategyName="", type="", futureYears=def$futureYears, costs=def$tradingCost, 
                               coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
    
    if (strategyName=="") 
@@ -99,11 +114,10 @@ createSMAstrategy <- function(inputDF="dat", inputName="TR", SMA1=def$SMA1, SMA2
        parameters$name2[index] <<- "SMA2"
       parameters$value2[index] <<-  SMA2
    }
-   calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, 
+   calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, costs=costs,
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    stats$type[which(stats$strategy == strategyName)] <<- parameters$type[which(parameters$strategy == strategyName)]
    stats$subtype[which(stats$strategy == strategyName)] <<- parameters$subtype[which(parameters$strategy == strategyName)]
-#    calcTRnetOfTradingCost(strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)      
 }
 
 
@@ -112,7 +126,7 @@ searchForOptimalSMA <- function(inputDF="dat", inputName="TR",
                                 minSMA2=1L, maxSMA2=1L, bySMA2=1L, 
                                 minBear=0, maxBear=60, byBear=5, 
                                 minDelta=0, maxDelta=5, byDelta=1,  
-                                futureYears=def$futureYears, tradingCost=def$tradingCost, type="search", 
+                                futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, type="search", 
                                 minTR=0, maxVol=20, maxDD2=2, minTO=1, minScore=15, 
                                 col=F, plotType="symbols", force=F) {
    
@@ -131,7 +145,7 @@ searchForOptimalSMA <- function(inputDF="dat", inputName="TR",
                createSMAstrategy(inputDF=inputDF, inputName=inputName, SMA1=SMA1, SMA2=SMA2,
                                  bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
                                  strategyName=strategyName, force=force)                  
-               showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
+               showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
                                       minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, force=F)
             }
             if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > 5 ) { # we replot only if it's been a while
@@ -144,9 +158,10 @@ searchForOptimalSMA <- function(inputDF="dat", inputName="TR",
    plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
 }
 
-# 
-# plotSMA <- function(SMA1=def$SMA1, SMA2=def$SMA2, futureYears=def$FutureYears, startYear=1885) {
-#    futureReturnName <- paste0("future", futureYears)
+
+## OBSOLETE
+plotSMA <- function(SMA1=def$SMA1, SMA2=def$SMA2, futureYears=def$FutureYears, startYear=1885) {
+   futureReturnName <- paste0("future", futureYears)
 #    if (!futureReturnName %in% colnames(dat)) calcStocksFutureReturn(futureYears)
 #    SMAname1 <- paste0("SMA", SMA1)
 #    SMAname2 <- paste0("SMA", SMA2)
@@ -162,4 +177,4 @@ searchForOptimalSMA <- function(inputDF="dat", inputName="TR",
 #    plot(temp, dat[, futureReturnName], xlab="SMA ratio", ylab="future return", xlim=c(-.5,.5))
 #    mod <- lm( dat[, futureReturnName] ~ temp)
 #    abline(mod)
-# }
+}

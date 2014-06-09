@@ -1,3 +1,4 @@
+
 ############################################
 ##                                        ##
 ##         Investing by numbers           ##
@@ -35,6 +36,7 @@ showUsefulFunctions <- function() {
    print("plotReturnAndAlloc()")
    print("plotAssetClassesReturn()")
    print("showPlotLegend()")
+   print("createStrategiesAndSavePlots()")
    print("## Searching the parameter space:")
    print("searchForOptimalBalanced() # for instance.")
    print("")
@@ -60,17 +62,19 @@ showForNewcomer <- function() {
 
 # showToDoList()
 
-start(dataSplit="none",          # "none" for all data, "search" and "testing" for half the data
+start(dataSplit="search",          # "none" for all data, "search" and "testing" for half the data
       extrapolateDividends=T,    # whether to extrapolate missing recent dividends (or remove incomplete months)
       smoothConstantAlloc=F,     # calculates more constant-allocation portfolios, to get smoother curves in plots (slower)
       downloadAndCheckAllFiles=F,# downloads data files even if they exist locally, to check whether they are up to date
+      futureYears=10L,           # to calculate the return over the next so many years
+      tradingCost=0.5/100,       # cost of turning the portfolio entirely 
       otherAssetClasses=F,       # loads gold and UK house prices
-      newcomer=T,                # displays some information on the code
+      newcomer=F,                # displays some information on the code
       force=T)                   # forces recalculations (useful when making modifications to the algorthm, but slower)
 
 plotAllReturnsVsFour()
 
-# plotAllReturnsVsFour()
+
 ## Zoomed-out version of the above plot:
 # plotAllReturnsVsFour(xMinVol=10, xMaxVol=20, xMinDD=0, xMaxDD=4.5, xMinAlloc=40, xMaxAlloc=100, xMinTO=0, xMaxTO=100, yMin=5)
 # plotReturnAndAlloc()
@@ -83,5 +87,6 @@ plotAllReturnsVsFour()
 # plotAllReturnsVsFour(xMinVol=10, xMaxVol=20, xMinDD=0, xMaxDD=4.5, 
 #                      xMinAlloc=40, xMaxAlloc=100, xMinTO=0, xMaxTO=100, yMin=5, 
 #                      pngOutput=T, pngName="figures/return_vs_four_zoomed_out.png")
+#createStrategiesAndSavePlots()
 
 

@@ -29,15 +29,6 @@ setPlottingDefaultValues <- function() {
    def$plotEndYear <<- 2015
    def$maxTR     <<- 10000
    
-   costs <- (def$tradingCost)
-   if (costs==0.5/100)
-      def$yStatsName <<- "netTR0.5"
-   else if (costs==2/100)
-      def$yStatsName <<- "netTR2"
-   else if (costs==4/100)
-      def$yStatsName <<- "netTR4"
-   else stop("No data frame \'netTR", round(costs*100), "\' exists.")
-   
    #Colors consistently used for the various tsrategies
    def$colCAPE      <<- "cyan"
    def$colDetrended <<- "skyblue"
@@ -299,7 +290,7 @@ parametrizeFutureReturnPlot <- function(costs, yLabel="", futureYears, minTR, ma
       if (maxTR=="") maxTR <-  32
    } else if (futureYears==10) {
       if (minTR=="") minTR <-  -6
-      if (maxTR=="") maxTR <-  23
+      if (maxTR=="") maxTR <-  24
    } else if (futureYears==20) {
       if (minTR=="") minTR <-  -1
       if (maxTR=="") maxTR <-  15
@@ -327,7 +318,7 @@ plotFutureReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typi
    if(pngOutput)
       png(file=pngName, width=pngWidth, height=pngHeight)
           
-   para <- parametrizeFutureReturnPlot(costs, yLabel, futureYears, minTR, maxTR) 
+   para <- parametrizeFutureReturnPlot(costs*net, yLabel, futureYears, minTR, maxTR) 
    yLabel <- para[[1]]; minTR <- as.numeric(para[[2]]); maxTR <- as.numeric(para[[3]])
    
    normDate <- (startYear-def$dataStartYear)*12+1
@@ -347,10 +338,8 @@ plotFutureReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typi
    if(net & costs>0) # reduce TR because of costs
       for (strat in 1:numCurves) {
          if (stratNames[strat] != "") {
-            index <- which(stats$strategy == stratNames[strat])
-            TOcost <- costs/12/stats$turnover[index]
-            for (i in startIndex:numData)
-               returnDF[i, strat] <- returnDF[i, strat] * exp(-TOcost*(i-startIndex))
+            index  <- which(stats$strategy == stratNames[strat])
+            returnDF[, strat] <- returnDF[, strat] - 100*costs/stats$turnover[index]
          }
       }
    
@@ -405,7 +394,7 @@ plotAllReturnsVsSomeParameter <- function(type1=def$type1, col1=def$col1, pch1=d
                                           Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
                                           lineCol=def$lineCol, searchPlotType="dots",
                                           xStatsName, xFactor=100, xLabel="volatility (%)",
-                                          yStatsName=def$yStatsName, yFactor=100,
+                                          yStatsName="", yFactor=100,
                                           xMin, xMax, yMin=def$yTRmin, yMax=def$yTRmax, 
                                           costs=def$tradingCost, 
                                           pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, pngName) { 
@@ -462,6 +451,14 @@ plotAllReturnsVsSomeParameter <- function(type1=def$type1, col1=def$col1, pch1=d
       Stype <- "p"
    else stop(searchPlotType, " is not a legitimate value for argument searchPlotType, only line, dots or symbols")
       
+   if (costs==0.5/100)
+      def$yStatsName <<- "netTR0.5"
+   else if (costs==2/100)
+      def$yStatsName <<- "netTR2"
+   else if (costs==4/100)
+      def$yStatsName <<- "netTR4"
+   else stop("No data frame \'netTR", round(costs*100), "\' exists.")
+   
    xRange <- c(xMin, xMax)
    yRange <- c(yMin - 100*costs/2, yMax - 100*costs/4)
    par( mar=c(4.2, 4.2, 1.5, 1.5) )
@@ -610,7 +607,7 @@ plotAllReturnsVsInverseTurnover <- function(type1=def$type1, col1=def$col1, pch1
                                             lineCol=def$lineCol,  searchPlotType="dots",
                                             xFactor=100, xLabel="100 / turnover (years)",
                                             yStatsName=def$yStatsName, yFactor=100,
-                                            xMin=1., xMax=100, yMin=def$yTRmin, yMax=def$yTRmax, 
+                                            xMin=0, xMax=100, yMin=def$yTRmin, yMax=def$yTRmax, 
                                             costs=def$tradingCost,
                                             pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
                                             pngName="figures/return_vs_inverse_turnover.png") { 
@@ -772,7 +769,7 @@ saveAllPlotsAsPng <- function(pngWidth=def$pngWidth, pngHeight=def$pngHeight) {
 
 plotCumulativeFutureReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTechnical, 
                                        stratName3=def$typicalValue, stratName4="stocks", 
-                                       futureYears=def$futureYears, net=F, costs=def$tradingCost,
+                                       futureYears=def$futureYears, net=T, costs=def$tradingCost,
                                        col1=def$colBalanced, col2=def$colTechnical, 
                                        col3=def$colValue, col4=def$colConstantAlloc, 
                                        lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=2,                                  
@@ -781,7 +778,16 @@ plotCumulativeFutureReturn <- function(stratName1=def$typicalBalanced, stratName
  
    if(pngOutput) 
       png(file=pngName, width=pngWidth, height=pngHeight)
-      
+    
+   if( !net | costs==0 )  # cost = 0: gross returns
+      yLabel <- paste0("annual return (%) over next ", futureYears, " years, GROSS of costs")
+   else if( costs>0 ) # cost > 0: net returns
+      yLabel <- paste0("annual return (%) over next ", futureYears, 
+                       " years, net of costs of ", round(costs*100, 1), "%")   
+   else # no notion of cost (e.g. for asset classes)
+      yLabel <- paste0("annual return (%) over next ", futureYears, " years")
+
+   
    stratNames <- c(stratName1, stratName2, stratName3, stratName4)
    numCurves <- length(stratNames)
    
@@ -793,25 +799,22 @@ plotCumulativeFutureReturn <- function(stratName1=def$typicalBalanced, stratName
       returnDF <- 100 * next20yrs[, stratNames]
    else if (futureYears==30) 
       returnDF <- 100 * next30yrs[, stratNames]  
+      
+   cp <- complete.cases(returnDF)
    
    if(net & costs>0) # reduce TR because of costs
-      for (strat in 1:numCurves) {
+      for (strat in 1:numCurves) 
          if (stratNames[strat] != "") {
             index <- which(stats$strategy == stratNames[strat])
-            TOcost <- costs/12/stats$turnover[index]
-            for (i in startIndex:numData)
-               returnDF[i, strat] <- returnDF[i, strat] * exp(-TOcost*(i-startIndex))
+            returnDF[cp, strat] <- returnDF[cp, strat] - 100*costs/stats$turnover[index]
          }
-      }
    
-   cp <- complete.cases(returnDF)
    minTR <- min(returnDF[cp, ])
    maxTR <- max(returnDF[cp, ])
    par(mar=c(4.2, 4.2, 1.5, 1.5))
    
    plot(quantile(returnDF[cp, 1], probs = seq(0, 1, 0.01)), type="l", col=col1, lwd=lwd1, ylim=c(minTR,maxTR),
-        main="", xlab="cumulative frequency (%)", 
-        ylab=paste("annual return (%) over next ", futureYears, "years"))
+        main="", xlab="cumulative frequency (%)", ylab=yLabel)
    if(stratName2!="")
       lines(quantile(returnDF[cp, 2], probs = seq(0, 1, 0.01)), col=col2, lwd=lwd2 )
    if(stratName3!="")
@@ -829,18 +832,9 @@ plotCumulativeFutureReturn <- function(stratName1=def$typicalBalanced, stratName
 }
 
 
-createStrategiesAndSavePlots <- function(pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
-                                         futureYears=def$futureYears) {
-#    ## All data (1871_2014) -- futureYears==20
-#    futureYearsAll <- 20L
-#    start(dataSplit="none", extrapolateDividends=T, smoothConstantAlloc=F, downloadAndCheckAllFiles=F,
-#          futureYears=futureYearsAll, otherAssetClasses=F, newcomer=F, force=T)   
-#    plotFutureReturn(futureYears=futureYearsAll, pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight,
-#                     pngName=paste0("figures/return_over_next_", futureYearsAll, "_years-1871_2014.png"))
-#    plotCumulativeFutureReturn(futureYears=futureYearsAll, pngOutput=T, 
-#                                pngName=paste0("figures/cumulative_return_over_next_", futureYearsAll, "_years-1871_2014.png") )
-#    
-#    
+createStrategiesAndSavePlots <- function(futureYears=10L, tradingCost=0.5/100, 
+                                         pngWidth=def$pngWidth, pngHeight=def$pngHeight) {
+
 #    ## All data (1871_2014) -- futureYears==30
 #    futureYearsAll <- 30L
 #    start(dataSplit="none", extrapolateDividends=T, smoothConstantAlloc=F, downloadAndCheckAllFiles=F,
@@ -852,21 +846,26 @@ createStrategiesAndSavePlots <- function(pngWidth=def$pngWidth, pngHeight=def$pn
    
    
    ## Parameter search (1871_1942)
-   start(dataSplit="search", extrapolateDividends=T, smoothConstantAlloc=T, downloadAndCheckAllFiles=F,
+   start(dataSplit="search", futureYears=futureYears, tradingCost=tradingCost, 
+         extrapolateDividends=T, smoothConstantAlloc=T, downloadAndCheckAllFiles=F,
          otherAssetClasses=F, newcomer=F, force=T)   
    plotAllReturnsVsFour(yMin=5, pngOutput=T, pngName="figures/return_vs_four-1871_1942.png", 
                         pngWidth=pngWidth, pngHeight=pngHeight)
    plotReturnAndAlloc(pngOutput=T, pngName="figures/return_and_allocation-1871_1942.png", 
                       pngWidth=pngWidth, pngHeight=pngHeight)
-   plotFutureReturnVsCAPE(pngOutput=T, pngName="figures/future_return_vs_CAPE-1871_1942.png",
-                          pngWidth=pngWidth, pngHeight=pngHeight)
+   plotFutureReturnVsCAPE(futureYears=futureYears, maxTR=21, pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight, 
+                          pngName=paste0("figures/return_over_next_",futureYears,"_years_vs_CAPE-1871_1942.png") )
    plotFutureReturn(futureYears=futureYears, pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight,
                     pngName=paste0("figures/return_over_next_", futureYears, "_years-1871_1942.png"))
    plotCumulativeFutureReturn(futureYears=futureYears, pngOutput=T, 
-                               pngName=paste0("figures/cumulative_return_over_next_", futureYears, "_years-1871_1942.png") )
-
+                               pngName=paste0("figures/cumulative_return_over_next_",futureYears,"_years-1871_1942.png") )
+#    searchForOptimalBalanced(byF1=2.02, byF2=0.02)
+#    plotAllReturnsVsFour(searchPlotType="line", pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight, 
+#                         pngName="figures/balanced_optimization-1871_1942.png")
+   
    ## Testing (1942_2014)
-   start(dataSplit="testing", extrapolateDividends=T, smoothConstantAlloc=T, downloadAndCheckAllFiles=F,
+   start(dataSplit="testing", futureYears=futureYears, tradingCost=tradingCost, 
+         extrapolateDividends=T, smoothConstantAlloc=T, downloadAndCheckAllFiles=F,
          otherAssetClasses=F, newcomer=F, force=T)   
    plotAllReturnsVsFour(pngOutput=T, pngName="figures/return_vs_four-1942_2014.png", 
                         pngWidth=pngWidth, pngHeight=pngHeight)
@@ -874,16 +873,24 @@ createStrategiesAndSavePlots <- function(pngWidth=def$pngWidth, pngHeight=def$pn
                       pngWidth=pngWidth, pngHeight=pngHeight)   
    plotFutureReturn(futureYears=futureYears, pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight,
                     pngName=paste0("figures/return_over_next_", futureYears, "_years-1942_2014.png"))
+   plotFutureReturnVsCAPE(futureYears=futureYears, maxTR=21, pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight, 
+                          pngName=paste0("figures/return_over_next_",futureYears,"_years_vs_CAPE-1942_2014.png") )
    plotCumulativeFutureReturn(futureYears=futureYears, pngOutput=T, 
-                               pngName=paste0("figures/cumulative_return_over_next_", futureYears, "_years-1942_2014.png") )
+                               pngName=paste0("figures/cumulative_return_over_next_",futureYears,"_years-1942_2014.png") )
 
    ## Testing (1942_2014) -- futureYears == 20
-   start(dataSplit="testing", extrapolateDividends=T, smoothConstantAlloc=F, downloadAndCheckAllFiles=F,
-         futureYears=20L, otherAssetClasses=F, newcomer=F, force=T)   
-   plotFutureReturn(futureYears=20L, legendPlacement="topleft", 
-                    pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight,
-                    pngName=paste0("figures/return_over_next_20_years-1942_2014.png"))
-   plotCumulativeFutureReturn(futureYears=20, pngOutput=T, 
-                               pngName=paste0("figures/cumulative_return_over_next_20_years-1942_2014.png") )
+   if (futureYears != 20) { # i.e. if we have not done all this already above
+      start(dataSplit="testing", futureYears=20L, tradingCost=tradingCost, 
+            extrapolateDividends=T, smoothConstantAlloc=F, downloadAndCheckAllFiles=F,
+            otherAssetClasses=F, newcomer=F, force=T)   
+      plotFutureReturn(futureYears=20L, legendPlacement="topleft", 
+                       pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight,
+                       pngName=paste0("figures/return_over_next_20_years-1942_2014.png"))
+      plotFutureReturnVsCAPE(futureYears=20L, minCAPE=5.5, maxCAPE=25, 
+                             pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight, 
+                             pngName="figures/return_over_next_20_years_vs_CAPE-1942_2014.png")
+      plotCumulativeFutureReturn(futureYears=20, pngOutput=T, 
+                                 pngName=paste0("figures/cumulative_return_over_next_20_years-1942_2014.png") )
+   }
 }
 

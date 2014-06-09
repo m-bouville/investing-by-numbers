@@ -41,6 +41,20 @@ requireColInTR <- function(colName) {
 }
 
 
+calcNext5YrsReturn  <- function(strategyName, force=F) {
+   if (!strategyName %in% colnames(next5yrs) | force) {
+      next5yrs[, strategyName] <<- numeric(numData)
+      months <- 12*5
+      exponent <- 1/5
+      
+      next5yrs[1:(numData-months), strategyName] <<- 
+         (TR[1:(numData-months)+months, strategyName] / TR[1:(numData-months), strategyName]) ^ exponent - 1
+      next5yrs[(numData-months+1):numData, strategyName] <<- NA
+   }
+   median5 <- median(next5yrs[, strategyName], na.rm=T)
+   five5 <- quantile(next5yrs[, strategyName], .05, na.rm=T)[[1]]
+   return( c(median=median5, five=five5) )
+}
 calcNext10YrsReturn <- function(strategyName, force=F) {
    if (!strategyName %in% colnames(next10yrs) | force) {
       next10yrs[, strategyName] <<- numeric(numData)
@@ -55,7 +69,6 @@ calcNext10YrsReturn <- function(strategyName, force=F) {
    five10 <- quantile(next10yrs[, strategyName], .05, na.rm=T)[[1]]
    return( c(median=median10, five=five10) )
 }
-
 calcNext20YrsReturn <- function(strategyName, force=F) {
    if (!strategyName %in% colnames(next20yrs) | force) {
       next20yrs[, strategyName] <<- numeric(numData)
@@ -70,7 +83,6 @@ calcNext20YrsReturn <- function(strategyName, force=F) {
    five20 <- quantile(next20yrs[, strategyName], .05, na.rm=T)[[1]]
    return( c(median=median20, five=five20) )
 }
-
 calcNext30YrsReturn <- function(strategyName, force=F) {
    if (!strategyName %in% colnames(next30yrs) | force) {
       next30yrs[, strategyName] <<- numeric(numData)
@@ -88,7 +100,9 @@ calcNext30YrsReturn <- function(strategyName, force=F) {
 
 ## calculating future annualized return of strategies
 calcStrategyFutureReturn <- function(strategyName, futureYears = numeric(), force=F) {
-   if (futureYears==10)
+   if (futureYears==5)
+      median_five <-  calcNext5YrsReturn(strategyName, force)
+   else if (futureYears==10)
       median_five <- calcNext10YrsReturn(strategyName, force)
    else if (futureYears==20)
       median_five <- calcNext20YrsReturn(strategyName, force)
@@ -126,7 +140,7 @@ calcTRconstAlloc <- function(stockAllocation = 70L, strategyName="", force=F) { 
 
 
 createConstAllocStrategy <- function(stockAllocation = 70L, strategyName="", 
-                                     futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) { # parameter is stock allocation in %
+                                     futureYears=def$futureYears, force=F) { # parameter is stock allocation in %
 
    if(stockAllocation<0 | stockAllocation>100) stop("Stock allocation must be between 0 and 100 (percents).")
    #   if(stockAllocation != floor(stockAllocation)) stop("Stock allocation must be an integer.")
@@ -151,7 +165,7 @@ createConstAllocStrategy <- function(stockAllocation = 70L, strategyName="",
       stats$latestStockAlloc[index] <<- stockAllocation/100
       stats$turnover[index] <<- Inf
    }   
-   calcStatisticsForStrategy(strategyName, futureYears=futureYears, force=force)
+   calcStatisticsForStrategy(strategyName, futureYears=futureYears, costs=0, force=force)
 }
 
 
@@ -306,6 +320,8 @@ calcTRnetOfTradingCost <- function(strategyName, tradingCost=def$tradingCost, fo
 
 ## not used
 calcTurnoverAndTRnetOfTradingCost <- function(strategyName, futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
+   warning("calcTurnoverAndTRnetOfTradingCost() should not be used anymore.")
+
    #       time1 <- proc.time()      
 #    if ( (strategyName %in% colnames(alloc)) ) {# this means we are not dealing with constant allocation (e.g. stocks)
 #       dateRange <- def$startIndex:(numData-1)
@@ -343,7 +359,7 @@ calcTurnoverAndTRnetOfTradingCost <- function(strategyName, futureYears=def$futu
 }
 
 
-calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears, costs=def$tradingCost, 
+calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears, costs, #=def$tradingCost, 
                                       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
    
    dateRange <- def$startIndex:numData
@@ -357,7 +373,12 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
    
    medianName <- paste0("median", futureYears)
    fiveName <- paste0("five", futureYears)
-
+   if (!medianName %in% colnames(stats)) {
+      if (futureYears != def$futureYears)
+         stop( paste0("stats$", medianName, " does not exist (probably because futureYears != def$futureYears.") )
+      else stop(paste0("stats$", medianName, " does not exist (probably because def$futureYears got changed by hand)."))
+   }
+   
    if ( is.na(stats$score[index]) | force) {
       # if data do not exist (we use 'score' to test this as it requires a lot of other data) yet or we force recalculation:   
       
@@ -405,11 +426,11 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
       stats$netTR2[index]   <<- stats$TR[index] - 2  /100/stats$turnover[index]
       stats$netTR4[index]   <<- stats$TR[index] - 4  /100/stats$turnover[index]
    }
-   stats$score[index] <<- 70 * (   coeffTR  * (stats$TR[index] - 0.07)
+   stats$score[index] <<- 80 * (   coeffTR  * (stats$TR[index] - 0.07)
                                  - coeffVol * (stats$volatility[index] - 0.14)
                                  - coeffDD2 * (stats$DD2[index] - 1.5) / 100
                                  + stats[index, medianName] + stats[index, fiveName] 
-                                 - (coeffTR+2) * costs * (1/stats$turnover[index]-1/4) ) + 2
+                                 - (coeffTR+2) * costs * (1/stats$turnover[index]-1/4) ) + 4
    ## For constant allocations, the derivative of TR with respect to volatility is about 0.23 and 
    ## with respect to DD^2 it is about 0.65%.
    ## So for constant allocations: 2*TR - vol/4 - DD2*2/300 is about constant.
@@ -418,11 +439,11 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
 }
 
 showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def$futureYears, 
-                                   costs=def$tradingCost,
+                                   costs, #=def$tradingCost,
                                    minTR=0, maxVol=Inf, maxDD2=Inf, minTO=0, minScore=-Inf, 
                                    coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
    
-   if ( !(strategyName %in% stats$strategy) ) 
+   if ( !(strategyName %in% stats$strategy) )
       calcStatisticsForStrategy(strategyName, futureYears=futureYears, costs=costs,
                                 coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=T) 
    else  # if force==F then we only recalculate the score (quick)

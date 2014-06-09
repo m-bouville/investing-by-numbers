@@ -1,21 +1,37 @@
+
+############################################
+##                                        ##
+##         Investing by numbers           ##
+##   a quantitative trading strategy by   ##
+##         Mathieu Bouville, PhD          ##
+##      <mathieu.bouville@gmail.com>      ##
+##                                        ##
+##         detrended.r subtracts          ##
+##          the long-term trend           ##
+##           from the strategy            ##
+##                                        ##
+############################################
+
+
+
 #default values of parameters:
 setDetrendedDefaultValues <- function() {
-   def$detrendedInputDF           <<- "dat"
-   def$detrendedInputName         <<- "TR"
+   def$detrendedInputDF     <<- "dat"
+   def$detrendedInputName   <<- "TR"
    
    ## detrended strategy in stocks 90% of the time, just dodging the worst bubbles
-   def$detrendedAvgOver1           <<- 33L
-   def$detrendedBearish1           <<- 30
-   def$detrendedBullish1           <<- 30
-   def$typicalDetrended1           <<- paste0("detrended_", def$detrendedInputName, "_avg", def$detrendedAvgOver1, "__", 
+   def$detrendedAvgOver1    <<- 33L
+   def$detrendedBearish1    <<- 30
+   def$detrendedBullish1    <<- 30
+   def$typicalDetrended1    <<- paste0("detrended_", def$detrendedInputName, "_avg", def$detrendedAvgOver1, "__", 
                                              def$detrendedBearish1, "_", def$detrendedBullish1)
    
    ## detrended strategy with lower stock allocation (and vol and DD)
-   def$detrendedAvgOver2           <<- 24L
-   def$detrendedBearish2           <<- 40
-   def$detrendedBullish2           <<-  0
-   def$typicalDetrended2           <<- paste0("detrended_", def$detrendedInputName, "_avg", def$detrendedAvgOver2, "__", 
-                                              def$detrendedBearish2, "_", def$detrendedBullish2)
+   def$detrendedAvgOver2    <<- 24L
+   def$detrendedBearish2    <<- 40
+   def$detrendedBullish2    <<-  0
+   def$typicalDetrended2    <<- paste0("detrended_", def$detrendedInputName, "_avg", def$detrendedAvgOver2, "__", 
+                                       def$detrendedBearish2, "_", def$detrendedBullish2)
 }
 
 calcDetrended <- function(inputDF, inputName, detrendedName="") {
@@ -76,7 +92,7 @@ createDetrendedStrategy <- function(inputDF=def$detrendedInputDF, inputName=def$
                                     bearish=def$detrendedBearish, bullish=def$detrendedBullish, 
                                     signalMin=def$signalMin, signalMax=def$signalMax,
                                     strategyName="",  type="detrended",
-                                    futureYears=def$futureYears, tradingCost=def$tradingCost, 
+                                    futureYears=def$futureYears, costs=def$tradingCost, 
                                     coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {   
    if (strategyName=="") {
       if( is.numeric(avgOver) )
@@ -116,11 +132,10 @@ createDetrendedStrategy <- function(inputDF=def$detrendedInputDF, inputName=def$
       parameters$bearish[index]    <<- bearish
       parameters$bullish[index]    <<- bullish      
    }
-   calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, 
+   calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, costs=costs,
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    stats$type[which(stats$strategy == strategyName)] <<- parameters$type[which(parameters$strategy == strategyName)]
    stats$subtype[which(stats$strategy == strategyName)] <<- parameters$subtype[which(parameters$strategy == strategyName)]
-#    calcTRnetOfTradingCost(strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)      
 }
 
 
@@ -128,7 +143,7 @@ searchForOptimalDetrended <- function(inputDF=def$detrendedInputDF, inputName=de
                                       minAvgOver=24, maxAvgOver=42, byAvgOver=6, 
                                       minBear=20, maxBear=50, byBear=10, 
                                       minBull=-40, maxBull=20, byBull=10, 
-                                      futureYears=def$futureYears, tradingCost=def$tradingCost, 
+                                      futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
                                       minTR=0, maxVol=20, maxDD2=5, minTO=5, minScore=16, 
                                       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, col=F, 
                                       plotType="symbols", CPUnumber=def$CPUnumber, force=F) {
@@ -149,7 +164,7 @@ searchForOptimalDetrended <- function(inputDF=def$detrendedInputDF, inputName=de
                                        bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
                                        type="search", futureYears=futureYears, force=force)
                
-               showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
+               showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
                                       minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, 
                                       minScore=minScore, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=F)
             }

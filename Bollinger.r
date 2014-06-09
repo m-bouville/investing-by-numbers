@@ -1,3 +1,19 @@
+
+
+############################################
+##                                        ##
+##         Investing by numbers           ##
+##   a quantitative trading strategy by   ##
+##         Mathieu Bouville, PhD          ##
+##      <mathieu.bouville@gmail.com>      ##
+##                                        ##
+##    Bollinger.r generates a strategy    ##
+##        based on Bollinger bands        ##
+##                                        ##
+############################################
+
+
+
 #default values of parameters:
 setBollDefaultValues <- function() {
    def$BollInputDF          <<- "dat"
@@ -53,7 +69,7 @@ calcBollSignal <- function(inputDF=def$BollInputDF, inputName=def$BollInputName,
 createBollStrategy <- function(inputDF=def$BollInputDF, inputName=def$BollInputName, avgOver=def$BollAvgOver, 
                                bearish=def$BollBearish, bullish=def$BollBullish, 
                                signalMin=def$signalMin, signalMax=def$signalMax,
-                               strategyName="", type="", futureYears=def$futureYears, tradingCost=def$tradingCost, 
+                               strategyName="", type="", futureYears=def$futureYears, costs=def$tradingCost, 
                                coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
    if(strategyName=="")  
       strategyName <- paste0("Boll_", inputName, "_", avgOver, "__", -bearish, "_", bullish)
@@ -102,7 +118,7 @@ createBollStrategy <- function(inputDF=def$BollInputDF, inputName=def$BollInputN
       parameters$bullish[index]    <<- bullish  
       parameters$avgOver[index]    <<-  avgOver
    }
-   calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, 
+   calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, costs=costs,
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    stats$type[which(stats$strategy == strategyName)] <<- parameters$type[which(parameters$strategy == strategyName)]
    stats$subtype[which(stats$strategy == strategyName)] <<- parameters$subtype[which(parameters$strategy == strategyName)]
@@ -113,7 +129,7 @@ searchForOptimalBoll <- function(inputDF="dat", inputName="TR",
                                  minAvgOver=18L, maxAvgOver=24L, byAvgOver=3L, 
                                  minBear=-140L, maxBear=-60L, byBear=10L, 
                                  minBull= -40L, maxBull= 40L, byBull=10L, 
-                                 futureYears=def$futureYears, tradingCost=def$tradingCost, type="search", 
+                                 futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, type="search", 
                                  minTR=0, maxVol=20, maxDD2=4, minTO=1, minScore=15,
                                  col=F, plotType="symbols", force=F) {
    
@@ -131,7 +147,7 @@ searchForOptimalBoll <- function(inputDF="dat", inputName="TR",
                                   bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
                                   strategyName=strategyName, futureYears=futureYears, force=force)
                
-               showSummaryForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
+               showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
                                       minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, force=F)
             }
          }
