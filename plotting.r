@@ -336,12 +336,11 @@ plotFutureReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typi
       returnDF <- 100 * next30yrs[, stratNames]  
    
    if(net & costs>0) # reduce TR because of costs
-      for (strat in 1:numCurves) {
+      for (strat in 1:numCurves) 
          if (stratNames[strat] != "") {
             index  <- which(stats$strategy == stratNames[strat])
             returnDF[, strat] <- returnDF[, strat] - 100*costs/stats$turnover[index]
          }
-      }
    
    ## adjust endYear based on non-NA data
    i <- (endYear-def$dataStartYear)*12+1
@@ -577,7 +576,7 @@ plotAllReturnsVsAverageAlloc <- function(type1=def$type1, col1=def$col1, pch1=de
                                          lineCol=def$lineCol, searchPlotType="dots",
                                          xFactor=100, xLabel="average stock allocation (%)",
                                          yStatsName=def$yStatsName, yFactor=100,
-                                         xMin=40, xMax=98, yMin=def$yTRmin, yMax=def$yTRmax, 
+                                         xMin=40, xMax=97, yMin=def$yTRmin, yMax=def$yTRmax, 
                                          costs=def$tradingCost,
                                          pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
                                          pngName="figures/return_vs_average_alloc.png") { 
@@ -607,7 +606,7 @@ plotAllReturnsVsInverseTurnover <- function(type1=def$type1, col1=def$col1, pch1
                                             lineCol=def$lineCol,  searchPlotType="dots",
                                             xFactor=100, xLabel="100 / turnover (years)",
                                             yStatsName=def$yStatsName, yFactor=100,
-                                            xMin=0, xMax=100, yMin=def$yTRmin, yMax=def$yTRmax, 
+                                            xMin=1, xMax=100, yMin=def$yTRmin, yMax=def$yTRmax, 
                                             costs=def$tradingCost,
                                             pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
                                             pngName="figures/return_vs_inverse_turnover.png") { 
@@ -835,7 +834,7 @@ plotCumulativeFutureReturn <- function(stratName1=def$typicalBalanced, stratName
 createStrategiesAndSavePlots <- function(futureYears=10L, tradingCost=0.5/100, 
                                          pngWidth=def$pngWidth, pngHeight=def$pngHeight) {
 
-#    ## All data (1871_2014) -- futureYears==30
+   ## All data (1871_2014) -- futureYears==30
 #    futureYearsAll <- 30L
 #    start(dataSplit="none", extrapolateDividends=T, smoothConstantAlloc=F, downloadAndCheckAllFiles=F,
 #          futureYears=futureYearsAll, otherAssetClasses=F, newcomer=F, force=T)   

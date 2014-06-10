@@ -20,19 +20,20 @@ setCAPEdefaultValues <- function() {
    def$CAPEyears    <<- 10
    def$CAPEcheat    <<- 2
    
-   ## CAPE strategy in stocks 90% of the time, just dodging the worst bubbles
+   ## CAPE strategy without hysteresis
    def$CAPEavgOver1 <<- 35
    def$CAPEbearish1 <<- 21
    def$CAPEbullish1 <<- 21
    def$typicalCAPE1 <<- paste0("CAPE", def$CAPEyears, "avg", def$CAPEavgOver1, "__", 
                                 def$CAPEbearish1, "_", def$CAPEbullish1)
    
-   ## CAPE strategy with lower stock allocation (and vol and DD)
-   def$CAPEavgOver2 <<- 32
-   def$CAPEbearish2 <<- 17.2
-   def$CAPEbullish2 <<- 17.2
-   def$typicalCAPE2 <<- paste0("CAPE", def$CAPEyears, "avg", def$CAPEavgOver2, "__", 
-                                def$CAPEbearish2, "_", def$CAPEbullish2)
+   ## CAPE strategy with hysteresis
+   def$CAPEavgOver2 <<- 33
+   def$hystLoopWidthMidpoint2 <<- 19
+   def$hystLoopWidth2 <<- 7
+   def$slope2 <<- 2.2
+   def$typicalCAPE2 <<- paste0("CAPE", def$CAPEyears, "avg", def$CAPEavgOver2, "__hyst_", 
+                                def$hystLoopWidthMidpoint2, "_", def$hystLoopWidth2, "_", def$slope2)
    
    def$initialOffset <<- (def$CAPEyears-def$CAPEcheat)*12 + max(def$CAPEavgOver1, def$CAPEavgOver2)
    def$CAPEstrategies <<- c(def$typicalCAPE1, def$typicalCAPE2, def$typicalCAPE1, def$typicalCAPE2)
@@ -57,11 +58,13 @@ calcAvgCAPE <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver=def$CA
    CAPEname <- paste0("CAPE", years)
    if (!(CAPEname %in% colnames(dat))) 
       calcCAPE(years=years, cheat=cheat)
-   avgCAPEname <- paste0(CAPEname,"avg",avgOver)
-   addNumColToDat(avgCAPEname)
-   #   message(paste0("NB: dat$", avgCAPEname, " has average of ", CAPEname, "over ", avgOver, " *months*."))
-   for(i in 1:(avgOver-1)) dat[i, avgCAPEname] <<- NA # not enough data to calculate average
-   for(i in avgOver:numData) dat[i, avgCAPEname] <<- mean(dat[(i-avgOver+1):i, CAPEname])  
+   if(avgOver>0) {
+      avgCAPEname <- paste0(CAPEname,"avg",avgOver)
+      addNumColToDat(avgCAPEname)
+      #   message(paste0("NB: dat$", avgCAPEname, " has average of ", CAPEname, "over ", avgOver, " *months*."))
+      for(i in 1:(avgOver-1)) dat[i, avgCAPEname] <<- NA # not enough data to calculate average
+      for(i in avgOver:numData) dat[i, avgCAPEname] <<- mean(dat[(i-avgOver+1):i, CAPEname])
+   }
 }
 
 
@@ -77,25 +80,127 @@ calcCAPEsignal <- function(CAPEname, bearish=def$CAPEbearish, bullish=def$CAPEbu
 }
 
 
-createCAPEstrategy <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver=def$CAPEavgOver, 
-                               bearish=def$CAPEbearish, bullish=def$CAPEbullish, 
+## Calculate CAPE signal based on an hysteresis loop
+## There can be no call to calcSignalForStrategy() because this is not a state function: 
+## the signal depends on the direction (CAPE increasing or decreasing), not just on the value of the CAPE
+calcCAPEsignalWithHysteresis <- function(CAPEname, hystLoopWidthMidpoint=def$hystLoopWidthMidpoint2, 
+                                         hystLoopWidth=def$hystLoopWidth2, slope=def$slope2,
+                                         signalMin=def$signalMin, signalMax=def$signalMax, 
+                                         startIndex=def$startIndex, strategyName="") {
+   bullish <- hystLoopWidthMidpoint - hystLoopWidth/2 + (0.5-signalMin)*slope
+   bearish <- hystLoopWidthMidpoint + hystLoopWidth/2 - (signalMax-0.5)*slope
+   
+#    print(c(bearish, bullish))
+   if (bearish < bullish - slope*(signalMax-signalMin) )
+      stop("bearish (", bearish, ") cannot be smaller than bullish-slope*(signalMax-signalMin) (", 
+           bullish-slope*(signalMax-signalMin), ").")
+   
+   requireColInDat(CAPEname)
+   if(strategyName=="") 
+      strategyName <- paste0(CAPEname, "__hyst_", hystLoopWidthMidpoint, "_", hystLoopWidth, "_", slope)
+
+   addNumColToSignal(strategyName)
+   CAPEinput <- dat[, CAPEname]
+   
+   dateRange <- startIndex:numData
+   if( sum(is.na(CAPEinput[dateRange])) > 0) # there should be no NA after startIndex
+      stop("Input contains NA after startIndex (", startIndex, ").")   
+   processedCAPE <- numeric(numData)
+      
+   ## Initializing CAPEgoingUp
+   if ( CAPEinput[startIndex] <= (bullish+bearish)/2 ) { # if CAPE is low, 
+      #       moving <- T                                   # we consider that we are going up
+      processedCAPE[startIndex] <- signalMax                     # we consider that we should be in stocks
+   } else {
+      #       moving <- T
+      processedCAPE[startIndex] <- signalMin
+   }
+#    processedCAPE[startIndex] <- 0.5
+   
+   for (i in (startIndex+1):numData) {
+      if( CAPEinput[i]<bearish & processedCAPE[i-1]>signalMax-0.01 )
+         processedCAPE[i] <- processedCAPE[i-1]
+      else if( CAPEinput[i]>bullish & processedCAPE[i-1]<signalMin+0.01 ) 
+         processedCAPE[i] <- processedCAPE[i-1]
+      else {
+         processedCAPE[i] <- processedCAPE[i-1] - (CAPEinput[i]-CAPEinput[i-1]) * slope
+         if (processedCAPE[i] <= signalMin) processedCAPE[i] <- signalMin
+         if (processedCAPE[i] >= signalMax) processedCAPE[i] <- signalMax
+      }
+   }
+   
+#    for (i in (startIndex+1):numData) {
+#       if( CAPEinput[i]>bearish & CAPEgoingUp ) {
+#          processedCAPE[i] <- processedCAPE[i-1] - (CAPEinput[i]-CAPEinput[i-1]) * slope
+#          if (processedCAPE[i] <= signalMin) { # if we went down below signalMin
+#             processedCAPE[i] <- signalMin     # we saturate processedCAPE at signalMin
+#             CAPEgoingUp <- F                  # we get ready for the CAPE to go down
+#          }         
+#       } else if( CAPEinput[i]<bullish & !CAPEgoingUp ) {
+#          processedCAPE[i] <- processedCAPE[i-1] - (CAPEinput[i]-CAPEinput[i-1]) * slope         
+#          if (processedCAPE[i] >= signalMax) { # if we went up abobe signalMax
+#             processedCAPE[i] <- signalMax     # we saturate processedCAPE at signalMax
+#             CAPEgoingUp <- T                  # we get ready for the CAPE to go up
+#          }
+#       } else processedCAPE[i] <- processedCAPE[i-1]   
+#    }
+   #    print(tail(processedCAPE))
+
+#    plot(dat$numericDate[dateRange], processedCAPE[dateRange], type="l")
+#    par(new=T)
+#    plot(dat$numericDate[dateRange], CAPEinput[dateRange], type="l", col="blue")
+#    par(new=F)
+   
+#        plot(CAPEinput[dateRange], processedCAPE[dateRange], type="l", xlim=c(5,30))
+
+   signal[dateRange, strategyName] <<- processedCAPE[dateRange]
+   
+#    isZero <- tan ( pi * ( -signalMin / (signalMax - signalMin) - 1/2 ) ) 
+#    isOne <- tan ( pi * ( (1-signalMin) / (signalMax - signalMin) - 1/2 ) )
+#    a <- (isOne-isZero) / (bullish-bearish)
+#    b <- isOne - a * bullish
+#    signal[1:(startIndex-1), strategyName] <<- NA  
+#    signal[dateRange, strategyName] <<- ( atan( a * processedCAPE[dateRange] + b ) / pi + .5 ) * 
+#       (signalMax - signalMin) + signalMin   
+}
+
+
+createCAPEstrategy <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver=0, 
+                               hysteresis=F, 
+                               bearish=def$CAPEbearish1, bullish=def$CAPEbullish1, 
+                               hystLoopWidthMidpoint=def$hystLoopWidthMidpoint2, 
+                               hystLoopWidth=def$hystLoopWidth2, slope=def$slope2,
                                signalMin=def$signalMin, signalMax=def$signalMax,
                                strategyName="", type="CAPE", 
                                futureYears=def$futureYears, costs=def$tradingCost, 
                                coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
 
-   CAPEname <- paste0("CAPE", years, "avg", avgOver)
+   if (avgOver>0)
+      CAPEname <- paste0("CAPE", years, "avg", avgOver)
+   else CAPEname <- paste0("CAPE", years)
+   
    if (!(CAPEname %in% colnames(dat)))
       calcAvgCAPE(years=years, cheat=cheat, avgOver=avgOver)
    startIndex <- (years-cheat)*12 + avgOver + 1
    
-   if(strategyName=="") strategyName <- paste0(CAPEname, "__", bearish, "_", bullish)
-   if (bearish==bullish) bullish = bearish - 1e-3 # bear==bull creates problems
+   if(hysteresis) {
+      if(strategyName=="") 
+         strategyName <- paste0(CAPEname, "__hyst_", hystLoopWidthMidpoint, "_", hystLoopWidth, "_", slope)
+   } else {
+      if(strategyName=="") strategyName <- paste0(CAPEname, "__", bearish, "_", bullish)
+      if (bearish==bullish) bullish = bearish - 1e-3 # bear==bull creates problems
+   }
    
    ## if data do not exist yet or we force recalculation:
-   if (!(strategyName %in% colnames(TR)) | !(strategyName %in% colnames(alloc)) | force) {   
-      calcCAPEsignal(CAPEname, bearish=bearish, bullish=bullish, signalMin=signalMin, signalMax=signalMax,
-                     startIndex=startIndex, strategyName=strategyName)
+   if (!(strategyName %in% colnames(TR)) | !(strategyName %in% colnames(alloc)) | force) { 
+      if(hysteresis)          
+         calcCAPEsignalWithHysteresis(CAPEname, hystLoopWidth=hystLoopWidth, 
+                                      hystLoopWidthMidpoint=hystLoopWidthMidpoint, slope=slope,
+                                      signalMin=signalMin, signalMax=signalMax,
+                                      startIndex=startIndex, strategyName=strategyName)
+      else
+         calcCAPEsignal(CAPEname, bearish=bearish, bullish=bullish, signalMin=signalMin, signalMax=signalMax,
+                        startIndex=startIndex, strategyName=strategyName)
       calcAllocFromSignal(strategyName)
       addNumColToTR(strategyName)
       calcStrategyReturn(strategyName, startIndex)
@@ -116,9 +221,18 @@ createCAPEstrategy <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver
          parameters$type[index]    <<- "CAPE"
       }
       parameters$startIndex[index] <<- startIndex
-      parameters$bearish[index]    <<- bearish
-      parameters$bullish[index]    <<- bullish      
-      parameters$avgOver[index]    <<- avgOver   
+      parameters$avgOver[index]    <<- avgOver
+      if (hysteresis) {
+         parameters$name1[index]   <<- "hystLoopWidthMidpoint"
+         parameters$value1[index]  <<-  hystLoopWidthMidpoint
+         parameters$name2[index]   <<- "hystLoopWidthMidpoint"
+         parameters$value2[index]  <<-  hystLoopWidthMidpoint
+         parameters$name3[index]   <<- "slope"
+         parameters$value3[index]  <<-  slope
+      } else {
+         parameters$bearish[index]    <<- bearish
+         parameters$bullish[index]    <<- bullish
+      }      
    }
    calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, costs=costs,
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
@@ -150,7 +264,7 @@ searchForOptimalCAPE <-function(minYears=10, maxYears=10, byYears=0, cheat=2,
                   
                   createCAPEstrategy(years=years, cheat=cheat, avgOver=avgOver, strategyName=strategyName, 
                                      bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
-                                     type="search", futureYears=futureYears, force=force)
+                                     hysteresis=F, type="search", futureYears=futureYears, force=force)
                   showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
                                          minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, 
                                          minScore=minScore, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=F)
@@ -168,6 +282,52 @@ searchForOptimalCAPE <-function(minYears=10, maxYears=10, byYears=0, cheat=2,
    plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
 }
 
+searchForOptimalCAPEwithHysteresis <-function(minYears=10, maxYears=10, byYears=0, cheat=2, 
+                                              minAvgOver=24L, maxAvgOver=36L, byAvgOver=6L, 
+                                              minMid=12L,   maxMid=22L,  byMid=2L, 
+                                              minWidth=0.5, maxWidth=4.5,byWidth=1,
+                                              minSlope=0.2, maxSlope=1,  bySlope=0.2, 
+                                              futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
+                                              minTR=0, maxVol=20, maxDD2=5, minTO=5, minScore=13,
+                                              coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
+                                              CPUnumber=def$CPUnumber, col=F, plotType="symbols", force=F) {
+   
+   lastTimePlotted <- proc.time()
+   print(paste0("strategy                  |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
+   
+   for (years in seq(minYears, maxYears, by=byYears)) {
+      calcCAPE(years=years, cheat=cheat)
+      for (avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver)) {
+         calcAvgCAPE(years=years, cheat=cheat, avgOver=avgOver)
+         if (avgOver>0)
+            CAPEname <- paste0("CAPE", years, "avg", avgOver)
+         else CAPEname <- paste0("CAPE", years)
+         
+         for ( mid in seq(minMid, maxMid, by=byMid) )   
+            for ( width in seq(minWidth, maxWidth, by=byWidth) ) {      
+               for ( slope in seq(minSlope, maxSlope, by=bySlope) ) {
+                  strategyName <- paste0(CAPEname, "__hyst_", mid, "_", width, "_", slope)
+                  
+                  createCAPEstrategy(years=years, cheat=cheat, avgOver=avgOver, strategyName=strategyName, 
+                                     hystLoopWidthMidpoint=mid, hystLoopWidth=width, slope=slope,
+                                     signalMin=def$signalMin, signalMax=def$signalMax,
+                                     hysteresis=T, type="search", futureYears=futureYears, force=force)
+                  showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
+                                         minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, 
+                                         minScore=minScore, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=F)
+               }
+               if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > 5 ) { # we replot only if it's been a while
+                  plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
+                  lastTimePlotted <- proc.time()
+               }
+            }
+      }
+   }
+   print("")
+   showSummaryForStrategy(def$typicalCAPE1, costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
+   showSummaryForStrategy(def$typicalCAPE2, costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
+   plotAllReturnsVsTwo(col=col, searchPlotType=plotType, costs=costs)
+}
 
 searchForTwoOptimalCAPE <-function(plotType="symbols", force=F) {
    

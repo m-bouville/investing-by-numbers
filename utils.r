@@ -195,10 +195,8 @@ calcSignalForStrategy <- function(strategyName, # the signal will be written to 
    
    isZero <- tan ( pi * ( -signalMin / (signalMax - signalMin) - 1/2 ) ) 
    isOne <- tan ( pi * ( (1-signalMin) / (signalMax - signalMin) - 1/2 ) )
-   #message("FYI: alloc = 0 @ ", isZero, " and 1 @ ", isOne)
    a <- (isOne-isZero) / (bullish-bearish)
    b <- isOne - a * bullish
-   #message("FYI: a = ", a, " and b = ", b)
    
    addNumColToSignal(strategyName)
    signal[1:(startIndex-1), strategyName] <<- NA  

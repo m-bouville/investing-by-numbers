@@ -225,9 +225,9 @@ splitData <- function(dataSplit, force) {
       dat <<- dat[1:numData, ] # we keep only the first half
       def$plotEndYear <<- round( (numData-1)/12 + def$dataStartYear )
       
-      def$maxTR  <<- 250
+      def$maxTR  <<- 400
       def$yTRmin <<- 7.5
-      def$yTRmax <<- 10
+      def$yTRmax <<- 10.6
       def$maxVol <<- 20
       def$minDD2 <<- 0.6
       def$maxDD2 <<- 1.8
@@ -245,7 +245,7 @@ splitData <- function(dataSplit, force) {
       def$dataStartYear  <<- (startIndex-1)/12 + def$dataStartYear 
       def$plotStartYear  <<- def$dataStartYear + def$startIndex %/% 12 + 1 
       
-      def$maxTR  <<- 300
+      def$maxTR  <<- 400
       def$yTRmin <<- 4.4
       def$yTRmax <<- 9
       def$minVol <<- 11
@@ -383,7 +383,7 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
    
    time0 <- proc.time()
    createCAPEstrategy(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver=def$CAPEavgOver1, 
-                      bearish=def$CAPEbearish1, bullish=def$CAPEbullish1, 
+                      hysteresis=F, bearish=def$CAPEbearish1, bullish=def$CAPEbullish1, 
                       signalMin=def$signalMin, signalMax=def$signalMax,
                       futureYears=def$futureYears, costs=def$tradingCost, 
                       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
@@ -391,11 +391,14 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
    
    time0 <- proc.time()
    createCAPEstrategy(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver=def$CAPEavgOver2, 
-                      bearish=def$CAPEbearish2, bullish=def$CAPEbullish2, 
+                      hysteresis=T, hystLoopWidthMidpoint=def$hystLoopWidthMidpoint2,
+                      hystLoopWidth=def$hystLoopWidth2, slope=def$slope2,
                       signalMin=def$signalMin, signalMax=def$signalMax,
                       futureYears=def$futureYears, costs=def$tradingCost, 
                       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
    print( c( "CAPE2 time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
+   
+   
    
    time0 <- proc.time()
    createDetrendedStrategy(inputDF=def$detrendedInputDF, inputName=def$detrendedInputName, 
@@ -460,9 +463,9 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
    print( c( "technical time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
    time0 <- proc.time()
-   combineStrategies(def$typicalValue, def$typicalTechnical, "", "",
-                     def$balancedFractionValue, def$balancedFractionTechnical, 0, 0,
-                     type="combined", subtype="balanced", combineMode="weighted",
+   combineStrategies(def$typicalTechnical, def$typicalValue, "", "",
+                     def$balancedFractionTechnical, def$balancedFractionValue, 0, 0,
+                     type="combined", subtype="balanced", combineMode=def$balancedCombineMode,
                      costs=def$tradingCost, 
                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
    print( c( "balanced time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )   

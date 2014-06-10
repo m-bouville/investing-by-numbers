@@ -19,10 +19,10 @@ setCombinedDefaultValues <- function() {
    ## (this is to avoid idiosyncrasies: if what was the best strategy when fitting 
    ## is bad when testing, then other strategies can counterbalance it to an extent)
    ## It turns out that detrended1 is the best of the four
-   def$valueFractionCAPE1         <<- 16
-   def$valueFractionCAPE2         <<- 16
-   def$valueFractionDetrended1    <<- 56
-   def$valueFractionDetrended2    <<- 12
+   def$valueFractionCAPE1         <<- 12
+   def$valueFractionCAPE2         <<- 30
+   def$valueFractionDetrended1    <<- 28
+   def$valueFractionDetrended2    <<- 30
    def$typicalValue               <<- paste0("value_", def$valueFractionCAPE1, "_", def$valueFractionCAPE2, "_", 
                                              def$valueFractionDetrended1, "_", def$valueFractionDetrended2)
    
@@ -32,9 +32,12 @@ setCombinedDefaultValues <- function() {
    def$typicalTechnical          <<- paste0("technical_", def$technicalFractionSMA, "_", def$technicalFractionBoll,
                                             "_", def$technicalFractionReversal)
    
-   def$balancedFractionValue     <<- 40
    def$balancedFractionTechnical <<- 60
-   def$typicalBalanced          <<- paste0("balanced_", def$balancedFractionValue, "_", def$balancedFractionTechnical)
+   def$balancedFractionValue     <<- 40
+   def$balancedCombineMode       <<- "weighted"
+   if (def$balancedCombineMode == "weighted")
+      def$typicalBalanced        <<- paste0("balanced_", def$balancedFractionTechnical, "_", def$balancedFractionValue)
+   else def$typicalBalanced      <<- paste0("balanced_", def$balancedCombineMode)
 }
 
 
@@ -380,13 +383,13 @@ searchForOptimalValue <- function(inputStrategyName1=def$typicalCAPE1, inputStra
                                   minF3=12L, maxF3=100L, byF3=8L, minF4=12L, maxF4=100L, 
                                   futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
                                   type="search", subtype="value",
-                                  minTR=0, maxVol=20, maxDD2=2, minTO=4, minScore=17,
-                                  col=F, CPUnumber=def$CPUnumber, plotType="dots", combineMode="all", force=F) {
+                                  minTR=0, maxVol=20, maxDD2=2, minTO=4, minScore=12.5,
+                                  col=F, CPUnumber=def$CPUnumber, plotType="dots", combineMode="weighted", force=F) {
 
 #    print("While you are waiting, here are the four strategies being used.")
 #    plotReturnAndAlloc(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4)
    
-   print(paste0("strategy        |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score") )
+   print(paste0("strategy          |  TR   |", futureYears, " yrs: med, 5% | vol.  |alloc: avg, now|TO yrs| DD^2 | score") )
    searchForOptimalCombined(inputStrategyName1=inputStrategyName1, inputStrategyName2=inputStrategyName2,
                             inputStrategyName3=inputStrategyName3, inputStrategyName4=inputStrategyName4, 
                             minF1=minF1, maxF1=maxF1, byF1=byF1, minF2=minF2, maxF2=maxF2, byF2=byF2, 
@@ -409,7 +412,7 @@ searchForOptimalTechnical <- function(inputStrategyName1=def$typicalSMA, inputSt
                                       type="search", subtype="technical",
                                       minTR=7, maxVol=17, maxDD2=1.4, minTO=1, minScore=17.2,
                                       col=F, CPUnumber=def$CPUnumber, plotType="dots", 
-                                      combineMode="all", force=F) {
+                                      combineMode="weighted", force=F) {
    
    print(paste0("strategy              |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
    searchForOptimalCombined(inputStrategyName1=inputStrategyName1, inputStrategyName2=inputStrategyName2,
@@ -424,7 +427,7 @@ searchForOptimalTechnical <- function(inputStrategyName1=def$typicalSMA, inputSt
 }
 
 
-searchForOptimalBalanced <- function(inputStrategyName1=def$typicalValue, inputStrategyName2=def$typicalTechnical, 
+searchForOptimalBalanced <- function(inputStrategyName2=def$typicalTechnical, inputStrategyName1=def$typicalValue, 
                                      inputStrategyName3="", inputStrategyName4="", 
                                      minF1=0L, maxF1=100L, byF1=4L, minF2=0L, maxF2=100L, byF2=4L, 
                                      minF3=0L, maxF3=0L, byF3=0L, minF4=0L, maxF4=0L, 
@@ -432,7 +435,7 @@ searchForOptimalBalanced <- function(inputStrategyName1=def$typicalValue, inputS
                                      type="search", subtype="balanced", speed=0,
                                      minTR=5, maxVol=20, maxDD2=2.5, minTO=2., minScore=17,
                                      col=F, CPUnumber=def$CPUnumber, plotType="line", 
-                                     combineMode="weighted", force=F) {
+                                     combineMode="all", force=F) {
    totTime <- proc.time()
    print(paste0("strategy       |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score") )
    
