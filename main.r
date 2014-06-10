@@ -17,7 +17,7 @@ source("init.r")       # loads data and initializes everything
 
 showToDoList <- function() {
    print("What's still left TO DO:")
-   print(" - Improve CAPE strategy results.")
+   print(" - Improve value strategy results.")
    print(" - Change (how?) the way 2 strategies are combined.")
    print(" - Automate parameter search.")
    print(" - Switch to ggplot2 for scatter plots?")
@@ -76,7 +76,7 @@ plotAllReturnsVsFour()
 
 
 ## Zoomed-out version of the above plot:
-# plotAllReturnsVsFour(xMinVol=10, xMaxVol=20, xMinDD=0.15, xMaxDD=4.5, xMinAlloc=40, xMinTO=0, xMaxTO=100, yMin=5)
+# plotAllReturnsVsFour(xMinVol=10, xMaxVol=20, xMinDD=0.15, xMaxDD=4.5, xMinAlloc=40, yMin=5)
 # plotReturnAndAlloc()
 # plotAssetClassesReturn()
 

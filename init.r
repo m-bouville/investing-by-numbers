@@ -16,7 +16,7 @@
 # Loading and preparing data
 start <- function(dataSplit="none",           # "none" for all data, "search" and "testing" for half the data
                   extrapolateDividends=T,     # whether to extrapolate missing recent dividends (or remove incomplete months)
-                  smoothConstantAlloc=F,      # calculates more constant-allocation portfolios, to get smoother curves in plots
+                  smoothConstantAlloc=F,      # calculates more constant-allocation portfolios, for smoother curves in plots
                   downloadAndCheckAllFiles=F, # downloads data files even if they exist locally,
                                               # to check whether they are up to date
                   futureYears=10L,            # to calculate the return over the next so many years
@@ -54,6 +54,7 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
       message()
       loadData(downloadAndCheckAllFiles=downloadAndCheckAllFiles)
    }
+   if (!exists("DD") | force) loadDDlist(force=force) # loading the dates of major drawdowns
    
    if (dataSplit != "none") splitData(dataSplit=dataSplit, force=force)
   
@@ -70,7 +71,6 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
    else if ( (def$futureYears==30) & (!exists("next30yrs") | force) ) 
       next30yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
    
-   if (!exists("DD") | force) loadDDlist(force=force) # loading the dates of major drawdowns
    if (!exists("stats") | force)  createStatsDF(futureYears=futureYears)   
    if (!exists("parameters") | force) createParametersDF()
    
@@ -152,9 +152,17 @@ setDefaultValues <- function(dataSplit, futureYears=10L, tradingCost=0.5/100, fo
    def$CPUnumber     <<- 1 # Parallelization does not work
    
    ## coefficients to calculate the score
-   def$coeffTR       <<- 2
-   def$coeffVol      <<- 0.18
-   def$coeffDD2      <<- 1.
+   def$coeffTR       <<- 0.6
+
+   ## how many extra percentage points of return justify one extra percentage point of volatility.
+   ## 0.05 means that we are indifferent if the volatility increases by 1%, 
+   ## provided that the return increases by 0.05%
+   def$coeffVol      <<- 0.05
+
+   ## how many extra percentage points of return justify one extra unit of DD2.
+   ## 1/8 means that we are indifferent if DD2 increases by 0.8, 
+   ## provided that the return increases by at least 0.1%
+   def$coeffDD2      <<- 1/8
    
    def$signalMin     <<- -0.2
    def$signalMax     <<-  1.2
@@ -227,11 +235,14 @@ splitData <- function(dataSplit, force) {
       
       def$maxTR  <<- 400
       def$yTRmin <<- 7.5
-      def$yTRmax <<- 10.6
+      def$yTRmax <<- 10.2
       def$maxVol <<- 20
       def$minDD2 <<- 0.6
       def$maxDD2 <<- 1.8
       def$coeffDD2 <<- def$coeffDD2 * 2 # DD2 is half as big with half as many years, hence the rescaling
+ 
+      DD <<- DD[1:28, ]
+      numDD <<- dim(DD)[[1]]
       
       if (!force)
          warning("When switching to \'search\' from a complete data set or from \'testing\', 
@@ -253,6 +264,9 @@ splitData <- function(dataSplit, force) {
       def$minDD2 <<- 0
       def$maxDD2 <<- 1.2
       def$coeffDD2 <<- def$coeffDD2 * 2 # DD2 is half as big with half as many years, hence the rescaling
+
+      DD <<- DD[28:numDD, ]
+      numDD <<- dim(DD)[[1]]
       
       if (!force)
          warning("When switching to \'testing\' from a complete data set or from \'search\', 
@@ -381,93 +395,90 @@ makeStringsFactors <- function() {
 createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
    message("Creating entries for the typical strategies")
    
-   time0 <- proc.time()
+#    time0 <- proc.time()
    createCAPEstrategy(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver=def$CAPEavgOver1, 
                       hysteresis=F, bearish=def$CAPEbearish1, bullish=def$CAPEbullish1, 
                       signalMin=def$signalMin, signalMax=def$signalMax,
                       futureYears=def$futureYears, costs=def$tradingCost, 
                       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
-   print( c( "CAPE1 time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
+#    print( c( "CAPE1 time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
-   time0 <- proc.time()
+#    time0 <- proc.time()
    createCAPEstrategy(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver=def$CAPEavgOver2, 
                       hysteresis=T, hystLoopWidthMidpoint=def$hystLoopWidthMidpoint2,
                       hystLoopWidth=def$hystLoopWidth2, slope=def$slope2,
                       signalMin=def$signalMin, signalMax=def$signalMax,
                       futureYears=def$futureYears, costs=def$tradingCost, 
                       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
-   print( c( "CAPE2 time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
+#    print( c( "CAPE2 time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )   
    
-   
-   
-   time0 <- proc.time()
+#    time0 <- proc.time()
    createDetrendedStrategy(inputDF=def$detrendedInputDF, inputName=def$detrendedInputName, 
                            avgOver=def$detrendedAvgOver1, 
                            bearish=def$detrendedBearish1, bullish=def$detrendedBullish1, 
                            signalMin=def$signalMin, signalMax=def$signalMax,
                            futureYears=def$futureYears, costs=def$tradingCost, 
                            coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
-   print( c( "detrended1 time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
+#    print( c( "detrended1 time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
-   time0 <- proc.time()
+#    time0 <- proc.time()
    createDetrendedStrategy(inputDF=def$detrendedInputDF, inputName=def$detrendedInputName, 
                            avgOver=def$detrendedAvgOver2, 
                            bearish=def$detrendedBearish2, bullish=def$detrendedBullish2, 
                            signalMin=def$signalMin, signalMax=def$signalMax,
                            futureYears=def$futureYears, costs=def$tradingCost, 
                            coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
-   print( c( "detrended2 time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
+#    print( c( "detrended2 time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
-   time0 <- proc.time()
+#    time0 <- proc.time()
    createBollStrategy(inputDF=def$BollInputDF, inputName=def$BollInputName, avgOver=def$BollAvgOver, 
                       bearish=def$BollBearish, bullish=def$BollBullish, 
                       signalMin=def$signalMin, signalMax=def$signalMax,
                       futureYears=def$futureYears, costs=def$tradingCost, 
                       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)   
-   print( c( "Bollinger time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
+#    print( c( "Bollinger time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
-   time0 <- proc.time()
+#    time0 <- proc.time()
    createSMAstrategy(inputDF=def$SMAinputDF, inputName=def$SMAinputName, SMA1=def$SMA1, SMA2=def$SMA2, 
                      bearish=def$SMAbearish, bullish=def$SMAbullish, 
                      signalMin=def$signalMin, signalMax=def$signalMax,
                      futureYears=def$futureYears, costs=def$tradingCost, 
                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)   
-   print( c( "SMA time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
+#    print( c( "SMA time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
-   
-   time0 <- proc.time()
+#    time0 <- proc.time()
    createReversalStrategy(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
                           avgOver=def$reversalAvgOver, returnToMean=def$reversalReturnToMean, 
                           bearish=def$reversalBearish, bullish=def$reversalBullish, 
                           signalMin=def$signalMin, signalMax=def$signalMax,
                           futureYears=def$futureYears, costs=def$tradingCost, 
                           coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force) 
-   print( c( "reversal time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
+#    print( c( "reversal time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
-   time0 <- proc.time()
+#    time0 <- proc.time()
    combineStrategies(inputStrategyName1=def$typicalCAPE1, inputStrategyName2=def$typicalCAPE2, 
                      inputStrategyName3=def$typicalDetrended1, inputStrategyName4=def$typicalDetrended2,
                      def$valueFractionCAPE1, def$valueFractionCAPE2, 
                      def$valueFractionDetrended1, def$valueFractionDetrended2,
                      type="combined", subtype="value", combineMode="weighted", costs=def$tradingCost, 
                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
-   print( c( "value time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
+#    print( c( "value time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
-   time0 <- proc.time()
+#    time0 <- proc.time()
    combineStrategies(def$typicalSMA, def$typicalBoll, def$typicalReversal, "",
                      def$technicalFractionSMA, def$technicalFractionBoll, 
                      def$technicalFractionReversal, 0, 
                      type="combined", subtype="technical", combineMode="weighted",
                      costs=def$tradingCost, 
                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
-   print( c( "technical time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
+#    print( c( "technical time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
-   time0 <- proc.time()
+#    time0 <- proc.time()
    combineStrategies(def$typicalTechnical, def$typicalValue, "", "",
                      def$balancedFractionTechnical, def$balancedFractionValue, 0, 0,
                      type="combined", subtype="balanced", combineMode=def$balancedCombineMode,
                      costs=def$tradingCost, 
                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
-   print( c( "balanced time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )   
+#    print( c( "balanced time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )   
    
 }

@@ -241,17 +241,18 @@ createCAPEstrategy <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver
 }
 
 
-searchForOptimalCAPE <-function(minYears=10, maxYears=10, byYears=0, cheat=2, 
-                                minAvgOver=12L, maxAvgOver=36L, byAvgOver=12L, 
-                                minBear=16L, maxBear=24L,  byBear=2L, 
-                                minDelta=0L, maxDelta=5L, byDelta=1L, 
-                                futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
-                                minTR=0, maxVol=20, maxDD2=5, minTO=5, minScore=13,
-                                coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
-                                CPUnumber=def$CPUnumber, col=F, plotType="symbols", force=F) {
+searchForOptimalCAPEwithoutHysteresis <-function(minYears=10L, maxYears=10L, byYears=0L, cheat=2, 
+                                                 minAvgOver=24L, maxAvgOver=36L, byAvgOver=12L, 
+                                                 minBear=16L, maxBear=24L,  byBear=2L, 
+                                                 minDelta=0L, maxDelta=12L, byDelta=4L, 
+                                                 futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
+                                                 minTR=0, maxVol=20, maxDD2=5, minTO=5, minScore=11.5,
+                                                 coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
+                                                 CPUnumber=def$CPUnumber, col=F, plotType="symbols", force=F) {
    
    lastTimePlotted <- proc.time()
-   print(paste0("strategy           |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
+   print(paste0("strategy           |  TR  |", futureYears, 
+                " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score") )
 
    for (years in seq(minYears, maxYears, by=byYears)) {
          calcCAPE(years=years, cheat=cheat)
@@ -277,23 +278,24 @@ searchForOptimalCAPE <-function(minYears=10, maxYears=10, byYears=0, cheat=2,
          }
       }
    print("")
-   showSummaryForStrategy(def$typicalCAPE1, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
-   showSummaryForStrategy(def$typicalCAPE2, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
-   plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
+   showSummaryForStrategy(def$typicalCAPE1, costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
+#   showSummaryForStrategy(def$typicalCAPE2, costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
+   plotAllReturnsVsTwo(col=col, costs=costs, searchPlotType=plotType)
 }
 
-searchForOptimalCAPEwithHysteresis <-function(minYears=10, maxYears=10, byYears=0, cheat=2, 
-                                              minAvgOver=24L, maxAvgOver=36L, byAvgOver=6L, 
-                                              minMid=12L,   maxMid=22L,  byMid=2L, 
-                                              minWidth=0.5, maxWidth=4.5,byWidth=1,
-                                              minSlope=0.2, maxSlope=1,  bySlope=0.2, 
+searchForOptimalCAPEwithHysteresis <-function(minYears=10L, maxYears=10L, byYears=0L, cheat=2, 
+                                              minAvgOver=30L, maxAvgOver=36L, byAvgOver=3L, 
+                                              minMid=18L,   maxMid=20L,  byMid=2L, 
+                                              minWidth=4,   maxWidth=8,  byWidth=2,
+                                              minSlope=1, maxSlope=3,  bySlope=1, 
                                               futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
-                                              minTR=0, maxVol=20, maxDD2=5, minTO=5, minScore=13,
+                                              minTR=0, maxVol=20, maxDD2=5, minTO=5, minScore=12,
                                               coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
                                               CPUnumber=def$CPUnumber, col=F, plotType="symbols", force=F) {
    
    lastTimePlotted <- proc.time()
-   print(paste0("strategy                  |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
+   print(paste0("strategy                  |  TR  |", futureYears, 
+                " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score") )
    
    for (years in seq(minYears, maxYears, by=byYears)) {
       calcCAPE(years=years, cheat=cheat)
@@ -313,8 +315,8 @@ searchForOptimalCAPEwithHysteresis <-function(minYears=10, maxYears=10, byYears=
                                      signalMin=def$signalMin, signalMax=def$signalMax,
                                      hysteresis=T, type="search", futureYears=futureYears, force=force)
                   showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
-                                         minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, 
-                                         minScore=minScore, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=F)
+                                         minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
+                                         coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=F)
                }
                if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > 5 ) { # we replot only if it's been a while
                   plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
@@ -324,7 +326,7 @@ searchForOptimalCAPEwithHysteresis <-function(minYears=10, maxYears=10, byYears=
       }
    }
    print("")
-   showSummaryForStrategy(def$typicalCAPE1, costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
+#   showSummaryForStrategy(def$typicalCAPE1, costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
    showSummaryForStrategy(def$typicalCAPE2, costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
    plotAllReturnsVsTwo(col=col, searchPlotType=plotType, costs=costs)
 }
@@ -357,6 +359,7 @@ plotFutureReturnVsCAPE <- function(CAPEname1=paste0("CAPE", def$CAPEyears),
                                    col1="blue", col2="red", showFit=T, complete=T,
                                    futureYears=def$futureYears, 
                                    minCAPE=1.5, maxCAPE=44, minTR="", maxTR="", 
+                                   figureTitle="", 
                                    pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
                                    pngName=paste0("figures/return_over_next_", futureYears, "_years_vs_CAPE.png") ) {
    
@@ -390,6 +393,7 @@ plotFutureReturnVsCAPE <- function(CAPEname1=paste0("CAPE", def$CAPEyears),
    }
    
    par(mar=c(4.2, 4.2, 1.5, 1.5))
+   if (figureTitle != "") par( oma = c( 0, 0, 1.5, 0 ) )
    xRange <- c(minCAPE, maxCAPE)
    yRange <- c(minTR, maxTR)
    
@@ -409,8 +413,11 @@ plotFutureReturnVsCAPE <- function(CAPEname1=paste0("CAPE", def$CAPEyears),
       }
    }
    
-   legend( "topright", c(CAPEname1, CAPEname2), bty="n", col=c(col1, col2), pch=1 )
+   legend( "topright", c(CAPEname1, CAPEname2), bty="n", col=c(col1, col2), pch=1)
    par(new=F)
+
+   if (figureTitle != "") title( figureTitle, outer = TRUE )
+   par(oma = c( 0, 0, 0, 0 ))
    
    if(pngOutput) {
       dev.off()

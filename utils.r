@@ -424,16 +424,13 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
       stats$netTR2[index]   <<- stats$TR[index] - 2  /100/stats$turnover[index]
       stats$netTR4[index]   <<- stats$TR[index] - 4  /100/stats$turnover[index]
    }
-   stats$score[index] <<- 80 * (   coeffTR  * (stats$TR[index] - 0.07)
+   stats$score[index] <<- 200 * (   coeffTR  * (stats$TR[index] - 0.07)
                                  - coeffVol * (stats$volatility[index] - 0.14)
                                  - coeffDD2 * (stats$DD2[index] - 1.5) / 100
-                                 + stats[index, medianName] + stats[index, fiveName] 
-                                 - (coeffTR+2) * costs * (1/stats$turnover[index]-1/4) ) + 4
-   ## For constant allocations, the derivative of TR with respect to volatility is about 0.23 and 
-   ## with respect to DD^2 it is about 0.65%.
-   ## So for constant allocations: 2*TR - vol/4 - DD2*2/300 is about constant.
-   ## These 2 coefficients make it possible to 'convert' vol and DD2 into TR equivalents.
-   ## I subtract off constants to reduce the variation of the score when coefficients change
+                                 + (1-coeffTR)/2 * ( stats[index, medianName] + stats[index, fiveName] - 0.05)
+                                 - costs * (1/stats$turnover[index]-1/3) ) + 10
+   ## 1. The coefficients coeffVol and coeffDD2 make it possible to 'convert' vol and DD2 into return equivalents.
+   ## 2. I subtract off constants to reduce the variation of the score when coefficients change
 }
 
 showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def$futureYears, 
