@@ -5,7 +5,7 @@ The world of investing has many tribes: some buy and hold, others pick stocks (w
 
 
 ### Keeping it slow
-A key characteristic of any strategy is its time scale. A strategy that can tell that the stock market is overpriced may need years to be proven right: in the nineties the market was more overpriced than in 1929, but it stayed overpriced for years before crashing. Such strategies will necessarily trading infrequently, making their move and waiting to be proven right (eventually).
+A key characteristic of any strategy is its time scale. A strategy that can tell that the stock market is overpriced will necessarily trade infrequently because it may take years to be proven right: in the nineties the market was more overpriced than in 1929, but it stayed overpriced for years before crashing.
 
 Some indicators aim at telling that the market is in a trend (up or down). If one expects the market to keep trending up one buys, if one expects a downward trend one sells. Such trends can exist over minutes or years. Trading on the shorter time scales is a full-time activity.
 
@@ -55,7 +55,7 @@ A common claim regarding any strategy is that if it were so easy to outperform, 
 
 
 ## Technical strategies
-These are based on variations of the prices only. There is no attempt at finding out whether the price is high or low (as with the value strategies) but instead the question is 'will it go up or down in the near future'. In the late 1990s for instance, prices were high but still increasing, so value strategies were out of the stock market whereas technical ones were in.
+These are based on variations of the prices only. There is no attempt at finding out whether the price is objectively high or low (as with the value strategies) but instead the question is 'will it go up or down in the near future'. In the late 1990s for instance, prices were high but still increasing, so value strategies were out of the stock market whereas technical ones were in.
 
 ### Bollinger bands
 The basic idea is to see whether the price is much higher than it was recently in terms of how many standard deviations away it is (somewhat similar to the z-statistics). See https://en.wikipedia.org/wiki/Bollinger_Bands for instance for a description. 
@@ -66,15 +66,6 @@ A simple moving average over a year is simply the average price over the past ye
 ### Reversal
 The trend reversal strategy does not find out whether prices are going up (time to be in the market), or going down (we should be out of the market). Instead it finds out whether a rise or fall is starting. So when the signal is positive, instead of _setting_ the allocation to a high value, we _increase_ its value. For this reason the algorithm is rather different from other strategies.
 
-### A tale of two costs
-The variable 'tradingCost' is meant to account for direct (and less direct) costs of trading:
-- buying and selling assets costs money,
-- buying and selling assets takes time,
-- strategies that trade often require more sustained attention (even when not actually trading).
-
-'riskAsCost' accounts for the fact that a strategy that trades more is more likely to need up-to-date information (whereas a strategy like CAPE that turns its portfolio once in a decade can afford to use data that are a month old), and in historical testing it is not always easy to tell what precise information was available at the time -- so we penalize heavy-trading strategies because of the extra risk, not just the extra cost. 
-
-Since the latter is not an actual cost, it is used only in the parameter search. When plotting the results, only 'tradingCost' is included.
 
 
 ## Combining strategies
@@ -179,3 +170,5 @@ constant-allocation stock-bond portfolios: green line
 The whole point of splitting data between a search for optimal parameters and testing is that what looked like the best strategy may in fact be due to a strange turn of event which made us create a great strategy for too specific a situation. The test between 1942 and 2014 shows that value strategies fare a lot less well than from 1871 to 1942. So the masochism worked just fine.
 
 The reason why the value strategies fall harder than technical strategies is that they turn their portfolio infrequently. Sixty years of data for a strategy with a natural cycle time of twenty years means that we fit to only three cycles. In a sense there are more data available for technical strategies, not in terms of number of years but in terms of number of cycles.
+
+Also, since the optimization takes place over 1871-1942 the process is controlled by the Depression: any strategy that handles it well will look good (even if it does not do so well elsewhere).

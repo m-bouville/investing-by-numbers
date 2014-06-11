@@ -27,7 +27,7 @@ setPlottingDefaultValues <- function() {
    def$maxDD2    <<- 2.
    
    def$plotEndYear <<- 2015
-   def$maxTR     <<- 10000
+   def$maxTR     <<- 50000
    
    #Colors consistently used for the various tsrategies
    def$colCAPE      <<- "cyan"
@@ -39,48 +39,51 @@ setPlottingDefaultValues <- function() {
    def$colValue     <<- "blue"
    def$colTechnical <<- "red"
    def$colBalanced  <<- "black"
-
+   
+   def$pch          <<- 16L
+   def$Mpch         <<- 15L
+   
    def$colConstantAlloc  <<- "green"
    
    # plotAllReturnsVsX()
    def$type1 <<- "CAPE"
    def$col1  <<- def$colCAPE
-   def$pch1  <<- 16L
+   def$pch1  <<- def$pch
    
    def$type2 <<- "detrended"
    def$col2  <<- def$colDetrended
-   def$pch2  <<- 16L
+   def$pch2  <<- def$pch
    
    def$type4 <<- "SMA"
    def$col4  <<- def$colSMA
-   def$pch4  <<- 16L
+   def$pch4  <<- def$pch
    
    def$type5 <<- "Bollinger"
    def$col5  <<- def$colBollinger
-   def$pch5  <<- 16L
+   def$pch5  <<- def$pch
    
    def$type6 <<- "reversal"
    def$col6  <<- def$colReversal
-   def$pch6  <<- 16L
+   def$pch6  <<- def$pch
    
    # plotAllReturnsVsX(): combined strategies
    def$Msubtype1 <<- "value"
    def$Mcol1     <<- def$colValue
-   def$Mpch1     <<- 15L
+   def$Mpch1     <<- def$Mpch
    
    def$Msubtype2 <<- "technical"
    def$Mcol2     <<- def$colTechnical
-   def$Mpch2     <<- 15L
+   def$Mpch2     <<- def$Mpch
    
    def$Msubtype3 <<- "balanced"
    def$Mcol3     <<- def$colBalanced
-   def$Mpch3     <<- 15L
+   def$Mpch3     <<- def$Mpch
    
    # plotAllReturnsVsX(): searches
    def$Stype    <<- "search"
    def$Scol     <<- NA # we need the subtype to set the color, we do that in the plotting function
-   def$Spch     <<- 16L # default symbol
-   def$SpchM    <<- 15L # empty square for combined strategies
+   def$Spch     <<- def$pch # default symbol
+   def$SpchM    <<- def$Mpch # empty square for combined strategies
    
    def$lineCol   <<- def$colConstantAlloc
 }
@@ -155,7 +158,8 @@ plotReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTec
                        costs=def$tradingCost, 
                        minTR=.9, maxTR=def$maxTR, yLabel="", legendPlacement="topleft",
                        startIndex=def$startIndex, net=T, normalize=T,
-                       pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, pngName="figures/return.png") {   
+                       pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
+                       pngName="figures/return.png") {   
    
    if(pngOutput)
       png(file=pngName, width=pngWidth, height=pngHeight)
@@ -244,6 +248,37 @@ plotAlloc <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTech
    }
 }
 
+plotReturnAndAllocTechnical <- function(stratName1=def$typicalSMA,       col1=def$colSMA,       lwd1=1.5,
+                                        stratName2=def$typicalBoll,      col2=def$colBoll,      lwd2=1.5,
+                                        stratName3=def$typicalReversal,  col3=def$colReversal,  lwd3=1.5,
+                                        stratName4=def$typicalTechnical, col4=def$colTechnical, lwd4=2, 
+                                        startYear=def$plotStartYear, endYear=def$plotEndYear, 
+                                        yLabel="", net=T, minTR=0.8, maxTR=def$maxTR, costs=def$tradingCost,
+                                        pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
+                                        pngName="figures/return_and_allocation-technical.png") {
+   
+   plotReturnAndAlloc(stratName1=stratName1, col1=col1, lwd1=lwd1, stratName2=stratName2, col2=col2, lwd2=lwd2,
+              stratName3=stratName3, col3=col3, lwd3=lwd3, stratName4=stratName4, col4=col4, lwd4=lwd4, 
+              startYear=startYear, endYear=endYear, costs=costs, 
+              yLabel=yLabel, net=net, minTR=minTR, maxTR=maxTR,
+              pngOutput=pngOutput, pngWidth=pngWidth, pngHeight=pngHeight, pngName=pngName) 
+}
+
+plotReturnAndAllocValue <- function(stratName1=def$typicalCAPE2,     col1=def$colCAPE,      lwd1=1.5,
+                                    stratName2=def$typicalDetrended1,col2=def$colDetrended, lwd2=1.5,
+                                    stratName3=def$typicalDetrended2,col3=def$colDetrended, lwd3=2,
+                                    stratName4=def$typicalValue,     col4=def$colValue,     lwd4=2, 
+                                    startYear=def$plotStartYear, endYear=def$plotEndYear, 
+                                    yLabel="", net=T, minTR=0.8, maxTR=def$maxTR, costs=def$tradingCost,
+                                    pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
+                                    pngName="figures/return_and_allocation-value.png") {
+   
+   plotReturnAndAlloc(stratName1=stratName1, col1=col1, lwd1=lwd1, stratName2=stratName2, col2=col2, lwd2=lwd2,
+                      stratName3=stratName3, col3=col3, lwd3=lwd3, stratName4=stratName4, col4=col4, lwd4=lwd4, 
+                      startYear=startYear, endYear=endYear, costs=costs, 
+                      yLabel=yLabel, net=net, minTR=minTR, maxTR=maxTR,
+                      pngOutput=pngOutput, pngWidth=pngWidth, pngHeight=pngHeight, pngName=pngName) 
+}
 
 plotReturnAndAlloc <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTechnical, 
                                stratName3=def$typicalValue, stratName4="stocks", 
@@ -251,7 +286,8 @@ plotReturnAndAlloc <- function(stratName1=def$typicalBalanced, stratName2=def$ty
                                col3=def$colValue, col4=def$colConstantAlloc, 
                                lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=2,
                                startYear=def$plotStartYear, endYear=def$plotEndYear, costs=def$tradingCost, 
-                               minTR=.9, maxTR=def$maxTR, yLabelReturn="", legendPlacement="topleft", net=T, normalize=T,
+                               minTR=.9, maxTR=def$maxTR, yLabelReturn="", 
+                               legendPlacement="topleft", net=T, normalize=T,
                                pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
                                pngName="figures/return_and_allocation.png") {
    if(pngOutput)
@@ -309,7 +345,7 @@ plotFutureReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typi
                              col3=def$colValue, col4=def$colConstantAlloc, 
                              lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=2,
                              startYear=def$plotStartYear, endYear=def$plotEndYear, 
-                             costs=def$tradingCost, 
+                             costs=def$tradingCost, extrapolate=0,
                              minTR="", maxTR="", yLabel="", legendPlacement="bottomleft",
                              startIndex=def$startIndex, net=T, 
                              pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
@@ -348,6 +384,17 @@ plotFutureReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typi
       i <- i-1
    endYear <- round( (i-1)/12 + def$dataStartYear ) + 1
    
+   ## A drawback of looking at the next 20 years is that it ends in 1994, for lack of data after 2014.
+   ## In particular, we cannot observe the impact of the crash of 2000-2002.
+   ## So after 1994, we look at the annual return between year y and 2014 (i.e. over less than 20 years).
+   ## We notice a drop in return after 1995 because we catch less of the 1995-2000 bull market.
+   ## The bottom is reached in 2000, because the next 14 years could not be good, starting from such a height
+   if( extrapolate>0 )
+      for ( count in 1:round(extrapolate*12) ) 
+         returnDF[i+count, stratNames] <- ( (TR[dim(TR)[1], stratNames] / TR[i+count, stratNames])
+                                           ^(1/((dim(TR)[1] - i - count)/12)) - 1 ) *100
+   endYear <- round(endYear+extrapolate)
+         
    plotSomeSortOfReturn(returnDF1=returnDF[, 1], returnDF2=returnDF[, 2], 
                         returnDF3=returnDF[, 3], returnDF4=returnDF[, 4],
                         xVect=xVect, stratName1=stratName1, stratName2=stratName2, 
@@ -362,6 +409,157 @@ plotFutureReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typi
    }   
 }
 
+
+plotRelativeFutureReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTechnical, 
+                             stratName3=def$typicalValue, refStratName="stocks", 
+                             futureYears=def$futureYears, xVect=TR$numericDate, 
+                             col1=def$colBalanced, col2=def$colTechnical, 
+                             col3=def$colValue, col4=def$colConstantAlloc, 
+                             lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=2,
+                             startYear=def$plotStartYear, endYear=def$plotEndYear, 
+                             costs=def$tradingCost, 
+                             minTR="", maxTR="", yLabel="", legendPlacement="topleft",
+                             startIndex=def$startIndex, net=T, 
+                             pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
+                             pngName=paste0("figures/return_over_next_", futureYears, 
+                                            "_years-reference_", refStratName, ".png") ) { 
+   
+   if(pngOutput)
+      png(file=pngName, width=pngWidth, height=pngHeight)
+   
+   para <- parametrizeFutureReturnPlot(costs*net, yLabel, futureYears, minTR, maxTR) 
+   yLabel <- paste("relative", para[[1]])
+   
+   normDate <- (startYear-def$dataStartYear)*12+1
+   
+   stratNames <- c(stratName1, stratName2, stratName3, refStratName)
+   numCurves <- length(stratNames)
+   
+   if (futureYears==5) 
+      returnDF <- 100 *  next5yrs[, stratNames]
+   else if (futureYears==10) 
+      returnDF <- 100 * next10yrs[, stratNames]
+   else if (futureYears==20) 
+      returnDF <- 100 * next20yrs[, stratNames]
+   else if (futureYears==30) 
+      returnDF <- 100 * next30yrs[, stratNames]  
+   
+   if(net & costs>0) # reduce TR because of costs
+      for (strat in 1:numCurves) 
+         if (stratNames[strat] != "") {
+            index  <- which(stats$strategy == stratNames[strat])
+            returnDF[, strat] <- returnDF[, strat] - 100*costs/stats$turnover[index]
+         }
+   
+   ## adjust endYear based on non-NA data
+   i <- (endYear-def$dataStartYear)*12+1
+   while ( sum(is.na(returnDF[i, ])) > 0 ) 
+      i <- i-1
+   endYear <- round( (i-1)/12 + def$dataStartYear ) + 1
+   
+   returnDF[, 1:numCurves] <- returnDF[, 1:numCurves] - returnDF[, 4]
+   minTR <- min(returnDF,na.rm=T); maxTR <- max(returnDF,na.rm=T)
+   
+   plotSomeSortOfReturn(returnDF1=returnDF[, 1], returnDF2=returnDF[, 2], 
+                        returnDF3=returnDF[, 3], returnDF4=returnDF[, 4],
+                        xVect=xVect, stratName1=stratName1, stratName2=stratName2, 
+                        stratName3=stratName3, stratName4=refStratName,
+                        col1=col1, col2=col2, col3=col3, col4=col4, lwd1=lwd1, lwd2=lwd2, lwd3=lwd3, lwd4=lwd4,
+                        startYear=startYear, endYear=endYear, minTR=minTR, maxTR=maxTR, 
+                        yLabel=yLabel, legendPlacement=legendPlacement, yLog=F)
+   
+   if(pngOutput) {
+      dev.off()
+      print( paste0("png file (", pngWidth, " by ", pngHeight, ") written to: ", pngName) )
+   }   
+}
+
+
+
+plotFutureReturnVsStocks <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTechnical, 
+                                     stratName3=def$typicalValue, refStratName="stocks", 
+                                     futureYears=def$futureYears, 
+                                     col1=def$colBalanced, col2=def$colTechnical, col3=def$colValue,    
+                                     pch1=1L, pch2=1L, pch3=1L,    
+                                     startYear=def$plotStartYear, endYear=def$plotEndYear, 
+                                     costs=def$tradingCost, showFit=T,
+                                     minTR="", maxTR="", yLabel="", legendPlacement="topleft",
+                                     startIndex=def$startIndex, net=T, 
+                                     figureTitle="", 
+                                     pngOutput=F, pngWidth=def$pngHeight, pngHeight=def$pngHeight, 
+                                     pngName=paste0("figures/return_over_next_", futureYears, 
+                                                    "_years_vs_", refStratName, ".png") ) { 
+   
+   if(pngOutput)
+      png(file=pngName, width=pngWidth, height=pngHeight)
+   
+   para <- parametrizeFutureReturnPlot(costs*net, yLabel, futureYears, minTR, maxTR) 
+   yLabel <- para[[1]]
+   xLabel <- paste0("stocks annual return (%) over next ", futureYears, " years")
+   if (figureTitle != "") par( oma = c( 0, 0, 1.5, 1.5 ) )
+   
+   stratNames <- c(stratName1, stratName2, stratName3, refStratName)
+   numCurves <- length(stratNames)
+   
+   if (futureYears==5) 
+      returnDF <- 100 *  next5yrs[, stratNames]
+   else if (futureYears==10) 
+      returnDF <- 100 * next10yrs[, stratNames]
+   else if (futureYears==20) 
+      returnDF <- 100 * next20yrs[, stratNames]
+   else if (futureYears==30) 
+      returnDF <- 100 * next30yrs[, stratNames]  
+   
+   if(net & costs>0) # reduce TR because of costs
+      for (strat in 1:numCurves) 
+         if (stratNames[strat] != "") {
+            index  <- which(stats$strategy == stratNames[strat])
+            returnDF[, strat] <- returnDF[, strat] - 100*costs/stats$turnover[index]
+         }
+   
+   ## adjust endYear based on non-NA data
+   i <- (endYear-def$dataStartYear)*12+1
+   while ( sum(is.na(returnDF[i, ])) > 0 ) 
+      i <- i-1
+   endYear <- round( (i-1)/12 + def$dataStartYear ) + 1
+   
+   minTR <- min(returnDF,na.rm=T); maxTR <- max(returnDF,na.rm=T)
+   
+   par(mar=c(4.2, 4.2, 1.5, 1.5))
+   xRange <- c(minTR, maxTR)
+   yRange <- c(minTR, maxTR)
+   
+   if( stratName1 != "" ) {   
+      plot(returnDF[, 4], returnDF[, 1], col=col1, xlab=xLabel, ylab=yLabel, pch=pch1, xlim=xRange, ylim=yRange)
+      if (showFit) 
+         abline( lm( returnDF[, 1] ~ returnDF[, 4], na.action=na.omit) , col=col1, lwd=2)
+      par(new=T)
+   }
+   if( stratName2 != "" ) {   
+      plot(returnDF[, 4], returnDF[, 2], col=col2, xlab="", ylab="", pch=pch2, xlim=xRange, ylim=yRange)
+      if (showFit) 
+         abline( lm( returnDF[, 2] ~ returnDF[, 4], na.action=na.omit) , col=col2, lwd=2)
+      par(new=T)
+   }  
+   if( stratName3 != "" ) {   
+      plot(returnDF[, 4], returnDF[, 3], col=col3, xlab="", ylab="", pch=pch3, xlim=xRange, ylim=yRange)
+      if (showFit) 
+         abline( lm( returnDF[, 3] ~ returnDF[, 4], na.action=na.omit) , col=col3, lwd=2)
+      par(new=T)
+   }
+   legend( legendPlacement, c(stratName1,stratName2,stratName3), 
+           bty="n", pch=c(pch1, pch2, pch3), col=c(col1, col2, col3) )
+   par(new=F)
+   
+   if (figureTitle != "") title( figureTitle, outer = TRUE )
+   par(oma = c( 0, 0, 0, 0 ))
+
+   
+   if(pngOutput) {
+      dev.off()
+      print( paste0("png file (", pngWidth, " by ", pngHeight, ") written to: ", pngName) )
+   }   
+}
 
 
 showPlotLegend <- function() {
@@ -396,7 +594,8 @@ plotAllReturnsVsSomeParameter <- function(type1=def$type1, col1=def$col1, pch1=d
                                           yStatsName="", yFactor=100,
                                           xMin, xMax, yMin=def$yTRmin, yMax=def$yTRmax, 
                                           costs=def$tradingCost, 
-                                          pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, pngName) { 
+                                          pngOutput=F, pngWidth=def$pngWidth,
+                                          pngHeight=def$pngHeight, pngName) { 
    
    if(pngOutput)
       png(file=pngName, width=pngWidth, height=pngHeight)
@@ -781,7 +980,8 @@ plotCumulativeFutureReturn <- function(stratName1=def$typicalBalanced, stratName
                                        lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=2,                                  
                                        figureTitle="", 
                                        pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
-                                       pngName=paste0("figures/cumulative_return_over_next_",futureYears,"_years.png") ) {
+                                       pngName=paste0("figures/cumulative_return_over_next_",
+                                                      futureYears,"_years.png") ) {
  
    if(pngOutput) 
       png(file=pngName, width=pngWidth, height=pngHeight)
@@ -861,50 +1061,67 @@ createStrategiesAndSavePlots <- function(futureYears=10L, tradingCost=0.5/100,
    start(dataSplit="search", futureYears=futureYears, tradingCost=tradingCost, 
          extrapolateDividends=T, smoothConstantAlloc=T, downloadAndCheckAllFiles=F,
          otherAssetClasses=F, newcomer=F, force=T)   
-   plotAllReturnsVsFour(yMin=5, pngOutput=T, pngName="figures/return_vs_four-1871_1942.png", 
+   plotAllReturnsVsFour(yMin=5, pngOutput=T, pngName="figures/1871_1942-return_vs_four.png", 
                         pngWidth=pngWidth, pngHeight=pngHeight, 
                         figureTitle="1871-1942 (optimization range)" )
-   plotReturnAndAlloc(pngOutput=T, pngName="figures/return_and_allocation-1871_1942.png", 
+   plotReturnAndAlloc(pngOutput=T, pngName="figures/1871_1942-return_and_allocation.png", 
                       pngWidth=pngWidth, pngHeight=pngHeight)
    plotFutureReturnVsCAPE(futureYears=futureYears, maxTR=21, 
                           pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight, 
-                          pngName=paste0("figures/return_over_next_", 
-                                         futureYears, "_years_vs_CAPE-1871_1942.png"),
+                          pngName=paste0("figures/1871_1942-return_over_next_", 
+                                         futureYears, "_years_vs_CAPE.png"),
                           figureTitle="1871-1942 (optimization range)")
    plotFutureReturn(futureYears=futureYears, pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight,
-                    pngName=paste0("figures/return_over_next_", futureYears, "_years-1871_1942.png"))
+                    pngName=paste0("figures/1871_", 1942-futureYears, 
+                                   "-return_over_next_", futureYears, "_years.png"))
    plotCumulativeFutureReturn(futureYears=futureYears, pngOutput=T, 
-                              pngName=paste0("figures/cumulative_return_over_next_",
-                                             futureYears,"_years-1871_1942.png"),
-                              figureTitle="1871-1942 (optimization range)" )
+                              pngName=paste0("figures/1871_", 1942-futureYears, 
+                                             "-cumulative_return_over_next_", futureYears,"_years.png"),
+                              figureTitle=paste0("1871-", 1942-futureYears, " (optimization range)") )
+   plotFutureReturnVsStocks(futureYears=futureYears, pngOutput=T, 
+                            pngName=paste0("figures/1871_", 1942-futureYears, 
+                                           "-return_over_next_", futureYears, "_years_vs_stocks.png"),
+                            figureTitle=paste0("1871-", 1942-futureYears, " (optimization range)") )
    #    searchForOptimalBalanced(byF1=2.02, byF2=0.02)
    #    plotAllReturnsVsFour(searchPlotType="line", pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight, 
-   #                         pngName="figures/balanced_optimization-1871_1942.png")
+   #                         pngName="figures/1871_1942-balanced_optimization.png")
+   
    
    ## Testing (1942_2014)
    start(dataSplit="testing", futureYears=futureYears, tradingCost=tradingCost, 
          extrapolateDividends=T, smoothConstantAlloc=T, downloadAndCheckAllFiles=F,
          otherAssetClasses=F, newcomer=F, force=T)   
-   plotAllReturnsVsFour(pngOutput=T, pngName="figures/return_vs_four-1942_2014.png", 
+   plotAllReturnsVsFour(pngOutput=T, pngName="figures/1942_2014-return_vs_four.png", 
                         pngWidth=pngWidth, pngHeight=pngHeight, 
                         figureTitle="1942-2014 (parameters optimized over 1871-1942)")
-   plotReturnAndAlloc(pngOutput=T, pngName="figures/return_and_allocation-1942_2014.png", 
+   plotReturnAndAlloc(pngOutput=T, pngName="figures/1942_2014-return_and_allocation.png", 
                       pngWidth=pngWidth, pngHeight=pngHeight)   
    plotFutureReturn(futureYears=futureYears, pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight,
-                    pngName=paste0("figures/return_over_next_", futureYears, 
-                                   "_years-1942_", 2014-futureYears, ".png") )
+                    pngName=paste0("figures/1942_", 2014-futureYears, "-return_over_next_", 
+                                   futureYears, "_years.png") )
+   plotRelativeFutureReturn(futureYears=futureYears, refStratName="stocks", 
+                            legendPlacement="topleft", 
+                            pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight,
+                            pngName=paste0("figures/1942_", 2014-futureYears, "-return_over_next_", 
+                                           futureYears, "_years-reference_stocks.png"))
    plotFutureReturnVsCAPE(futureYears=futureYears, maxTR=21, 
                           pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight, 
-                          pngName=paste0("figures/return_over_next_",futureYears,"_years_vs_CAPE-1942_", 
-                                         2014-futureYears, ".png"),
+                          pngName=paste0("figures/1942_", 2014-futureYears, "-return_over_next_",
+                                         futureYears,"_years_vs_CAPE.png"),
                           figureTitle=paste0("1942-", 2014-futureYears, 
                                              " (parameters optimized over 1871-1942)"))
    plotCumulativeFutureReturn(futureYears=futureYears, pngOutput=T, 
-                              pngName=paste0("figures/cumulative_return_over_next_", futureYears, 
-                                             "_years-1942_", 2014-futureYears, ".png"),
+                              pngName=paste0("figures/1942_", 2014-futureYears, 
+                                             "-cumulative_return_over_next_", futureYears, "_years.png"),
                               figureTitle=paste0("1942-", 2014-futureYears, 
                                                  " (parameters optimized over 1871-1942)"))
-
+   plotFutureReturnVsStocks(futureYears=futureYears, pngOutput=T, 
+                            pngName=paste0("figures/1942_", 2014-futureYears, 
+                                           "-return_over_next_", futureYears, "_years_vs_stocks.png"),
+                            figureTitle=paste0("1942-", 2014-futureYears, 
+                                               " (parameters optimized over 1871-1942)") )
+   
+   
    ## Testing (1942_2014) -- futureYears == 20
    newFutureYears <- 20L
    if (futureYears != newFutureYears) { # i.e. if we have not done all this already above
@@ -913,19 +1130,29 @@ createStrategiesAndSavePlots <- function(futureYears=10L, tradingCost=0.5/100,
             otherAssetClasses=F, newcomer=F, force=T)   
       plotFutureReturn(futureYears=newFutureYears, legendPlacement="topleft", 
                        pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight,
-                       pngName=paste0("figures/return_over_next_", newFutureYears, 
-                                      "_years-1942_", 2014-newFutureYears, ".png"))
+                       pngName=paste0("figures/1942_", 2014-newFutureYears, "-return_over_next_", 
+                                      newFutureYears, "_years.png"))
+      plotRelativeFutureReturn(futureYears=newFutureYears, refStratName="stocks", 
+                               legendPlacement="topleft", 
+                               pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight,
+                               pngName=paste0("figures/1942_", 2014-newFutureYears, "-return_over_next_", 
+                                              newFutureYears, "_years-reference_stocks.png"))
       plotFutureReturnVsCAPE(futureYears=newFutureYears, minCAPE=5.5, maxCAPE=25, 
                              pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight, 
-                             pngName=paste0("figures/return_over_next_", newFutureYears, 
-                                            "_years_vs_CAPE-1942_", 2014-newFutureYears, ".png"),
+                             pngName=paste0("figures/1942_", 2014-newFutureYears, "-return_over_next_", 
+                                            newFutureYears, "_years_vs_CAPE.png"),
                              figureTitle=paste0("1942-", 2014-newFutureYears, 
                                                 " (parameters optimized over 1871-1942)") )
-      plotCumulativeFutureReturn(futureYears=newFutureYears, pngOutput=T, 
-                                 pngName=paste0("figures/cumulative_return_over_next_", newFutureYears, 
-                                                "_years-1942_", 2014-newFutureYears, ".png"),
-                                 figureTitle=paste0("1942-", 2014-newFutureYears, 
-                                                    " (parameters optimized over 1871-1942)") )
+#       plotCumulativeFutureReturn(futureYears=newFutureYears, pngOutput=T, 
+#                                  pngName=paste0("figures/1942_", 2014-newFutureYears, 
+#                                                 "-cumulative_return_over_next_", newFutureYears, "_years.png"),
+#                                  figureTitle=paste0("1942-", 2014-newFutureYears, 
+#                                                     " (parameters optimized over 1871-1942)") )
+#       plotFutureReturnVsStocks(futureYears=newFutureYears, pngOutput=T, 
+#                                pngName=paste0("figures/1942_", 2014-newFutureYears, 
+#                                               "-return_over_next_", newFutureYears, "_years_vs_stocks.png"),
+#                                figureTitle=paste0("1942-", 2014-newFutureYears, 
+#                                                   " (parameters optimized over 1871-1942)") )
    }
 }
 

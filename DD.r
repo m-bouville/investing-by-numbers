@@ -1,4 +1,17 @@
 
+############################################
+##                                        ##
+##         Investing by numbers           ##
+##   a quantitative trading strategy by   ##
+##         Mathieu Bouville, PhD          ##
+##      <mathieu.bouville@gmail.com>      ##
+##                                        ##
+##       DD.r calculates drawdowns        ##
+##                                        ##
+############################################
+
+
+
 ## Loading DD list from csv file
 loadDDlist <- function(force=F) {
    if (!exists("DD") | force) {
@@ -21,8 +34,8 @@ loadDDlist <- function(force=F) {
 ## Calculate the drawdown (bigger price fall) for a certain startegy in a given date range
 drawdown <- function(strategyName, startYear, endYear) {
    requireColInTR(strategyName)
-   startIndex <- (startYear-1871)*12+1
-   endIndex <- min((endYear-1871)*12, numData)
+   startIndex <- (startYear-def$dataStartYear)*12+1
+   endIndex <- min((endYear-def$dataStartYear)*12, numData)
    
    DD <- 1
    highValue <- -1
@@ -123,7 +136,7 @@ plotDD <- function(DDindex, padding=0, minTR=.8, maxTR=1.5, newStartYear="", new
 
 # Displays the inflation during a certain drawdown event (useful to tell how much of the real drawdown was due to inflation)
 showDDinflation <- function(DDindex) {
-   return ( dat$CPI[(DD$endYear[DDindex]-1871)*12+1] / dat$CPI[(DD$startYear[DDindex]-1871)*12+1] - 1)
+   return ( dat$CPI[(DD$endYear[DDindex]-def$dataStartYear)*12+1] / dat$CPI[(DD$startYear[DDindex]-def$dataStartYear)*12+1] - 1)
 }
 
 # Calculates the inflation during all drawdown events (useful to tell how much of the real drawdown was due to inflation)
