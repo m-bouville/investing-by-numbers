@@ -9,9 +9,17 @@ A key characteristic of any strategy is its time scale. A strategy that can tell
 
 Some indicators aim at telling that the market is in a trend (up or down). If one expects the market to keep trending up one buys, if one expects a downward trend one sells. Such trends can exist over minutes or years. Trading on the shorter time scales is a full-time activity.
 
+I use monthly data starting in the 19th century (I deal with stocks as an asset class rather than with indivdual stocks), not daily or tick-by-tick data from the past few years. Two advantages of strategies trading less often are:
+- they are less time consuming, i.e. not a full-time job, 
+- the trading costs are not as huge an issue.
+I test the strategies,
+- taking costs into account and 
+- splitting the data between searching for parameters and testing them.
+So I do not claim that a certain strategy should work in theory, I actually test it and show the results as plots: https://github.com/m-bouville/investing-by-numbers/tree/master/figures (so you can make up your own mind as to whether this is working or not).
 
-### Anybody can use it...
-We focus on time scales of years, which essentially means investing in stocks except  when the market is unfavorable. Such asset allocation is suitable for normal, non-professional investors:
+
+### Strategies for the average investor
+I focus on time scales of years, which essentially means investing in stocks except  when the market is unfavorable. Such asset allocation is suitable for normal, non-professional investors:
 - it is based solely on dynamic changes to the stock-bond allocation,
 - there is no short position,
 - there is no stock-picking,
@@ -19,14 +27,6 @@ We focus on time scales of years, which essentially means investing in stocks ex
 - one needs to act only infrequently (this is far from a full-time activity),
 - there are no asset classes other than stocks and bonds,
 - the strategies use only data that are publically available.
-
-
-### ... but not anybody can create it
-Coming up with the strategies on the other hand requires more: 
-- knowledge of finance, math, programming (the code is in R);
-- finding more data (e.g. so far I have data only for the U.S.);
-- coming up with new ideas (or reusing other people's);
-- testing a wide range of parameters for these strategies and keeping the best ones.
 
 
 

@@ -6,128 +6,11 @@
 ##         Mathieu Bouville, PhD          ##
 ##      <mathieu.bouville@gmail.com>      ##
 ##                                        ##
-##           init.r loads data            ##
+##         loading.r loads data           ##
 ##       and initializes everything       ##
 ##                                        ##
 ############################################
 
-
-
-# Loading and preparing data
-start <- function(dataSplit="none",           # "none" for all data, "search" and "testing" for half the data
-                  extrapolateDividends=T,     # whether to extrapolate missing recent dividends (or remove incomplete months)
-                  smoothConstantAlloc=F,      # calculates more constant-allocation portfolios, for smoother curves in plots
-                  downloadAndCheckAllFiles=F, # downloads data files even if they exist locally,
-                                              # to check whether they are up to date
-                  futureYears=10L,            # to calculate the return over the next so many years
-                  tradingCost=0.5/100,        # cost of turning the portfolio entirely 
-                  otherAssetClasses=F,        # loads gold and UK house prices
-                  newcomer=F,                 # displays some information on the code
-                  force=F) {
-   
-   if(!file.exists("utils.r")) 
-      stop("Use \'setwd()\' to change the working directory to that containing the data.")
-
-   source("utils.r")      # general functions (i.e. those not in another file)
-   source("DD.r")         # drawdowns
-   source("plotting.r")   # various functions that generate plots
-   
-   # Strategies:
-   source("CAPE.r")
-   source("detrended.r")
-   source("Bollinger.r")
-   source("SMA.r")
-   #source("momentum.r") # I cannot get it to work well enough to be competitive
-   source("reversal.r")
-   source("combine.r")
-   
-   totTime <- proc.time()
-      
-   setDefaultValues(dataSplit=dataSplit, futureYears=futureYears, tradingCost=tradingCost, force=force)
-   
-   ## if data frame does not exist, or is incomplete (had been used for search or testing), 
-   ## or if we want to force the loading: we load the xls file
-   if (!exists("dat") || numData<1500 || downloadAndCheckAllFiles) { 
-      message("Starting to load the data from the xls file.")
-      message("Then we will also load a list of drawdowns, of gold prices and of UK house prices.")
-      message("After that, we will create the basic data structures and calculate some basic strategies.")
-      message()
-      loadData(downloadAndCheckAllFiles=downloadAndCheckAllFiles)
-   }
-   if (!exists("DD") | force) loadDDlist(force=force) # loading the dates of major drawdowns
-   
-   if (dataSplit != "none") splitData(dataSplit=dataSplit, force=force)
-  
-   if (!exists("signal")| force) signal <<- data.frame(date = dat$date, numericDate = dat$numericDate)
-   if (!exists("alloc") | force) alloc  <<- data.frame(date = dat$date, numericDate = dat$numericDate)
-   if (!exists("TR")    | force) TR     <<- data.frame(date = dat$date, numericDate = dat$numericDate, stocks = dat$TR)
-
-   if ( (def$futureYears==5) & (!exists("next5yrs") | force) ) 
-      next5yrs  <<- data.frame(date = dat$date, numericDate = dat$numericDate)
-   else if ( (def$futureYears==10) & (!exists("next10yrs") | force) ) 
-      next10yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
-   else if ( (def$futureYears==20) & (!exists("next20yrs") | force) ) 
-      next20yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
-   else if ( (def$futureYears==30) & (!exists("next30yrs") | force) ) 
-      next30yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
-   
-   if (!exists("stats") | force)  createStatsDF(futureYears=futureYears)   
-   if (!exists("parameters") | force) createParametersDF()
-   
-   addNumColToDat("TRmonthly")
-   addNumColToDat("bondsMonthly")
-   addNumColToDat("monthlyDifference")
-   for(i in 2:numData) {
-      dat$TRmonthly[i] <<- dat$TR[i] / dat$TR[i-1] 
-      dat$bondsMonthly[i] <<- dat$bonds[i] / dat$bonds[i-1] 
-      dat$monthlyDifference[i] <<- dat$TRmonthly[i] - dat$bondsMonthly[i]
-   }
-   
-   time0 <- proc.time()
-   message("Creating constant-allocation stock-bond strategies.") 
-   if(smoothConstantAlloc)
-      constAllocList <- seq(100, 0, by=-5)
-   else 
-      constAllocList <- c(100, 80, 60, 45, 30, 0)
-   invisible ( lapply( constAllocList, function(alloc) createConstAllocStrategy(
-      alloc, futureYears=def$futureYears, force=force) ) )
-   print( c( "constant allocation time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
-   
-   if(otherAssetClasses) {
-      source("otherAssetClasses.r")# gold and UK housing
-      
-      if (!"gold" %in% colnames(dat) | !"gold" %in% stats$strategy | force) {
-         loadGoldData()
-         createGoldStrategy(futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, force=force)
-         message("Real gold prices were obtained from a local csv file.")
-      }
-      
-      if (!"UKhousePrice" %in% colnames(dat) | !"UKhousePrice" %in% stats$strategy | downloadAndCheckAllFiles) {
-         loadUKhousePriceData(downloadAndCheckAllFiles=downloadAndCheckAllFiles)
-         createUKhousePriceStrategy(futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, force=force)
-         message("Real UK house prices were obtained from Nationwide; they are in pounds, and based on UK inflation.")
-      }
-   }
-   
-   if(!downloadAndCheckAllFiles) {
-      print( Sys.time() )
-   }
-   
-   if(newcomer) showForNewcomer()
-   
-   createTypicalStrategies(force=force)
-   
-   showSummaries()
-   
-   makeStringsFactors()
-   
-#    print(proc.time() - totTime)
-   print( paste0( "This took: ", 
-                 round(summary(proc.time())[[3]] - totTime[[3]] , 0), " s, with about " , 
-                 round(summary(proc.time())[[1]] - totTime[[1]] , 0), " s for calculations and " ,
-                 round(summary(proc.time())[[3]]-summary(proc.time())[[1]] + totTime[[1]]-totTime[[3]] , 0), 
-                 " s to download files." ) )
-}
 
 
 setDefaultValues <- function(dataSplit, futureYears=10L, tradingCost=0.5/100, force=F) {
@@ -431,14 +314,6 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
 #    print( c( "detrended2 time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
 #    time0 <- proc.time()
-   createBollStrategy(inputDF=def$BollInputDF, inputName=def$BollInputName, avgOver=def$BollAvgOver, 
-                      bearish=def$BollBearish, bullish=def$BollBullish, 
-                      signalMin=def$signalMin, signalMax=def$signalMax,
-                      futureYears=def$futureYears, costs=def$tradingCost, 
-                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)   
-#    print( c( "Bollinger time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
-   
-#    time0 <- proc.time()
    createSMAstrategy(inputDF=def$SMAinputDF, inputName=def$SMAinputName, SMA1=def$SMA1, SMA2=def$SMA2, 
                      bearish=def$SMAbearish, bullish=def$SMAbullish, 
                      signalMin=def$signalMin, signalMax=def$signalMax,
@@ -447,6 +322,14 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
 #    print( c( "SMA time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
 #    time0 <- proc.time()
+createBollStrategy(inputDF=def$BollInputDF, inputName=def$BollInputName, avgOver=def$BollAvgOver, 
+                   bearish=def$BollBearish, bullish=def$BollBullish, 
+                   signalMin=def$signalMin, signalMax=def$signalMax,
+                   futureYears=def$futureYears, costs=def$tradingCost, 
+                   coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)   
+#    print( c( "Bollinger time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
+
+#    time0 <- proc.time()
    createReversalStrategy(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
                           avgOver=def$reversalAvgOver, returnToMean=def$reversalReturnToMean, 
                           bearish=def$reversalBearish, bullish=def$reversalBullish, 
@@ -454,7 +337,16 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
                           futureYears=def$futureYears, costs=def$tradingCost, 
                           coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force) 
 #    print( c( "reversal time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
-   
+
+#    time0 <- proc.time()
+combineStrategies(def$typicalSMA, def$typicalBoll, def$typicalReversal, "",
+                  def$technicalFractionSMA, def$technicalFractionBoll, 
+                  def$technicalFractionReversal, 0, 
+                  type="combined", subtype="technical", combineMode="weighted",
+                  costs=def$tradingCost, 
+                  coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
+#    print( c( "technical time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
+
 #    time0 <- proc.time()
    combineStrategies(inputStrategyName1=def$typicalCAPE1, inputStrategyName2=def$typicalCAPE2, 
                      inputStrategyName3=def$typicalDetrended1, inputStrategyName4=def$typicalDetrended2,
@@ -463,15 +355,6 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
                      type="combined", subtype="value", combineMode="weighted", costs=def$tradingCost, 
                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
 #    print( c( "value time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
-   
-#    time0 <- proc.time()
-   combineStrategies(def$typicalSMA, def$typicalBoll, def$typicalReversal, "",
-                     def$technicalFractionSMA, def$technicalFractionBoll, 
-                     def$technicalFractionReversal, 0, 
-                     type="combined", subtype="technical", combineMode="weighted",
-                     costs=def$tradingCost, 
-                     coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
-#    print( c( "technical time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
    
 #    time0 <- proc.time()
    combineStrategies(def$typicalTechnical, def$typicalValue, "", "",
