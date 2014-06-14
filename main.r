@@ -12,13 +12,11 @@
 ### "http://mathieu.bouville.name/finance/CAPE/"
 
 
-source("init.r")       # loads data and initializes everything
-
-
 showToDoList <- function() {
    print("What's still left TO DO:")
    print(" - Improve value strategy results.")
-   print(" - Change (how?) the way 2 strategies are combined.")
+   print(" - Change the way 2 strategies are combined: right now I use constant weights.")
+   print("       I'd like to tell (how?) when a strategy is likely to do well to increase its weight.")
    print(" - Automate parameter search.")
    print(" - Switch to ggplot2 for scatter plots?")
    print(" - Try to speed up code (especially parameter searches) through compiling and (or) parallelization.")
@@ -58,6 +56,115 @@ showForNewcomer <- function() {
    showToDoList()
 }
 
+# Loading and preparing data
+start <- function(dataSplit="none",           # "none" for all data, "search" and "testing" for half the data
+                  extrapolateDividends=T,     # whether to extrapolate missing recent dividends (or remove incomplete months)
+                  smoothConstantAlloc=F,      # calculates more constant-allocation portfolios, for smoother curves in plots
+                  downloadAndCheckAllFiles=F, # downloads data files even if they exist locally,
+                  # to check whether they are up to date
+                  futureYears=10L,            # to calculate the return over the next so many years
+                  tradingCost=0.5/100,        # cost of turning the portfolio entirely 
+                  otherAssetClasses=F,        # loads gold and UK house prices
+                  newcomer=F,                 # displays some information on the code
+                  force=F) {
+   
+   if(!file.exists("utils.r")) 
+      stop("Use \'setwd()\' to change the working directory to that containing the data.")
+   
+   source("loading.r")    # to load data and initialize everything
+   source("utils.r")      # general functions (i.e. those not in another file)
+   source("DD.r")         # drawdowns
+   source("plotting.r")   # various functions that generate plots
+   
+   # Strategies:
+   source("CAPE.r")
+   source("detrended.r")
+   source("Bollinger.r")
+   source("SMA.r")
+   #source("momentum.r") # I cannot get it to work well enough to be competitive
+   source("reversal.r")
+   #source("inflation.r")
+   source("combine.r")
+   
+   totTime <- proc.time()
+   
+   setDefaultValues(dataSplit=dataSplit, futureYears=futureYears, tradingCost=tradingCost, force=force)
+   
+   ## if data frame does not exist, or is incomplete (had been used for search or testing), 
+   ## or if we want to force the loading: we load the xls file
+   if (!exists("dat") || numData<1500 || downloadAndCheckAllFiles) { 
+      message("Starting to load the data from the xls file.")
+      message("Then we will also load a list of drawdowns, of gold prices and of UK house prices.")
+      message("After that, we will create the basic data structures and calculate some basic strategies.")
+      message()
+      loadData(downloadAndCheckAllFiles=downloadAndCheckAllFiles)
+   }
+   if (!exists("DD") | force) loadDDlist(force=force) # loading the dates of major drawdowns
+   
+   if (dataSplit != "none") splitData(dataSplit=dataSplit, force=force)
+   else {
+      dat$splitting <<- factor(numData)
+      levels(dat$splitting) <<- c("search", "testing")
+      dat$splitting[ 1: (numData %/% 2) ] <<- "search"
+      dat$splitting[ (numData %/% 2+1):numData ] <<- "testing"
+   }
+   
+   if (!exists("signal")| force) signal <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+   if (!exists("alloc") | force) alloc  <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+   if (!exists("TR")    | force) TR     <<- data.frame(date = dat$date, numericDate = dat$numericDate, stocks = dat$TR)
+   
+   addFutureReturnsToDat(force=force)
+   
+   if (!exists("stats") | force)  createStatsDF(futureYears=futureYears)   
+   if (!exists("parameters") | force) createParametersDF()
+   
+   addNumColToDat("TRmonthly")
+   addNumColToDat("bondsMonthly")
+   addNumColToDat("monthlyDifference")
+   for(i in 2:numData) {
+      dat$TRmonthly[i] <<- dat$TR[i] / dat$TR[i-1] 
+      dat$bondsMonthly[i] <<- dat$bonds[i] / dat$bonds[i-1] 
+      dat$monthlyDifference[i] <<- dat$TRmonthly[i] - dat$bondsMonthly[i]
+   }
+   
+   #addInflationToDat()
+   
+   addConstAllocToDat(smoothConstantAlloc, force=force)
+   
+   if(otherAssetClasses) {
+      source("otherAssetClasses.r")# gold and UK housing
+      
+      if (!"gold" %in% colnames(dat) | !"gold" %in% stats$strategy | force) {
+         loadGoldData()
+         createGoldStrategy(futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, force=force)
+         message("Real gold prices were obtained from a local csv file.")
+      }
+      
+      if (!"UKhousePrice" %in% colnames(dat) | !"UKhousePrice" %in% stats$strategy | downloadAndCheckAllFiles) {
+         loadUKhousePriceData(downloadAndCheckAllFiles=downloadAndCheckAllFiles)
+         createUKhousePriceStrategy(futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, force=force)
+         message("Real UK house prices were obtained from Nationwide; they are in pounds, and based on UK inflation.")
+      }
+   }
+   
+#    if(!downloadAndCheckAllFiles)
+#       print( Sys.time() )
+      
+   if(newcomer) showForNewcomer()
+   
+   createTypicalStrategies(force=force)
+   
+   showSummaries()
+   
+   makeStringsFactors()
+   
+   #    print(proc.time() - totTime)
+   print( paste0( "This took: ", 
+                  round(summary(proc.time())[[3]] - totTime[[3]] , 0), " s, with about " , 
+                  round(summary(proc.time())[[1]] - totTime[[1]] , 0), " s for calculations and " ,
+                  round(summary(proc.time())[[3]]-summary(proc.time())[[1]] + totTime[[1]]-totTime[[3]] , 0), 
+                  " s to load files and for XLConnect." ) )
+}
 
 
 # showToDoList()
@@ -69,7 +176,7 @@ start(dataSplit="search",          # "none" for all data, "search" and "testing"
       futureYears=10L,           # to calculate the return over the next so many years
       tradingCost=0.5/100,       # cost of turning the portfolio entirely 
       otherAssetClasses=F,       # loads gold and UK house prices
-      newcomer=F,                # displays some information on the code
+      newcomer=T,                # displays some information on the code
       force=T)                   # forces recalculations (useful when making modifications to the algorthm, but slower)
 
 plotAllReturnsVsFour()

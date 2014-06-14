@@ -21,15 +21,15 @@ setDetrendedDefaultValues <- function() {
    
    ## detrended strategy in stocks 90% of the time, just dodging the worst bubbles
    def$detrendedAvgOver1    <<- 32L
-   def$detrendedBearish1    <<- 31
-   def$detrendedBullish1    <<- 31
+   def$detrendedBearish1    <<- 31L
+   def$detrendedBullish1    <<- 31L
    def$typicalDetrended1    <<- paste0("detrended_", def$detrendedInputName, "_avg", def$detrendedAvgOver1, "__", 
                                              def$detrendedBearish1, "_", def$detrendedBullish1)
    
    ## detrended strategy with lower stock allocation (and vol and DD)
    def$detrendedAvgOver2    <<- 23L
-   def$detrendedBearish2    <<- 23
-   def$detrendedBullish2    <<- 22
+   def$detrendedBearish2    <<- 23L
+   def$detrendedBullish2    <<- 22L
    def$typicalDetrended2    <<- paste0("detrended_", def$detrendedInputName, "_avg", def$detrendedAvgOver2, "__", 
                                        def$detrendedBearish2, "_", def$detrendedBullish2)
 }

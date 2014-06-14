@@ -430,7 +430,7 @@ searchForOptimalTechnical <- function(inputStrategyName1=def$typicalSMA, inputSt
 searchForOptimalBalanced <- function(inputStrategyName2=def$typicalTechnical, inputStrategyName1=def$typicalValue, 
                                      inputStrategyName3="", inputStrategyName4="", 
                                      minF1=0L, maxF1=100L, byF1=4L, minF2=0L, maxF2=100L, byF2=4L, 
-                                     minF3=0L, maxF3=0L, byF3=0L, minF4=0L, maxF4=0L, 
+                                     minF3=0L, maxF3=0L, byF3=1L, minF4=0L, maxF4=0L, 
                                      futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
                                      type="search", subtype="balanced", speed=0,
                                      minTR=5, maxVol=20, maxDD2=2.5, minTO=1.7, minScore=15,

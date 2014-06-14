@@ -374,7 +374,8 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
    if (!medianName %in% colnames(stats)) {
       if (futureYears != def$futureYears)
          stop( paste0("stats$", medianName, " does not exist (probably because futureYears != def$futureYears.") )
-      else stop(paste0("stats$", medianName, " does not exist (probably because def$futureYears got changed by hand)."))
+      else stop(paste0("stats$", medianName, " does not exist (probably because def$futureYears got changed by hand).\n",
+                       "This can happen when running start() with a new value of 'futureYears' without using \'force=T\'.") )
    }
    
    if ( is.na(stats$score[index]) | force) {
@@ -516,6 +517,8 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost,
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)   
       showSummaryForStrategy(def$typicalReversal,  displayName="reversal  ", futureYears=futureYears, costs=costs, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+#       showSummaryForStrategy(def$typicalInflation, displayName="inflation ", futureYears=futureYears, costs=costs, 
+#                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    }
    showSummaryForStrategy(def$typicalValue,        displayName="value     ", futureYears=futureYears, costs=costs, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)

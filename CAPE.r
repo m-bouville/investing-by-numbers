@@ -17,20 +17,20 @@
 
 #default values of parameters
 setCAPEdefaultValues <- function() {
-   def$CAPEyears    <<- 10
-   def$CAPEcheat    <<- 2
+   def$CAPEyears    <<- 10L
+   def$CAPEcheat    <<- 2L
    
    ## CAPE strategy without hysteresis
-   def$CAPEavgOver1 <<- 35
-   def$CAPEbearish1 <<- 21
-   def$CAPEbullish1 <<- 21
+   def$CAPEavgOver1 <<- 35L
+   def$CAPEbearish1 <<- 21L
+   def$CAPEbullish1 <<- 21L
    def$typicalCAPE1 <<- paste0("CAPE", def$CAPEyears, "avg", def$CAPEavgOver1, "__", 
                                 def$CAPEbearish1, "_", def$CAPEbullish1)
    
    ## CAPE strategy with hysteresis
-   def$CAPEavgOver2 <<- 33
-   def$hystLoopWidthMidpoint2 <<- 19
-   def$hystLoopWidth2 <<- 7
+   def$CAPEavgOver2 <<- 33L
+   def$hystLoopWidthMidpoint2 <<- 19L
+   def$hystLoopWidth2 <<- 7L
    def$slope2 <<- 2.2
    def$typicalCAPE2 <<- paste0("CAPE", def$CAPEyears, "avg", def$CAPEavgOver2, "__hyst_", 
                                 def$hystLoopWidthMidpoint2, "_", def$hystLoopWidth2, "_", def$slope2)
@@ -361,7 +361,8 @@ plotFutureReturnVsCAPE <- function(CAPEname1=paste0("CAPE", def$CAPEyears),
                                    minCAPE=1.5, maxCAPE=44, minTR="", maxTR="", 
                                    figureTitle="", 
                                    pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
-                                   pngName=paste0("figures/return_over_next_", futureYears, "_years_vs_CAPE.png") ) {
+                                   pngName=paste0("figures/return_over_next_", 
+                                                  futureYears, "_years_vs_CAPE.png") ) {
    
    if(pngOutput)
       png(file=pngName, width=pngWidth, height=pngHeight)
@@ -398,18 +399,20 @@ plotFutureReturnVsCAPE <- function(CAPEname1=paste0("CAPE", def$CAPEyears),
    yRange <- c(minTR, maxTR)
    
    if( CAPEname1 != "" ) {   
-      plot(dat[dateRange, CAPEname1], returnVect[dateRange], col=col1, xlim=xRange, ylim=yRange, xlab="CAPE", ylab=yLabel)
+      plot(dat[dateRange, CAPEname1], returnVect[dateRange], col=col1, 
+           xlim=xRange, ylim=yRange, xlab="CAPE", ylab=yLabel)
       if (showFit) {
          fit1 <- lm( returnVect[dateRange] ~ dat[dateRange, CAPEname1], na.action=na.omit)
-         abline(fit1, col=col1)
+         abline(fit1, col=col1, lwd=2)
       }
       par(new=T)
    }
    if( CAPEname2 != "" ) {
-      plot(dat[dateRange, CAPEname2], returnVect[dateRange], col=col2, xlim=xRange, ylim=yRange, xlab="", ylab="")
+      plot(dat[dateRange, CAPEname2], returnVect[dateRange], col=col2, 
+           xlim=xRange, ylim=yRange, xlab="", ylab="")
       if (showFit) {
          fit2 <- lm( returnVect[dateRange] ~ dat[dateRange, CAPEname2], na.action=na.omit)
-         abline(fit2, col=col2)
+         abline(fit2, col=col2, lwd=2)
       }
    }
    
@@ -423,6 +426,14 @@ plotFutureReturnVsCAPE <- function(CAPEname1=paste0("CAPE", def$CAPEyears),
       dev.off()
       print( paste0("png file (", pngWidth, " by ", pngHeight, ") written to: ", pngName) )
    }   
+   
+#    plot(dat[dateRange, CAPEname1], resid(fit1))
+# xVals <- seq(1, 50, by = 1)
+# newdata <- data.frame("CAPE10" = xVals)
+# p1 <- predict(fit1, newdata, interval = ("confidence"))
+# print( (p1[,2]) )
+# lines(xVals, p1[,2]); lines(xVals, p1[,3])
+   
 }
 
 

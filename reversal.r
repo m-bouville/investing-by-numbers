@@ -19,9 +19,9 @@ setReversalDefaultValues <- function() {
    def$reversalInputDF       <<- "dat"
    def$reversalInputName     <<- "TR"
    def$reversalAvgOver       <<- 9L
-   def$reversalReturnToMean  <<- 14
-   def$reversalBearish       <<- -50
-   def$reversalBullish       <<- -50
+   def$reversalReturnToMean  <<- 14L
+   def$reversalBearish       <<- -50L
+   def$reversalBullish       <<- -50L
    
    def$typicalReversal       <<- paste0("reversal_", def$reversalInputName, "_", 
                                         def$reversalAvgOver, "__", def$reversalReturnToMean, "_", 
