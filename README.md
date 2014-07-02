@@ -82,7 +82,7 @@ I take a weighted average of the best CAPE strategy and the best detrended strat
 - plotting.r is in charge of generating plots;
 - init.r loads the data and does some initialization;
 - DD.r calculates drawdowns;
-- otherAssetClasses.r loads the data and does some initialization for gold and housing prices.
+- otherAssetClasses.r loads the data and does some initialization for gold and UK housing prices (strategies for the latter can be found in https://github.com/m-bouville/investing-by-numbers/blob/master/UK_property-market.pdf).
 
 **To get started, just source main.r.**
 
