@@ -15,10 +15,10 @@
 #default values of parameters:
 setCombinedDefaultValues <- function() {
    
-   ## All strategies get at least 12%, so the combined strategy actually include all four contributions
+   ## All strategies get at least 15%, so the combined strategy actually include all four contributions
    ## (this is to avoid idiosyncrasies: if what was the best strategy when fitting 
    ## is bad when testing, then other strategies can counterbalance it to an extent)
-   ## It turns out that detrended1 is the best of the four
+   ## It turns out that detrended2 is the best of the four
    def$valueFractionCAPE1         <<- 15
    def$valueFractionCAPE2         <<- 20
    def$valueFractionDetrended1    <<- 15
@@ -32,8 +32,8 @@ setCombinedDefaultValues <- function() {
    def$typicalTechnical          <<- paste0("technical_", def$technicalFractionSMA, "_", def$technicalFractionBoll,
                                             "_", def$technicalFractionReversal)
    
-   def$balancedFractionTechnical <<- 50
-   def$balancedFractionValue     <<- 50
+   def$balancedFractionTechnical <<- 60
+   def$balancedFractionValue     <<- 40
    def$balancedCombineMode       <<- "weighted"
    if (def$balancedCombineMode == "weighted")
       def$typicalBalanced        <<- paste0("balanced_", def$balancedFractionTechnical, "_", def$balancedFractionValue)
@@ -427,15 +427,15 @@ searchForOptimalTechnical <- function(inputStrategyName1=def$typicalSMA, inputSt
 }
 
 
-searchForOptimalBalanced <- function(inputStrategyName2=def$typicalTechnical, inputStrategyName1=def$typicalValue, 
+searchForOptimalBalanced <- function(inputStrategyName1=def$typicalTechnical, inputStrategyName2=def$typicalValue, 
                                      inputStrategyName3="", inputStrategyName4="", 
-                                     minF1=0L, maxF1=100L, byF1=4L, minF2=0L, maxF2=100L, byF2=4L, 
+                                     minF1=0L, maxF1=100L, byF1=2L, minF2=0L, maxF2=100L, byF2=1L, 
                                      minF3=0L, maxF3=0L, byF3=1L, minF4=0L, maxF4=0L, 
                                      futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
                                      type="search", subtype="balanced", speed=0,
                                      minTR=5, maxVol=20, maxDD2=2.5, minTO=1.7, minScore=15,
                                      col=F, CPUnumber=def$CPUnumber, plotType="line", 
-                                     combineMode="all", force=F) {
+                                     combineMode="weighted", force=F) {
    totTime <- proc.time()
    print(paste0("strategy       |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score") )
    

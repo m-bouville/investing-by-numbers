@@ -209,12 +209,12 @@ addConstAllocToDat <- function(smoothConstantAlloc, force=F) {
 ## the xls file has *nominal* values, the "dat" data frame has *real* values
 loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=F) {  
      library(XLConnect) # to handle xls file
-   if(!file.exists("data/ie_data.xls")) # download file if not already locally available
-      download.file("http://www.econ.yale.edu/~shiller/data/ie_data.xls", "data/ie_data.xls", mode = "wb")
+   if(!file.exists("./data/ie_data.xls")) # download file if not already locally available
+      download.file("http://www.econ.yale.edu/~shiller/./data/ie_data.xls", "./data/ie_data.xls", mode = "wb")
    else if(downloadAndCheckAllFiles) # We check whether the local file is up to date (if we have time)
       checkXlsFileIsUpToDate()
    
-   wk <- loadWorkbook("data/ie_data.xls") 
+   wk <- loadWorkbook("./data/ie_data.xls") 
    rawDat <- readWorksheet(wk, sheet="Data", startRow=8)
    
    numData <<- dim(rawDat)[1]-2 # number of rows
@@ -258,13 +258,13 @@ loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=F) {
    for(i in 2:numData)
       dat$TR[i] <<- dat$TR[i-1] * dat$price[i]/dat$price[i-1] * (1 + dat$dividend[i]/dat$price[i]/12)
    
-   dat$bonds <<- read.csv("data/bonds.csv", header=T)[1:numData, 1]
+   dat$bonds <<- read.csv("./data/bonds.csv", header=T)[1:numData, 1]
    message("Real bond prices were imported from an Excel calculation.")
    
    message("Shiller's xls file has *nominal* values, the \'dat\' data frame has *real* values.")
 }
 
-checkXlsFileIsUpToDate <- function(fileName="data/ie_data.xls") {
+checkXlsFileIsUpToDate <- function(fileName="./data/ie_data.xls") {
    if(!file.exists(fileName)) 
       stop(fileName, " is not on the local disk.")
    
@@ -277,7 +277,7 @@ checkXlsFileIsUpToDate <- function(fileName="data/ie_data.xls") {
    localMessage2 <- as.character(localVersion$CPI[lastLine])
    localMessage3 <- as.character(localVersion$Rate.GS10[lastLine])
    
-   download.file("http://www.econ.yale.edu/~shiller/data/ie_data.xls", "ie_data-remote.xls", mode = "wb")
+   download.file("http://www.econ.yale.edu/~shiller/./data/ie_data.xls", "ie_data-remote.xls", mode = "wb")
    library(XLConnect) # to handle xls file
    wk <- loadWorkbook("ie_data-remote.xls")  # this is the local file
    remoteVersion <- readWorksheet(wk, sheet="Data", startRow=8)
@@ -304,19 +304,23 @@ checkXlsFileIsUpToDate <- function(fileName="data/ie_data.xls") {
 
 ## for some columns in 'parameters' and 'stats', there are only a handful of possible values
 makeStringsFactors <- function() {
-   parameters$type    <<- as.factor(parameters$type) 
-   parameters$subtype <<- as.factor(parameters$subtype)
-   parameters$inputDF <<- as.factor(parameters$inputDF)
-   levels(parameters$inputDF) <<- c( "dat", "signal", "alloc", "TR", "next10yrs", "next20yrs", "next30yrs" ) 
+   allTypes <- c("constantAlloc", "gold", "UKhousePrice", "CAPE", "detrended", "Bollinger", "SMA", "reversal", "combined" )
+   allSubtypes <- c(allTypes, "balanced", "technical", "value", "TR")
+   allTypes <- c(allTypes, "search") # "search" can only be a type, not a subtype
    
-   stats$type         <<- as.factor(stats$type) 
-   stats$subtype      <<- as.factor(stats$subtype)
+   parameters$type    <<- factor(parameters$type, levels=allTypes) 
+   parameters$subtype <<- factor(parameters$subtype, levels=allSubtypes)
+   parameters$inputDF <<- factor(parameters$inputDF, 
+                                    levels = c( "dat", "signal", "alloc", "TR", "next10yrs", "next20yrs", "next30yrs" ) )
+   
+   stats$type         <<- factor(stats$type, levels=allTypes) 
+   stats$subtype      <<- factor(stats$subtype, levels=allSubtypes)
    
    ## To handle searches:
-   levels(parameters$subtype) <<- c(levels(parameters$type), levels(parameters$subtype))
-   levels(parameters$type) <<- c(levels(parameters$type), "search")   
-   levels(stats$type)      <<- c(levels(stats$type), levels(parameters$type))
-   levels(stats$subtype)   <<- c(levels(stats$subtype), levels(parameters$subtype))
+#    levels(parameters$subtype) <<- c(levels(parameters$type), levels(parameters$subtype))
+#    levels(parameters$type) <<- c(levels(parameters$type), "search")   
+#    levels(stats$type)      <<- c(levels(stats$type), levels(parameters$type))
+#    levels(stats$subtype)   <<- c(levels(stats$subtype), levels(parameters$subtype))
 }
 
 # Generating typical strategies

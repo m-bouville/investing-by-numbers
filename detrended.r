@@ -8,7 +8,7 @@
 ##                                        ##
 ##         detrended.r subtracts          ##
 ##          the long-term trend           ##
-##           from the strategy            ##
+##        from the current price          ##
 ##                                        ##
 ############################################
 
@@ -208,3 +208,78 @@ searchForThreeOptimalDetrended <-function(plotType="symbols", force=F) {
    
 }
 
+
+plotFutureReturnVsDetrended <- function(futureYears=def$futureYears) {
+   library(ggplot2)   
+   if ( "splitting" %in% colnames(dat) ) {
+      dumbDF <- data.frame(numericDate=dat$numericDate, 
+                           detrended=100*detrended_TR, 
+                           next10yrsStocks=100*next10yrs$stocks, 
+                           next10yrsBonds=100*next10yrs$bonds, 
+                           next10yrsDifference=100*(next10yrs$stocks-next10yrs$bonds), 
+                           CAPE10=dat$CAPE10,
+                           splitting=dat$splitting)
+#       cutpoints <- quantile(dumbDF$inflation10yr, seq(0, 1, length = 4), na.rm = T)
+#       dumbDF$inflation10yrFactor <- cut(dumbDF$inflation10yr, cutpoints)
+      qplot(detrended, 
+            next10yrsDifference, 
+            data=dumbDF[def$startIndex:(numData-12*futureYears), ]
+#             , color=inflation10yrFactor
+            #             , facets= . ~ splitting
+      ) +
+         geom_smooth(method = "lm")
+   } else {
+      dumbDF <- data.frame(numericDate=dat$numericDate, 
+                           detrended=dat$detrended_TR, 
+                           detrended1Alloc=100*alloc[, def$typicalDetrended1], 
+                           detrended2Alloc=100*alloc[, def$typicalDetrended2], 
+                           CAPE10=dat$CAPE10, 
+                           CAPE1Alloc=100*alloc[, def$typicalCAPE1], 
+                           CAPE2Alloc=100*alloc[, def$typicalCAPE2],
+                           next10yrsStocks=100*next10yrs$stocks, 
+                           next10yrsBonds=100*next10yrs$bonds, 
+                           next10yrsDifference=100*(next10yrs$stocks-next10yrs$bonds))
+      dumbDF <- dumbDF[def$startIndex:(numData-12*futureYears), ]
+      
+      CAPE10quartiles <- quantile(dumbDF$CAPE10, c(.25, .75, 1), na.rm = T)
+      dumbDF$normalizedCAPE10 <- (dumbDF$CAPE10-CAPE10quartiles[1]) /
+         (CAPE10quartiles[2]-CAPE10quartiles[1])
+      detrendedQuartiles <- quantile(dumbDF$detrended, c(.25, .75, 1), na.rm = T)
+      dumbDF$normalizedDetrended <- (dumbDF$detrended-detrendedQuartiles[1]) /
+         (detrendedQuartiles[2]-detrendedQuartiles[1])
+      
+      #       CAPE10cutpoints <- quantile(dumbDF$normalizedCAPE10, seq(0, 1, length = 3), na.rm = T)
+      dumbDF$CAPEranges <- cut(dumbDF$normalizedCAPE10, c(-Inf, 0, 1, Inf) )
+      #       detrendedCutpoints <- quantile(dumbDF$normalizedDetrended, seq(0, 1, length = 3), na.rm = T)
+      dumbDF$detrendedRanges <- cut(dumbDF$normalizedDetrended, c(-Inf, 0, 1, Inf) )
+      
+      dumbDF$normalizedDifference <- dumbDF$normalizedDetrended - dumbDF$normalizedCAPE10
+      differenceCutpoints <- quantile(dumbDF$normalizedDifference, seq(0, 1, length = 6), na.rm = T)
+      dumbDF$differenceRanges <- cut(dumbDF$normalizedDifference, differenceCutpoints )
+      #       dumbDF$combinedRanges <- cut(dumbDF$CAPE10, cutpoints )
+      
+      p <- qplot(normalizedDetrended, 
+                 next10yrsDifference, 
+                 data=dumbDF 
+                 , color= differenceRanges
+      ) + geom_smooth(method = "lm")      
+      print(p)
+      
+      CL <- levels(dumbDF$CAPEranges)
+      DL <- levels(dumbDF$detrendedRanges)
+      print("   CAPE   detrended   fraction,      ")
+      for (i in 1:length(CL))
+         for (j in 1:length(DL)) {
+           criterion <- ( dumbDF$CAPEranges==CL[i] & dumbDF$detrendedRanges==DL[j] )
+           avg <- mean(dumbDF$next10yrsDifference, na.rm=T)
+           #             print( summary( dumbDF$CAPEranges==CL[i] & dumbDF$detrendedRanges==DL[j] ) )
+           if( sum(criterion) > 0 )
+            print(c(CL[i], DL[j], 
+                    round(sum(criterion) / length(dumbDF$CAPEranges), 2),
+                    round(mean(dumbDF$next10yrsDifference[ criterion ], na.rm=T) - avg, 1) ) )
+         }
+            
+   }
+}
+
+plotFutureReturnVsDetrended()

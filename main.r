@@ -9,7 +9,7 @@
 ############################################
 
 
-### "http://mathieu.bouville.name/finance/CAPE/"
+### https://github.com/m-bouville/investing-by-numbers/blob/master/README.md
 
 
 showToDoList <- function() {
@@ -41,6 +41,11 @@ showUsefulFunctions <- function() {
 }
 
 showForNewcomer <- function() {
+   
+   print(paste("Read https://github.com/m-bouville/investing-by-numbers/blob/master/README.md\n",
+         "for a description of the cose and of the strategies.") )
+   print("")         
+   
    showUsefulFunctions()   
    
    print("Legend for plots:")
@@ -61,15 +66,15 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
                   extrapolateDividends=T,     # whether to extrapolate missing recent dividends (or remove incomplete months)
                   smoothConstantAlloc=F,      # calculates more constant-allocation portfolios, for smoother curves in plots
                   downloadAndCheckAllFiles=F, # downloads data files even if they exist locally,
-                  # to check whether they are up to date
+                                              # to check whether they are up to date
                   futureYears=10L,            # to calculate the return over the next so many years
                   tradingCost=0.5/100,        # cost of turning the portfolio entirely 
                   otherAssetClasses=F,        # loads gold and UK house prices
                   newcomer=F,                 # displays some information on the code
                   force=F) {
    
-   if(!file.exists("utils.r")) 
-      stop("Use \'setwd()\' to change the working directory to that containing the data.")
+   if(!file.exists("main.r")) 
+      stop("Use \'setwd()\' to change the working directory to that containing the r files.")
    
    source("loading.r")    # to load data and initialize everything
    source("utils.r")      # general functions (i.e. those not in another file)
@@ -89,7 +94,8 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
    totTime <- proc.time()
    
    setDefaultValues(dataSplit=dataSplit, futureYears=futureYears, tradingCost=tradingCost, force=force)
-   
+   if(!file.exists("./data")) dir.create("./data")
+      
    ## if data frame does not exist, or is incomplete (had been used for search or testing), 
    ## or if we want to force the loading: we load the xls file
    if (!exists("dat") || numData<1500 || downloadAndCheckAllFiles) { 
@@ -166,9 +172,6 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
                   " s to load files and for XLConnect." ) )
 }
 
-
-# showToDoList()
-
 start(dataSplit="search",          # "none" for all data, "search" and "testing" for half the data
       extrapolateDividends=T,    # whether to extrapolate missing recent dividends (or remove incomplete months)
       smoothConstantAlloc=F,     # calculates more constant-allocation portfolios, to get smoother curves in plots (slower)
@@ -180,6 +183,11 @@ start(dataSplit="search",          # "none" for all data, "search" and "testing"
       force=T)                   # forces recalculations (useful when making modifications to the algorthm, but slower)
 
 plotAllReturnsVsFour()
+
+# print("")
+# print("Running searchForOptimalBalanced() to optimize the \'balanced\' strategy.")
+# searchForOptimalBalanced(byF1=4.1, byF2=0.1)
+# plotAllReturnsVsFour(searchPlotType="line")
 
 
 ## Zoomed-out version of the above plot:
