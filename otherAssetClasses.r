@@ -18,7 +18,7 @@ loadGoldData <- function() {
    dat$gold <<- dat$gold  / dat$CPI * refCPI # calculating real gold prices
 }
 
-createGoldStrategy <- function(strategyName="", futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
+createGoldStrategy <- function(strategyName="", futureYears=def$futureYears, costs=def$tradingCost, force=F) {
    if (strategyName == "") strategyName <- "gold" 
    if (!strategyName %in% colnames(TR)) TR[, strategyName] <<- numeric(numData)
    
@@ -80,7 +80,7 @@ loadUKhousePriceData <- function(downloadAndCheckAllFiles=F) {
    }
 }
 
-createUKhousePriceStrategy <- function(strategyName="", futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
+createUKhousePriceStrategy <- function(strategyName="", futureYears=def$futureYears, force=F) {
    if (strategyName == "") strategyName <- "UKhousePrice" 
    addNumColToTR(strategyName)
    

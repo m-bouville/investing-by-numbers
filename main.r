@@ -66,7 +66,7 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
                   extrapolateDividends=T,     # whether to extrapolate missing recent dividends (or remove incomplete months)
                   smoothConstantAlloc=F,      # calculates more constant-allocation portfolios, for smoother curves in plots
                   downloadAndCheckAllFiles=F, # downloads data files even if they exist locally,
-                                              # to check whether they are up to date
+                                              #    to check whether they are up to date
                   futureYears=10L,            # to calculate the return over the next so many years
                   tradingCost=0.5/100,        # cost of turning the portfolio entirely 
                   otherAssetClasses=F,        # loads gold and UK house prices
@@ -148,7 +148,7 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
       
       if (!"UKhousePrice" %in% colnames(dat) | !"UKhousePrice" %in% stats$strategy | downloadAndCheckAllFiles) {
          loadUKhousePriceData(downloadAndCheckAllFiles=downloadAndCheckAllFiles)
-         createUKhousePriceStrategy(futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, force=force)
+         createUKhousePriceStrategy(futureYears=def$futureYears, force=force)
          message("Real UK house prices were obtained from Nationwide; they are in pounds, and based on UK inflation.")
       }
    }
@@ -172,12 +172,9 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
                   " s to load files and for XLConnect." ) )
 }
 
-start(dataSplit="search",          # "none" for all data, "search" and "testing" for half the data
-      extrapolateDividends=T,    # whether to extrapolate missing recent dividends (or remove incomplete months)
+start(dataSplit="none",          # "none" for all data, "search" and "testing" for half the data
       smoothConstantAlloc=F,     # calculates more constant-allocation portfolios, to get smoother curves in plots (slower)
       downloadAndCheckAllFiles=F,# downloads data files even if they exist locally, to check whether they are up to date
-      futureYears=10L,           # to calculate the return over the next so many years
-      tradingCost=0.5/100,       # cost of turning the portfolio entirely 
       otherAssetClasses=F,       # loads gold and UK house prices
       newcomer=T,                # displays some information on the code
       force=T)                   # forces recalculations (useful when making modifications to the algorthm, but slower)

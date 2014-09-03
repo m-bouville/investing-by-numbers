@@ -56,7 +56,7 @@ setDefaultValues <- function(dataSplit, futureYears=10L, tradingCost=0.5/100, fo
    setBollDefaultValues()
    setSMAdefaultValues()
    setReversalDefaultValues()
-   setInflationDefaultValues()
+#    setInflationDefaultValues()
    setCombinedDefaultValues()
    
    def$typicalStrategies <<- c(def$typicalBalanced, def$typicalTechnical, def$typicalValue, "stocks")
@@ -260,6 +260,11 @@ loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=F) {
    
    dat$bonds <<- read.csv("./data/bonds.csv", header=T)[1:numData, 1]
    message("Real bond prices were imported from an Excel calculation.")
+   while(is.na(dat$bonds[numData])) {
+      warning(paste0("removing last row of data (for ", dat$date[numData], ") because bond data are missing."))
+      dat <<- dat[-numData, ]
+      numData <<- numData - 1
+   }
    
    message("Shiller's xls file has *nominal* values, the \'dat\' data frame has *real* values.")
 }
