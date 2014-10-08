@@ -221,22 +221,24 @@ loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=F) {
    message(paste0("According to the xls file, \'", rawDat$P[numData+2], "\'")) # displaying information given in xls file
    message(paste0("According to the xls file, \'", rawDat$CPI[numData+2], "\'"))
    rawDat <- rawDat[-(numData+2), ] # removing the row containing the information just displayed
-   rawDat <- rawDat[-(numData+1), ] # removing the current month, as it is not data for the end of month
+   rawDat <- rawDat[-(numData+1), ] # removing the current month, since it is not data for the end of month
    
-   # either we extrapolate the missing dividends (too soon for data to be available) or we remove the rows
-   if (extrapolateDividends) { 
-      lastIndex <- numData # last index where dividends are valid
-      while( is.na(rawDat$D[lastIndex]) )  lastIndex <- lastIndex-1
-      
-      fitPara <- regression( (lastIndex-12):lastIndex, rawDat$D[(lastIndex-12):lastIndex] )
-      a <- fitPara[[1]]
-      b <- fitPara[[2]]
-      rawDat$D[ (lastIndex+1) : numData ] <- a + b*( (lastIndex+1) : numData) # extrapolate dividend from past year
-   } else # remove rows where dividend is NA (cannot calculate total return)
-      while( is.na(rawDat$D[numData] ) ) { # remove rows where dividend is NA (cannot calculate total return)
-         rawDat <- rawDat[-numData, ]
-         numData <<- numData-1      
-      }   
+   # if the latest dividends are missing (if it is too early for the data to be available), 
+   # ... either we extrapolate them or we remove the rows
+   if ( is.na(rawDat$D[numData]) ) 
+      if (extrapolateDividends) { 
+         lastIndex <- numData # lastIndex will be the last index where dividends are valid         
+         while( is.na(rawDat$D[lastIndex]) ) 
+            lastIndex <- lastIndex-1         
+         fitPara <- regression( (lastIndex-12):lastIndex, rawDat$D[(lastIndex-12):lastIndex] )
+         a <- fitPara[[1]] # a and b are the parameters of a linear fit
+         b <- fitPara[[2]] # ... they are used to extrapolate linearly the dividends
+         rawDat$D[ (lastIndex+1) : numData ] <- a + b*( (lastIndex+1) : numData) # extrapolate dividend from past year
+      } else # remove rows where dividend is NA (cannot calculate total return)
+         while( is.na(rawDat$D[numData] ) ) {
+            rawDat <- rawDat[-numData, ]
+            numData <<- numData-1      
+         }   
    
    # data are for the last (business) day of each month, 28th is close enough
    dat <<- data.frame(date       = ISOdate( floor(rawDat$Date), round((rawDat$Date%%1)*100,0), 28 ),
@@ -283,7 +285,6 @@ checkXlsFileIsUpToDate <- function(fileName="./data/ie_data.xls") {
    localMessage3 <- as.character(localVersion$Rate.GS10[lastLine])
    
    download.file("http://www.econ.yale.edu/~shiller/./data/ie_data.xls", "ie_data-remote.xls", mode = "wb")
-   library(XLConnect) # to handle xls file
    wk <- loadWorkbook("ie_data-remote.xls")  # this is the local file
    remoteVersion <- readWorksheet(wk, sheet="Data", startRow=8)
    
