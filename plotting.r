@@ -26,7 +26,7 @@ setPlottingDefaultValues <- function() {
    def$minDD2    <<- 1.2
    def$maxDD2    <<- 2.
    
-   def$plotEndYear <<- 2015
+   def$plotEndYear <<- 2015.
    def$maxTR     <<- 50000
    
    #Colors consistently used for the various tsrategies
@@ -99,7 +99,7 @@ plotAssetClassesReturn <- function(stratName1="stocks",       col1=def$colConsta
                                    stratName3="UKhousePrice", col3="grey",               lwd3=2,
                                    stratName4="gold",         col4="gold",               lwd4=2, 
                                    startYear=1975.25, endYear=def$plotEndYear, 
-                                   yLabel="", net=F, minTR=.5, maxTR=15,
+                                   yLabel="rescaled total return", net=F, minTR=.5, maxTR=20,
                                    pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
                                    pngName="figures/asset_classes_returns.png") {
 

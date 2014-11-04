@@ -137,21 +137,26 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
    
    addConstAllocToDat(smoothConstantAlloc, force=force)
    
-   if(otherAssetClasses) {
-      source("otherAssetClasses.r")# gold and UK housing
-      
-      if (!"gold" %in% colnames(dat) | !"gold" %in% stats$strategy | force) {
-         loadGoldData()
-         createGoldStrategy(futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, force=force)
-         message("Real gold prices were obtained from a local csv file.")
+   if(otherAssetClasses) 
+      if (dat$numericDate[numData] < 1968) # if there are no data after 1968 in 'dat' (search mode) 
+                                           #    then other asset classes are not available
+         warning("Other asset classes not created: Since 'dat' ends before 1968",
+                 " (probably due to search mode) gold and UK property are not available.")
+      else {
+         source("otherAssetClasses.r")# gold and UK housing
+         
+         if (!"gold" %in% colnames(dat) | !"gold" %in% stats$strategy | force) {
+            loadGoldData()
+            createGoldStrategy(futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, force=force)
+            message("Real gold prices were obtained from a local csv file.")
+         }
+         
+         if (!"UKhousePrice" %in% colnames(dat) | !"UKhousePrice" %in% stats$strategy | downloadAndCheckAllFiles) {
+            loadUKhousePriceData(downloadAndCheckAllFiles=downloadAndCheckAllFiles)
+            createUKhousePriceStrategy(futureYears=def$futureYears, force=force)
+            message("Real UK house prices were obtained from Nationwide; they are in pounds, and based on UK inflation.")
+         }
       }
-      
-      if (!"UKhousePrice" %in% colnames(dat) | !"UKhousePrice" %in% stats$strategy | downloadAndCheckAllFiles) {
-         loadUKhousePriceData(downloadAndCheckAllFiles=downloadAndCheckAllFiles)
-         createUKhousePriceStrategy(futureYears=def$futureYears, force=force)
-         message("Real UK house prices were obtained from Nationwide; they are in pounds, and based on UK inflation.")
-      }
-   }
    
 #    if(!downloadAndCheckAllFiles)
 #       print( Sys.time() )
@@ -172,12 +177,15 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
                   " s to load files and for XLConnect." ) )
 }
 
-start(dataSplit="none",          # "none" for all data, "search" and "testing" for half the data
+start(dataSplit="search",          # "none" for all data, "search" and "testing" for half the data
       smoothConstantAlloc=F,     # calculates more constant-allocation portfolios, to get smoother curves in plots (slower)
       downloadAndCheckAllFiles=F,# downloads data files even if they exist locally, to check whether they are up to date
       otherAssetClasses=F,       # loads gold and UK house prices
       newcomer=T,                # displays some information on the code
       force=T)                   # forces recalculations (useful when making modifications to the algorthm, but slower)
+
+# start(downloadAndCheckAllFiles=T, force=T)
+
 
 plotAllReturnsVsFour()
 
