@@ -177,14 +177,14 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
                   " s to load files and for XLConnect." ) )
 }
 
-start(dataSplit="search",          # "none" for all data, "search" and "testing" for half the data
-      smoothConstantAlloc=F,     # calculates more constant-allocation portfolios, to get smoother curves in plots (slower)
-      downloadAndCheckAllFiles=F,# downloads data files even if they exist locally, to check whether they are up to date
-      otherAssetClasses=F,       # loads gold and UK house prices
-      newcomer=T,                # displays some information on the code
-      force=T)                   # forces recalculations (useful when making modifications to the algorthm, but slower)
+# start(dataSplit="search",          # "none" for all data, "search" and "testing" for half the data
+#       smoothConstantAlloc=F,     # calculates more constant-allocation portfolios, to get smoother curves in plots (slower)
+#       downloadAndCheckAllFiles=F,# downloads data files even if they exist locally, to check whether they are up to date
+#       otherAssetClasses=F,       # loads gold and UK house prices
+#       newcomer=T,                # displays some information on the code
+#       force=T)                   # forces recalculations (useful when making modifications to the algorthm, but slower)
 
-# start(downloadAndCheckAllFiles=T, force=T)
+ start(downloadAndCheckAllFiles=T, force=T)
 
 
 plotAllReturnsVsFour()

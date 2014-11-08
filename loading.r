@@ -208,12 +208,12 @@ addConstAllocToDat <- function(smoothConstantAlloc, force=F) {
 ## Loading data from xls file
 ## the xls file has *nominal* values, the "dat" data frame has *real* values
 loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=F) {  
-     library(XLConnect) # to handle xls file
    if(!file.exists("./data/ie_data.xls")) # download file if not already locally available
       download.file("http://www.econ.yale.edu/~shiller/./data/ie_data.xls", "./data/ie_data.xls", mode = "wb")
-   else if(downloadAndCheckAllFiles) # We check whether the local file is up to date (if we have time)
+   else if(downloadAndCheckAllFiles) # We force checking whether the local file is up to date
       checkXlsFileIsUpToDate()
    
+   library(XLConnect) # to handle xls file
    wk <- loadWorkbook("./data/ie_data.xls") 
    rawDat <- readWorksheet(wk, sheet="Data", startRow=8)
    
@@ -275,37 +275,15 @@ checkXlsFileIsUpToDate <- function(fileName="./data/ie_data.xls") {
    if(!file.exists(fileName)) 
       stop(fileName, " is not on the local disk.")
    
-   library(XLConnect) # to handle xls file
-   wk <- loadWorkbook(fileName) # this is the local file
-   localVersion <- readWorksheet(wk, sheet="Data", startRow=8)
+   download.file("http://www.econ.yale.edu/~shiller/data/ie_data.xls", "ie_data-remote.xls", mode = "wb")
    
-   lastLine <- dim(localVersion)[1] 
-   localMessage1 <- as.character(localVersion$P[lastLine])
-   localMessage2 <- as.character(localVersion$CPI[lastLine])
-   localMessage3 <- as.character(localVersion$Rate.GS10[lastLine])
-   
-   download.file("http://www.econ.yale.edu/~shiller/./data/ie_data.xls", "ie_data-remote.xls", mode = "wb")
-   wk <- loadWorkbook("ie_data-remote.xls")  # this is the local file
-   remoteVersion <- readWorksheet(wk, sheet="Data", startRow=8)
-   
-   lastLine <- dim(remoteVersion)[1] 
-   remoteMessage1 <- as.character(remoteVersion$P[lastLine])
-   remoteMessage2 <- as.character(remoteVersion$CPI[lastLine])
-   remoteMessage3 <- as.character(remoteVersion$Rate.GS10[lastLine])
-   
-   if (localMessage1 == remoteMessage1 & localMessage2 == remoteMessage2 & localMessage3 == remoteMessage3)
+   if ( file.info(fileName)$size == file.info("ie_data-remote.xls")$size ) 
       print(paste("The file", fileName, "is up to date.") )
-   else {
+   else { # The size of the local file is different from Shiller's file 
       file.copy("ie_data-remote.xls", fileName, overwrite=T)
-      print(paste("The file", fileName, "has been updated.") )
-#       if (localMessage1 != remoteMessage1)
-#          print(paste0("On the remote xls file \'", remoteMessage1, 
-#                       "\', whereas on the local file \'", localMessage1, "\'."))
-#       if (localMessage2 != remoteMessage2)
-#          print(paste0("On the remote xls file \'", remoteMessage2, 
-#                       "\', whereas on the local file \'", localMessage2, "\'."))
+      print(paste("The file", fileName, "has been updated.") )   
    }
-   file.remove("ie_data-remote.xls") 
+   file.remove("ie_data-remote.xls")
 }
 
 ## for some columns in 'parameters' and 'stats', there are only a handful of possible values
