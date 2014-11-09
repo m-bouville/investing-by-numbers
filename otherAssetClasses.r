@@ -18,7 +18,7 @@ loadGoldData <- function() {
    dat$gold <<- dat$gold / dat$CPI * refCPI # calculating real gold prices
 }
 
-createGoldStrategy <- function(strategyName="", futureYears=def$futureYears, costs=def$tradingCost, force=F) {
+createGoldStrategy <- function(strategyName="", goldAllocation=10, futureYears=def$futureYears, costs=def$tradingCost, force=F) {
    if (strategyName == "") strategyName <- "gold" 
    if (!strategyName %in% colnames(TR)) TR[, strategyName] <<- numeric(numData)
    
@@ -40,8 +40,28 @@ createGoldStrategy <- function(strategyName="", futureYears=def$futureYears, cos
    
    CalcAllDrawdowns(strategyName)
    
+   # creating a (constant allocation) strategy between gold and the balanced strategy
+   strategyName <- paste0("balancedGold_", 100-goldAllocation, "_", goldAllocation)
+   if (!strategyName %in% colnames(TR) | force) {
+      if (!strategyName %in% colnames(TR)) TR[, strategyName] <<- numeric(numData)
+      
+      goldAllocation <- goldAllocation / 100 # converting from percent to decimal (e.g. 5 -> 0.05)      
+      TR[index1968, strategyName] <<- 1
+      for(i in (index1968+1):numData) 
+         TR[i, strategyName] <<- TR[i-1, strategyName] * ( 
+            goldAllocation * TR$gold[i] / TR$gold[i-1] + 
+               (1-goldAllocation) * TR[i, def$typicalBalanced] / TR[i-1, def$typicalBalanced] )
+   }
+   
    #    calcStatisticsForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)
    ## since gold data start in 1968 gold statistics cannot be relevantly compared with other assets or strategies
+   
+   plotAssetClassesReturn(stratName1="stocks",            col1=def$colConstantAlloc, lwd1=2,
+                          stratName2="gold",              col2="gold",               lwd2=2,
+                          stratName3=def$typicalBalanced, col3=def$colBalanced,      lwd3=2,
+                          stratName4=strategyName,        col4="darkorange",                lwd4=2, 
+                          startYear=1968.25, maxTR=50, 
+                          pngOutput=F, pngName="figures/return_strategy_with_gold.png")
 }
 
 
