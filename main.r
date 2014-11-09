@@ -65,7 +65,7 @@ showForNewcomer <- function() {
 start <- function(dataSplit="none",           # "none" for all data, "search" and "testing" for half the data
                   extrapolateDividends=T,     # whether to extrapolate missing recent dividends (or remove incomplete months)
                   smoothConstantAlloc=F,      # calculates more constant-allocation portfolios, for smoother curves in plots
-                  downloadAndCheckAllFiles=F, # downloads data files even if they exist locally,
+                  downloadAndCheckAllFiles=T, # downloads data files even if they exist locally,
                                               #    to check whether they are up to date
                   futureYears=10L,            # to calculate the return over the next so many years
                   tradingCost=0.5/100,        # cost of turning the portfolio entirely 
@@ -105,7 +105,7 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
       message()
       loadData(downloadAndCheckAllFiles=downloadAndCheckAllFiles)
    }
-   if (!exists("DD") | force) loadDDlist(force=force) # loading the dates of major drawdowns
+   if (!exists("DD") | force) loadDDlist(otherAssetClasses=otherAssetClasses, force=force) # loading the dates of major drawdowns
    
    if (dataSplit != "none") splitData(dataSplit=dataSplit, force=force)
    else {
@@ -177,14 +177,15 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
                   " s to load files and for XLConnect." ) )
 }
 
-# start(dataSplit="search",          # "none" for all data, "search" and "testing" for half the data
-#       smoothConstantAlloc=F,     # calculates more constant-allocation portfolios, to get smoother curves in plots (slower)
-#       downloadAndCheckAllFiles=F,# downloads data files even if they exist locally, to check whether they are up to date
-#       otherAssetClasses=F,       # loads gold and UK house prices
-#       newcomer=T,                # displays some information on the code
-#       force=T)                   # forces recalculations (useful when making modifications to the algorthm, but slower)
+start(dataSplit="search",          # "none" for all data, "search" and "testing" for half the data
+      smoothConstantAlloc=F,     # calculates more constant-allocation portfolios, to get smoother curves in plots (slower)
+      downloadAndCheckAllFiles=T,# downloads data files even if they exist locally, to check whether they are up to date
+      otherAssetClasses=F,       # loads gold and UK house prices
+      newcomer=T,                # displays some information on the code
+      force=T)                   # forces recalculations (useful when making modifications to the algorthm, but slower)
 
- start(downloadAndCheckAllFiles=T, force=T)
+# start(downloadAndCheckAllFiles=T, force=T)
+# loadData()
 
 
 plotAllReturnsVsFour()

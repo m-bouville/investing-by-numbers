@@ -207,7 +207,7 @@ addConstAllocToDat <- function(smoothConstantAlloc, force=F) {
 
 ## Loading data from xls file
 ## the xls file has *nominal* values, the "dat" data frame has *real* values
-loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=F) {  
+loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=T) {  
    if(!file.exists("./data/ie_data.xls")) # download file if not already locally available
       download.file("http://www.econ.yale.edu/~shiller/./data/ie_data.xls", "./data/ie_data.xls", mode = "wb")
    else if(downloadAndCheckAllFiles) # We force checking whether the local file is up to date
@@ -241,7 +241,7 @@ loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=F) {
          }   
    
    # data are for the last (business) day of each month, 28th is close enough
-   dat <<- data.frame(date       = ISOdate( floor(rawDat$Date), round((rawDat$Date%%1)*100,0), 28 ),
+   dat <<- data.frame(date       = ISOdate( floor(rawDat$Date), round((rawDat$Date%%1)*100,0)+1, 1, hour=0, min=0, sec=0 ) - 1,
                       numericDate= as.numeric(rawDat$Fraction),
                       CPI        = as.numeric(rawDat$CPI), # reference for inflation
                       dividend   = as.numeric(rawDat$D), # loads nominal dividend (real dividend will be calculated below)

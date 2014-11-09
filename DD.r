@@ -13,19 +13,30 @@
 
 
 ## Loading DD list from csv file
-loadDDlist <- function(force=F) {
+loadDDlist <- function(otherAssetClasses=T, force=F) {
    if (!exists("DD") | force) {
       DD <<- read.csv("data/drawdownList.csv", col.names = c("startYear", "endYear", "comments"), stringsAsFactors=F, header=F)
-      DD <<- DD[-1, ] # removes 1873 DD since it occurs so early that CAPE-based strategies are unavailable at the time
-      DD <<- DD[-1, ] # removes 1876-77 DD since it occurs so early that CAPE-based strategies are unavailable at the time
+      
+      # removing the first 2 DD since they occur so early that CAPE-based strategies are unavailable at the time
+      DD <<- DD[-1, ] 
+      DD <<- DD[-1, ] 
+      
+      if(!otherAssetClasses) { # removing gold drawdowns
+         DD <<- DD[-39, ]
+         DD <<- DD[-39, ]
+         DD <<- DD[-40, ] 
+         DD <<- DD[-41, ] 
+         DD <<- DD[-50, ] 
+      }         
+      
       numDD <<- dim(DD)[[1]]
       DD$dates <<- character(numDD)
       
       for (i in 1:numDD) { # creates names for drawdowns
          year1 <- floor(DD$startYear[i])
          year2 <- floor(DD$endYear[i] - .01) # 1999.00 means January 1999, i.e. the DD ended in 1998
-         if (year1==year2) DD$dates[i] <<- as.character(year1)
-         else DD$dates[i] <<- paste0(year1, "-", year2)
+         if (year1==year2) DD$dates[i] <<- as.character(year1) # single year DD displayed as "2000"
+         else DD$dates[i] <<- paste0(year1, "-", year2)        #  multi-year DD displayed as "2000-2001"
       }
       calcDDinflationAll()
    }

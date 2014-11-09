@@ -15,7 +15,7 @@ loadGoldData <- function() {
       lastDatIndex <- lastGoldIndex + index1968 - 1
    
    dat$gold[ index1968:lastDatIndex ] <<- nominalGold[1:lastGoldIndex]
-   dat$gold <<- dat$gold  / dat$CPI * refCPI # calculating real gold prices
+   dat$gold <<- dat$gold / dat$CPI * refCPI # calculating real gold prices
 }
 
 createGoldStrategy <- function(strategyName="", futureYears=def$futureYears, costs=def$tradingCost, force=F) {
@@ -37,6 +37,8 @@ createGoldStrategy <- function(strategyName="", futureYears=def$futureYears, cos
       stats$turnover[index] <<- Inf
    }
    stats$type[which(stats$strategy == strategyName)] <<- "gold"
+   
+   CalcAllDrawdowns(strategyName)
    
    #    calcStatisticsForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)
    ## since gold data start in 1968 gold statistics cannot be relevantly compared with other assets or strategies
@@ -99,6 +101,8 @@ createUKhousePriceStrategy <- function(strategyName="", futureYears=def$futureYe
       stats$turnover[index] <<- Inf
    }
    stats$type[which(stats$strategy == strategyName)] <<- "UKhousePrice"
+   
+   CalcAllDrawdowns(strategyName)
    
    #    calcStatisticsForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)
    ## since real UKhousePrice data are only available since 1975 UKhousePrice statistics cannot be relevantly compared with other assets or strategies
