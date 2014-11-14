@@ -21,15 +21,14 @@ setCAPEdefaultValues <- function() {
    def$CAPEcheat    <<- 2L
    
    ## CAPE strategy without hysteresis
-   def$CAPEavgOver1 <<- 38L
-   def$CAPEbearish1 <<- 22L
-   def$CAPEbullish1 <<- 18L
+   def$CAPEavgOver1 <<- 35L
+   def$CAPEbearish1 <<- 21L
+   def$CAPEbullish1 <<- 21L
    def$typicalCAPE1 <<- paste0("CAPE", def$CAPEyears, "avg", def$CAPEavgOver1, "__", 
                                 def$CAPEbearish1, "_", def$CAPEbullish1)
-   ## NB: What works best when optimized by itself?
+   ## NB: What works best is:
    ## CAPEbearish = CAPEbullish, which means a strategy that is either all in or all out;
    ## a high value of the threshold (21), which leads to a high average stock allocation.
-   ## What works well when combined with other value strategies? the numbers above
    
    
    ## CAPE strategy with hysteresis
@@ -245,12 +244,12 @@ createCAPEstrategy <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver
 }
 
 
-searchForOptimalCAPEwithoutHysteresis <-function(minYears=10L, maxYears=10L, byYears=0L, cheat=2, 
+searchForOptimalCAPEwithoutHysteresis <-function(minYears=10L, maxYears=10L, byYears=1L, cheat=2, 
                                                  minAvgOver=32L, maxAvgOver=36L, byAvgOver=1L, 
-                                                 minBear=20L, maxBear=22L,  byBear=0.5, 
-                                                 minDelta=0L, maxDelta=1L, byDelta=1L, 
+                                                 minBear=20, maxBear=22,  byBear=0.2, 
+                                                 minDelta=0, maxDelta=0.4, byDelta=0.2, 
                                                  futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
-                                                 minTR=0, maxVol=20, maxDD2=5, minTO=5, minScore=11.5,
+                                                 minTR=0, maxVol=20, maxDD2=5, minTO=5, minScore=12.1,
                                                  coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
                                                  CPUnumber=def$CPUnumber, col=F, plotType="symbols", force=F) {
    
@@ -287,13 +286,13 @@ searchForOptimalCAPEwithoutHysteresis <-function(minYears=10L, maxYears=10L, byY
    plotAllReturnsVsTwo(col=col, costs=costs, searchPlotType=plotType)
 }
 
-searchForOptimalCAPEwithHysteresis <-function(minYears=10L, maxYears=10L, byYears=0L, cheat=2, 
+searchForOptimalCAPEwithHysteresis <-function(minYears=10L, maxYears=10L, byYears=1L, cheat=2, 
                                               minAvgOver=33L,maxAvgOver=35L, byAvgOver=1L, 
-                                              minMid =19.,  maxMid =19.5,  byMid = .1, 
-                                              minWidth=5.6,  maxWidth=6.6,  byWidth=.2,
-                                              minSlope=2.0,  maxSlope=2.2,  bySlope=.1, 
+                                              minMid =19.0,  maxMid =19.4,  byMid = .2, 
+                                              minWidth=5.8,  maxWidth=7.2,  byWidth=.2,
+                                              minSlope=2.0,  maxSlope=2.6,  bySlope=.2, 
                                               futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
-                                              minTR=0, maxVol=20, maxDD2=5, minTO=5, minScore=12.7,
+                                              minTR=0, maxVol=20, maxDD2=5, minTO=5, minScore=13.02,
                                               coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
                                               CPUnumber=def$CPUnumber, col=F, plotType="symbols", force=F) {
    
@@ -333,6 +332,14 @@ searchForOptimalCAPEwithHysteresis <-function(minYears=10L, maxYears=10L, byYear
 #   showSummaryForStrategy(def$typicalCAPE1, costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
    showSummaryForStrategy(def$typicalCAPE2, costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
    plotAllReturnsVsTwo(col=col, searchPlotType=plotType, costs=costs)
+}
+
+searchForTwoOptimalCAPE <-function(plotType="symbols", force=F) {
+   print("searching for optimal CAPE strategy without hysteresis...")
+   searchForOptimalCAPEwithoutHysteresis()
+   print("")
+   print("searching for optimal CAPE strategy with hysteresis...")
+   searchForOptimalCAPEwithHysteresis()
 }
 
 
@@ -419,29 +426,6 @@ plotFutureReturnVsCAPE <- function(CAPEname1=paste0("CAPE", def$CAPEyears),
    
 }
 
-
-
-## OBSOLETE
-searchForTwoOptimalCAPE <-function(plotType="symbols", force=F) {
-   
-   ## What turns out to work best:
-   ## a small value of delta, which means a strategy that is either all in or all out;
-   ## a high value of the threshold (21), which leads to a high average stock allocation.
-   searchForOptimalCAPE(minAvgOver=24L, maxAvgOver=48L, byAvgOver=3L, 
-                        minBear=18L, maxBear=24L, byBear=1L, 
-                        minDelta=0, maxDelta=2, byDelta=1, 
-                        coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, minScore=14.5, 
-                        plotType=plotType, force=force)
-   
-   ## Using a large penalty for drawdowns to get parameters corresponding to 
-   ## the outgrowth (see figure) of DD2 = 1 and net return = 7.4%
-   searchForOptimalCAPE(minAvgOver=30L, maxAvgOver=36L, byAvgOver=2L, 
-                        minBear=15L, maxBear=20L, byBear=1L, 
-                        minDelta=0, maxDelta=2, byDelta=1, 
-                        coeffVol=def$coeffVol, coeffDD2=10*def$coeffDD2, 
-                        maxDD2=1.1, minTR=6.8, minScore=15, 
-                        plotType=plotType, force=force)   
-}
 
 ## OBSOLETE
 searchForOptimalMetaCAPE <-function(stratName1=def$CAPEstrategies[[1]], stratName2=def$CAPEstrategies[[2]], 

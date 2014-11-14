@@ -141,12 +141,12 @@ createReversalStrategy <- function(inputDF=def$reversalInputDF, inputName=def$re
 
 
 searchForOptimalReversal <-function(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
-                                    minAvgOver=9L, maxAvgOver=9L, byAvgOver=3L, 
-                                    minRTM=10, maxRTM=20, byRTM=5,
-                                    minBear=-80, maxBear=-0, byBear=10, 
-                                    minDelta=0, maxDelta=20, byDelta=5, 
+                                    minAvgOver=8L, maxAvgOver=10L, byAvgOver=1L, 
+                                    minRTM = 10, maxRTM = 16, byRTM=1,
+                                    minBear=-54, maxBear=-42, byBear=2, 
+                                    minDelta=0,  maxDelta=2, byDelta=0.5, 
                                     futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
-                                    minTR=0, maxVol=20, maxDD2=5, minTO=1, minScore=16,
+                                    minTR=0, maxVol=20, maxDD2=5, minTO=1, minScore=14.8,
                                     col=F, plotType="symbols", force=F) {
    lastTimePlotted <- proc.time()  
    print(paste0("strategy                 |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
@@ -171,6 +171,6 @@ searchForOptimalReversal <-function(inputDF=def$reversalInputDF, inputName=def$r
          }
       }
    print("")
-   showSummaryForStrategy(def$typicalReversal)
+   showSummaryForStrategy(def$typicalReversal, costs=costs)
    plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
 }

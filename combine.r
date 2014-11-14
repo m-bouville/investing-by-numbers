@@ -26,9 +26,9 @@ setCombinedDefaultValues <- function() {
    def$typicalValue               <<- paste0("value_", def$valueFractionCAPE1, "_", def$valueFractionCAPE2, "_", 
                                              def$valueFractionDetrended1, "_", def$valueFractionDetrended2)
    
-   def$technicalFractionSMA      <<- 25
-   def$technicalFractionBoll     <<- 30
-   def$technicalFractionReversal <<- 45
+   def$technicalFractionSMA      <<- 33
+   def$technicalFractionBoll     <<- 33
+   def$technicalFractionReversal <<- 34
    def$typicalTechnical          <<- paste0("technical_", def$technicalFractionSMA, "_", def$technicalFractionBoll,
                                             "_", def$technicalFractionReversal)
    
@@ -378,11 +378,11 @@ searchForOptimalCombined <- function(inputStrategyName1, inputStrategyName2, inp
 
 searchForOptimalValue <- function(inputStrategyName1=def$typicalCAPE1, inputStrategyName2=def$typicalCAPE2, 
                                   inputStrategyName3=def$typicalDetrended1, inputStrategyName4=def$typicalDetrended2, 
-                                  minF1=20L, maxF1=100L, byF1=4L, minF2=20L, maxF2=100L, byF2=4L, 
-                                  minF3=20L, maxF3=100L, byF3=4L, minF4=20L, maxF4=100L, 
+                                  minF1=20L, maxF1= 24L, byF1=2L, minF2=20L, maxF2= 30L, byF2=2L, 
+                                  minF3=20L, maxF3=100L, byF3=2L, minF4=20L, maxF4=100L, 
                                   futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
                                   type="search", subtype="value",
-                                  minTR=0, maxVol=20, maxDD2=2, minTO=4, minScore=13.5,
+                                  minTR=0, maxVol=20, maxDD2=2, minTO=4, minScore=13.87,
                                   col=F, CPUnumber=def$CPUnumber, plotType="dots", combineMode="weighted", force=F) {
 
 #    print("While you are waiting, here are the four strategies being used.")
@@ -402,14 +402,14 @@ searchForOptimalValue <- function(inputStrategyName1=def$typicalCAPE1, inputStra
 
 
 ## Out of curiosity, I tried adding stocks as a possible strategy.
-## Their optimal weight is zero: buying and holding stocks is not a good strategy
+## Their optimal weight is zero: buying and holding stocks is not a good strategy:
 searchForOptimalTechnical <- function(inputStrategyName1=def$typicalSMA, inputStrategyName2=def$typicalBoll, 
                                       inputStrategyName3=def$typicalReversal, inputStrategyName4="stocks", 
                                       minF1=24L, maxF1=100L, byF1=2L, minF2=24L, maxF2=100L, byF2=2L, 
                                       minF3=24L, maxF3=100L, byF3=2L, minF4=0L,  maxF4=10L, 
                                       futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
                                       type="search", subtype="technical",
-                                      minTR=7, maxVol=17, maxDD2=1.4, minTO=1, minScore=15.38,
+                                      minTR=7, maxVol=17, maxDD2=1.4, minTO=1, minScore=15.54,
                                       col=F, CPUnumber=def$CPUnumber, plotType="dots", 
                                       combineMode="weighted", force=F) {
    
@@ -432,7 +432,7 @@ searchForOptimalBalanced <- function(inputStrategyName1=def$typicalTechnical, in
                                      minF3=0L, maxF3=0L, byF3=1L, minF4=0L, maxF4=0L, 
                                      futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
                                      type="search", subtype="balanced", speed=0,
-                                     minTR=5, maxVol=20, maxDD2=2.5, minTO=1.7, minScore=15,
+                                     minTR=5, maxVol=20, maxDD2=2.5, minTO=1.7, minScore=15.2,
                                      col=F, CPUnumber=def$CPUnumber, plotType="line", 
                                      combineMode="weighted", force=F) {
    totTime <- proc.time()

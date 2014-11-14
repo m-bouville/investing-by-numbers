@@ -20,12 +20,12 @@ setDefaultValues <- function(dataSplit, futureYears=10L, tradingCost=0.5/100, fo
    message("default futureYears: ", def$futureYears, " years")
    def$tradingCost   <<- tradingCost    # default value for the trading costs
    message("default tradingCost: ", def$tradingCost*100, "% / per year of turnover")
-   if(dataSplit=="testing") {
+   if(dataSplit=="search") {
+      def$riskAsCost   <<- 0.5/100 # default value for the trading costs
+      message("default riskAsCost:  ", def$riskAsCost*100, "% / per year of turnover")
+   } else {
       def$riskAsCost <<- 0
       message("default riskAsCost set to 0 for \'testing\' phase.")      
-   } else {
-      def$riskAsCost   <<- 0/100 # default value for the trading costs
-      message("default riskAsCost: ", def$riskAsCost*100, "% / per year of turnover")
    }      
    
    def$dataStartYear <<- 1871
@@ -68,8 +68,8 @@ createStatsDF <- function(futureYears=def$futureYears) {
                         subtype = character(), # especially for combinedstrategy
                         TR = numeric(),  # average real total return (exponential regression)
                         netTR0.5 = numeric(),  # average real total return net of 0.5% of trading costs
+                        netTR1 = numeric(),  # average real total return net of 1% of costs (trading + risk)
                         netTR2 = numeric(),  # average real total return net of 2% of costs (trading + risk)
-                        netTR4 = numeric(),  # average real total return net of 4% of costs (trading + risk)
                         #                         eval(parse(text=paste0("median", futureYears))), 
                         #                         parse(text=paste0("five", futureYears)),
                         volatility = numeric(), 

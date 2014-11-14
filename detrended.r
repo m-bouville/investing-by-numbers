@@ -20,16 +20,16 @@ setDetrendedDefaultValues <- function() {
    def$detrendedInputName   <<- "TR"
    
    ## detrended strategy in stocks 90% of the time, just dodging the worst bubbles
-   def$detrendedAvgOver1    <<- 38L
-   def$detrendedBearish1    <<- 30
-   def$detrendedBullish1    <<- 29
+   def$detrendedAvgOver1    <<- 40L
+   def$detrendedBearish1    <<- 29.4
+   def$detrendedBullish1    <<- 29.4
    def$typicalDetrended1    <<- paste0("detrended_", def$detrendedInputName, "_avg", def$detrendedAvgOver1, "__", 
                                              def$detrendedBearish1, "_", def$detrendedBullish1)
    
    ## detrended strategy with lower stock allocation (and vol and DD)
    def$detrendedAvgOver2    <<- 23L
-   def$detrendedBearish2    <<- 23
-   def$detrendedBullish2    <<- 22
+   def$detrendedBearish2    <<- 22.4
+   def$detrendedBullish2    <<- 22.2
    def$typicalDetrended2    <<- paste0("detrended_", def$detrendedInputName, "_avg", def$detrendedAvgOver2, "__", 
                                        def$detrendedBearish2, "_", def$detrendedBullish2)
 }
@@ -144,12 +144,12 @@ searchForOptimalDetrended <- function(inputDF=def$detrendedInputDF, inputName=de
                                       minBear=22, maxBear=32, byBear=1, 
                                       minDelta=0, maxDelta=1.5, byDelta=0.5, 
                                       futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
-                                      minTR=0, maxVol=20, maxDD2=5, minTO=4, minScore=14.15, 
+                                      minTR=0, maxVol=20, maxDD2=5, minTO=4, minScore=14.2, 
                                       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, col=F, 
                                       plotType="symbols", CPUnumber=def$CPUnumber, force=F) {
    
    lastTimePlotted <- proc.time()
-   print(paste0("strategy                  |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score") )
+   print(paste0("strategy                     |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score") )
    detrendedName <- paste0("detrended_", inputName)
    calcDetrended(inputDF=inputDF, inputName=inputName, detrendedName) 
    
@@ -185,16 +185,16 @@ searchForOptimalDetrended <- function(inputDF=def$detrendedInputDF, inputName=de
 
 ## There are two optima fairly far apart in parameter space, with little of interest in between
 searchForTwoOptimalDetrended <-function(plotType="symbols", force=F) {   
-   searchForOptimalDetrended(minAvgOver=36, maxAvgOver=40, byAvgOver=1L, 
-                             minBear=28,    maxBear=32,    byBear=1, 
-                             minDelta=0,    maxDelta=1.5,  byDelta=0.5, 
-                             minScore=14.15,
+   searchForOptimalDetrended(minAvgOver=39L, maxAvgOver=41L, byAvgOver=1L, 
+                             minBear=29.0,   maxBear=29.8,   byBear=0.2, 
+                             minDelta=0,     maxDelta=0.4,   byDelta=0.2, 
+                             minScore=14.55,
                              plotType=plotType, force=force)
    print("")
-   searchForOptimalDetrended(minAvgOver=21, maxAvgOver=25, byAvgOver=1L, 
-                             minBear=21,    maxBear=25,    byBear=1, 
-                             minDelta=0,    maxDelta=1.5,  byDelta=0.5, 
-                             minScore=14.25,
+   searchForOptimalDetrended(minAvgOver=22L, maxAvgOver=24L, byAvgOver=1L, 
+                             minBear=22.,    maxBear=23.,    byBear=0.2, 
+                             minDelta=0,     maxDelta=0.6,   byDelta=0.2, 
+                             minScore=14.52,
                              plotType=plotType, force=force)   
 }
 

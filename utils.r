@@ -503,9 +503,11 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost,
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    
    if(detailed) {
-      showSummaryForStrategy(def$typicalCAPE1,     displayName="CAPE10 1  ", futureYears=futureYears, costs=costs, 
+      showSummaryForStrategy("constantAlloc60_40", displayName="60_40     ", futureYears=futureYears, costs=0, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-      showSummaryForStrategy(def$typicalCAPE2,     displayName="CAPE10 2  ", futureYears=futureYears, costs=costs, 
+      showSummaryForStrategy(def$typicalCAPE1,     displayName="CAPE no h.", futureYears=futureYears, costs=costs, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+      showSummaryForStrategy(def$typicalCAPE2,     displayName="CAPE hyst ", futureYears=futureYears, costs=costs, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
       showSummaryForStrategy(def$typicalDetrended1,displayName="detrended1", futureYears=futureYears, costs=costs, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
@@ -517,8 +519,6 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost,
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)   
       showSummaryForStrategy(def$typicalReversal,  displayName="reversal  ", futureYears=futureYears, costs=costs, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-#       showSummaryForStrategy(def$typicalInflation, displayName="inflation ", futureYears=futureYears, costs=costs, 
-#                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    }
    showSummaryForStrategy(def$typicalValue,        displayName="value     ", futureYears=futureYears, costs=costs, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)

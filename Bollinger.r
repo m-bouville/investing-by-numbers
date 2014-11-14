@@ -18,9 +18,9 @@
 setBollDefaultValues <- function() {
    def$BollInputDF          <<- "dat"
    def$BollInputName        <<- "TR"
-   def$BollAvgOver          <<- 15L
-   def$BollBearish          <<- -35
-   def$BollBullish          <<- -30
+   def$BollAvgOver          <<- 14L
+   def$BollBearish          <<- -31
+   def$BollBullish          <<- -31
    def$typicalBoll          <<- paste0("Boll_", def$BollInputName, "_", def$BollAvgOver, "__", 
                                        -def$BollBearish, "_", def$BollBullish)
 }
@@ -126,11 +126,11 @@ createBollStrategy <- function(inputDF=def$BollInputDF, inputName=def$BollInputN
 
 
 searchForOptimalBoll <- function(inputDF="dat", inputName="TR", 
-                                 minAvgOver=18L, maxAvgOver=24L, byAvgOver=3L, 
-                                 minBear=-140L, maxBear=-60L, byBear=10L, 
-                                 minBull= -40L, maxBull= 40L, byBull=10L, 
+                                 minAvgOver=13L, maxAvgOver=15L, byAvgOver=1L, 
+                                 minBear   =-34, maxBear   =-30, byBear= 0.5, 
+                                 minBull   =-34, maxBull   =-30, byBull= 0.5, 
                                  futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, type="search", 
-                                 minTR=0, maxVol=20, maxDD2=4, minTO=1, minScore=15,
+                                 minTR=0, maxVol=20, maxDD2=4, minTO=1, minScore=14.78,
                                  col=F, plotType="symbols", force=F) {
    
    lastTimePlotted <- proc.time()
@@ -158,7 +158,7 @@ searchForOptimalBoll <- function(inputDF="dat", inputName="TR",
       }
    }
    print("")
-   showSummaryForStrategy(def$typicalBoll)
+   showSummaryForStrategy(def$typicalBoll, costs=costs)
    plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
 }
 

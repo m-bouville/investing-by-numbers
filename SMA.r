@@ -15,14 +15,14 @@
 
 #default values of parameters:
 setSMAdefaultValues <- function() {
-   def$SMAinputDF          <<- "dat"
-   def$SMAinputName        <<- "TR"
-   def$SMA1                <<- 12L
-   def$SMA2                <<- 3L
-   def$SMAbearish          <<- 18L
-   def$SMAbullish          <<- 16L
-   def$typicalSMA        <<- paste0("SMA_", def$SMAinputName, "_", def$SMA1, "_", def$SMA2, "__", 
-                                    def$SMAbearish, "_", def$SMAbullish)
+   def$SMAinputDF    <<- "dat"
+   def$SMAinputName  <<- "TR"
+   def$SMA1          <<- 10L
+   def$SMA2          <<- 5L
+   def$SMAbearish    <<- 19L
+   def$SMAbullish    <<- 18L
+   def$typicalSMA    <<- paste0("SMA_", def$SMAinputName, "_", def$SMA1, "_", def$SMA2, "__", 
+                                 def$SMAbearish, "_", def$SMAbullish)
 }
 
 ## calculating simple moving average (SMA)
@@ -122,12 +122,12 @@ createSMAstrategy <- function(inputDF="dat", inputName="TR", SMA1=def$SMA1, SMA2
 
 
 searchForOptimalSMA <- function(inputDF="dat", inputName="TR", 
-                                minSMA1=12L, maxSMA1=12L, bySMA1=3L, 
-                                minSMA2=1L, maxSMA2=1L, bySMA2=1L, 
-                                minBear=0, maxBear=60, byBear=5, 
-                                minDelta=0, maxDelta=5, byDelta=1,  
+                                minSMA1=9L, maxSMA1=11L, bySMA1=1L,
+                                minSMA2=4L, maxSMA2=6L, bySMA2=1L, 
+                                minBear=18, maxBear=20, byBear=0.5, 
+                                minDelta=0, maxDelta=2, byDelta=0.5,  
                                 futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
-                                minTR=0, maxVol=20, maxDD2=2, minTO=1, minScore=12.5, 
+                                minTR=0, maxVol=20, maxDD2=2, minTO=1, minScore=14.9, 
                                 type="search", col=F, plotType="symbols", force=F) {
    
    lastTimePlotted <- proc.time()
