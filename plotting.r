@@ -332,6 +332,9 @@ parametrizeFutureReturnPlot <- function(costs, yLabel="", futureYears, minTR, ma
    } else if (futureYears==10) {
       if (minTR=="") minTR <-  -6
       if (maxTR=="") maxTR <-  24
+   } else if (futureYears==15) {
+      if (minTR=="") minTR <-  -3
+      if (maxTR=="") maxTR <-  20
    } else if (futureYears==20) {
       if (minTR=="") minTR <-  -1
       if (maxTR=="") maxTR <-  15
@@ -371,6 +374,8 @@ plotFutureReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typi
       returnDF <- 100 *  next5yrs[, stratNames]
    else if (futureYears==10) 
       returnDF <- 100 * next10yrs[, stratNames]
+   else if (futureYears==15) 
+      returnDF <- 100 * next15yrs[, stratNames]
    else if (futureYears==20) 
       returnDF <- 100 * next20yrs[, stratNames]
    else if (futureYears==30) 
@@ -444,6 +449,8 @@ plotRelativeFutureReturn <- function(stratName1=def$typicalBalanced, stratName2=
       returnDF <- 100 *  next5yrs[, stratNames]
    else if (futureYears==10) 
       returnDF <- 100 * next10yrs[, stratNames]
+   else if (futureYears==15) 
+      returnDF <- 100 * next15yrs[, stratNames]
    else if (futureYears==20) 
       returnDF <- 100 * next20yrs[, stratNames]
    else if (futureYears==30) 
@@ -510,6 +517,8 @@ plotFutureReturnVsStocks <- function(stratName1=def$typicalBalanced, stratName2=
       returnDF <- 100 *  next5yrs[, stratNames]
    else if (futureYears==10) 
       returnDF <- 100 * next10yrs[, stratNames]
+   else if (futureYears==15) 
+      returnDF <- 100 * next15yrs[, stratNames]
    else if (futureYears==20) 
       returnDF <- 100 * next20yrs[, stratNames]
    else if (futureYears==30) 

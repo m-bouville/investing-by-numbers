@@ -69,6 +69,20 @@ calcNext10YrsReturn <- function(strategyName, force=F) {
    five10 <- quantile(next10yrs[, strategyName], .05, na.rm=T)[[1]]
    return( c(median=median10, five=five10) )
 }
+calcNext15YrsReturn <- function(strategyName, force=F) {
+   if (!strategyName %in% colnames(next15yrs) | force) {
+      next15yrs[, strategyName] <<- numeric(numData)
+      months <- 12*15
+      exponent <- 1/15
+      
+      next15yrs[1:(numData-months), strategyName] <<- 
+         (TR[1:(numData-months)+months, strategyName] / TR[1:(numData-months), strategyName]) ^ exponent - 1
+      next15yrs[(numData-months+1):numData, strategyName] <<- NA
+   }
+   median15 <- median(next15yrs[, strategyName], na.rm=T)
+   five15 <- quantile(next15yrs[, strategyName], .05, na.rm=T)[[1]]
+   return( c(median=median15, five=five15) )
+}
 calcNext20YrsReturn <- function(strategyName, force=F) {
    if (!strategyName %in% colnames(next20yrs) | force) {
       next20yrs[, strategyName] <<- numeric(numData)
@@ -104,6 +118,8 @@ calcStrategyFutureReturn <- function(strategyName, futureYears = numeric(), forc
       median_five <-  calcNext5YrsReturn(strategyName, force)
    else if (futureYears==10)
       median_five <- calcNext10YrsReturn(strategyName, force)
+   else if (futureYears==15)
+      median_five <- calcNext15YrsReturn(strategyName, force)
    else if (futureYears==20)
       median_five <- calcNext20YrsReturn(strategyName, force)
    else if (futureYears==30)

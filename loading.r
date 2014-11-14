@@ -165,6 +165,8 @@ addFutureReturnsToDat <- function(force=F) {
       next5yrs  <<- data.frame(date = dat$date, numericDate = dat$numericDate)
    else if ( (def$futureYears==10) & (!exists("next10yrs") | force) ) 
       next10yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+   else if ( (def$futureYears==15) & (!exists("next15yrs") | force) ) 
+      next15yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
    else if ( (def$futureYears==20) & (!exists("next20yrs") | force) ) 
       next20yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
    else if ( (def$futureYears==30) & (!exists("next30yrs") | force) ) 
@@ -295,7 +297,7 @@ makeStringsFactors <- function() {
    parameters$type    <<- factor(parameters$type, levels=allTypes) 
    parameters$subtype <<- factor(parameters$subtype, levels=allSubtypes)
    parameters$inputDF <<- factor(parameters$inputDF, 
-                                    levels = c( "dat", "signal", "alloc", "TR", "next10yrs", "next20yrs", "next30yrs" ) )
+                                    levels = c( "dat", "signal", "alloc", "TR", "next10yrs", "next15yrs", "next20yrs", "next30yrs" ) )
    
    stats$type         <<- factor(stats$type, levels=allTypes) 
    stats$subtype      <<- factor(stats$subtype, levels=allSubtypes)
