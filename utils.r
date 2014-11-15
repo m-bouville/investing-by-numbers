@@ -126,6 +126,7 @@ calcStrategyFutureReturn <- function(strategyName, futureYears = numeric(), forc
       median_five <- calcNext30YrsReturn(strategyName, force)
    else stop("No data frame \'calcNext", futureYears, "YrsReturn\' exists.")
    return(median_five)
+   # NB: median_five is about the median and the 5% risk, nothing to do with 5 years
 }
 
  
@@ -280,12 +281,6 @@ calcSMAofStrategy <- function(inputStrategyName, avgOver=3L, futureYears=def$fut
 
 ## Modern portfolio theory (Markowitz)
 # MPT <- function(input1, input2) { 
-#    var1 <- var(input1)
-#    var2 <- var(input2)
-#    covar <- cov(input1,input2)
-#    a <- (var2-covar) / (var1+var2-2*covar)
-#    print(c(var1, var2, covar))
-#    return( a )
 # }
 
 regression <- function(x, y) { # y = a + b x
@@ -294,85 +289,57 @@ regression <- function(x, y) { # y = a + b x
    return( c(a, b) )
 }
 
+## Interrupting parameter searches can create a problem with the strategy being calculated,
+##    which will crash subsequent runs.
+fixStrategies <- function() {
+   counter <- 0 # number of entries deleted
+   for ( i in (1:dim(TR)[[2]]) )
+      if ( is.na(TR[numData, i]) || TR[numData, i]==0 ) {
+         stratName      <- colnames(TR[i])
+         print(paste(stratName, "has a problem.") )
+         
+         # delete bogus strategy from all DFs
+         TR[i]         <<- NULL # delete bogus entry from 'TR' DF (strategy as row)
+         index          <- which( colnames(alloc) == stratName )
+         alloc[index]  <<- NULL
+         index          <- which( colnames(DD) == stratName )
+         DD[index]     <<- NULL
+         index          <- which( colnames (signal) == stratName )
+         signal[index] <<- NULL
 
-# not to be used anymore
-calcTRnetOfTradingCost <- function(strategyName, tradingCost=def$tradingCost, force=F) {
-   warning("calcTRnetOfTradingCost() should not be used anymore.")
-#    requireColInTR(strategyName)
-#    index <- which(stats$strategy == strategyName)
-#    
-#    cost <- tradingCost/stats$turnover[index]/12
-#     
-#    if ( !(strategyName %in% colnames(alloc)) ) {# this means we ARE dealing with constant allocation (e.g. stocks)
-#       if (tradingCost == 0.02)
-#          netTR2[, strategyName] <<- TR[, strategyName] # no trading, no trading cost
-#       else if(tradingCost == 0.04)
-#          netTR4[, strategyName] <<- TR[, strategyName] 
-#       else stop("No data frame \'netTR", round(tradingCost*100), "\' exists.")
-#    } else {
-#       if (tradingCost == 0.02) {
-#          if (!(strategyName %in% colnames(netTR2)) | force) {
-#             startIndex <- parameters$startIndex[which(parameters$strategy == strategyName)]      
-#             netTR2[1 : (startIndex-1), strategyName] <<- NA
-#             netTR2[startIndex, strategyName] <<- 1
-#             for(i in (startIndex+1):numData) netTR2[i, strategyName] <<- netTR2[i-1, strategyName] * 
-#                ( TR[i, strategyName] / TR[i-1, strategyName] - cost )
-#          }
-#       } else if(tradingCost == 0.04) {
-#          if (!(strategyName %in% colnames(netTR4)) | force) {
-#             startIndex <- parameters$startIndex[which(parameters$strategy == strategyName)]
-#             netTR4[1 : (startIndex-1), strategyName] <<- NA
-#             netTR4[startIndex, strategyName] <<- 1
-#             for(i in (startIndex+1):numData) netTR4[i, strategyName] <<- netTR4[i-1, strategyName] * 
-#                ( TR[i, strategyName] / TR[i-1, strategyName] - cost )
-#          }
-#       } else stop("No data frame \'netTR", round(tradingCost*100), "\' exists.")
-#    }
+         # strategies as rows
+         index          <- which(stats$strategy == stratName)
+         stats         <<- stats[-index, ] 
+         index          <- which(parameters$strategy == stratName)
+         parameters    <<- parameters[-index, ]
+         
+         if (def$futureYears==5) {
+            index             <- which( colnames(next5yrs) == stratName )
+            next5yrs[index]  <<- NULL
+         }
+         else if (def$futureYears==10) {
+            index             <- which( colnames(next10yrs) == stratName )
+            next10yrs[index] <<- NULL
+         }
+         else if (def$futureYears==15) {
+            index             <- which( colnames(next15yrs) == stratName )
+            next15yrs[index] <<- NULL
+         }            
+         else if (def$futureYears==20) {
+            index             <- which( colnames(next20yrs) == stratName )
+            next20yrs[index] <<- NULL
+         }            
+         else if (def$futureYears==30) {
+            index             <- which( colnames(next30yrs) == stratName )
+            next30yrs[index] <<- NULL
+         }                    
+         
+         counter        <- counter+1   # increment
+      }
+   print( paste("entries deleted:", counter) )
 }
 
-
-
-## not used
-calcTurnoverAndTRnetOfTradingCost <- function(strategyName, futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
-   warning("calcTurnoverAndTRnetOfTradingCost() should not be used anymore.")
-
-   #       time1 <- proc.time()      
-#    if ( (strategyName %in% colnames(alloc)) ) {# this means we are not dealing with constant allocation (e.g. stocks)
-#       dateRange <- def$startIndex:(numData-1)
-#       index <- which(stats$strategy == strategyName)
-# 
-#       turnover <- numeric(numData)
-#       turnover[1:def$startIndex] <- NA
-#       turnover[dateRange+1] <- abs(alloc[dateRange+1, strategyName] - alloc[dateRange, strategyName])
-#       stats$turnover[index] <<- 1/12/mean(turnover[dateRange+1], na.rm=F)
-#       
-#       if (tradingCost == 0.02) {
-#          netTR2[def$startIndex, strategyName] <<- 1
-#          for(i in dateRange+1)
-#             netTR2[i, strategyName] <<-  netTR2[i-1, strategyName] * 
-#             ( TR[i, strategyName] / TR[i-1, strategyName] - tradingCost*turnover[i] )
-#          stats$netTR2[index] <<- exp( regression(netTR2$numericDate[dateRange+1], log(netTR2[dateRange+1, strategyName]))[[2]] ) - 1
-#       }
-#       else if(tradingCost == 0.04)  {
-#          netTR4[def$startIndex, strategyName] <<- 1
-#          for(i in (def$startIndex+1) : numData )
-#             netTR4[i, strategyName] <<-  netTR4[i-1, strategyName] * 
-#             ( TR[i, strategyName] / TR[i-1, strategyName] - tradingCost*turnover[i] )
-#          stats$netTR4[index] <<- exp( regression(netTR4$numericDate[dateRange+1], log(netTR4[dateRange+1, strategyName]))[[2]] ) - 1    
-#       } else stop("No data frame \'netTR", round(tradingCost*100), "\' exists.")
-#       
-#    } else { # constant allocation: no trading, no cost
-#       if (tradingCost == 0.02) 
-#          netTR2[, strategyName] <<- TR[, strategyName]
-#       else if(tradingCost == 0.04) 
-#          netTR4[, strategyName] <<- TR[, strategyName]
-#       else stop("No data frame \'netTR", round(tradingCost*100), "\' exists.")
-#    }
-#    
-   #       print( c( "Time for turnover:", round(summary(proc.time())[[3]] - time1[[3]] , 2) ) )   
-}
-
-
+   
 calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears, costs, #=def$tradingCost, 
                                       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
    
@@ -438,8 +405,8 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
          stats$invTurnover[index] <<- 1/stats$turnover[index]
       } 
       stats$netTR0.5[index] <<- stats$TR[index] - 0.5/100/stats$turnover[index]
+      stats$netTR1[index]   <<- stats$TR[index] - 1  /100/stats$turnover[index]
       stats$netTR2[index]   <<- stats$TR[index] - 2  /100/stats$turnover[index]
-      stats$netTR4[index]   <<- stats$TR[index] - 4  /100/stats$turnover[index]
    }
    stats$score[index] <<- 200 * (   coeffTR  * (stats$TR[index] - 0.07)
                                  - coeffVol * (stats$volatility[index] - 0.14)
@@ -519,7 +486,7 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost,
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    
    if(detailed) {
-      showSummaryForStrategy("constantAlloc60_40", displayName="60_40     ", futureYears=futureYears, costs=0, 
+      showSummaryForStrategy("constantAlloc80_20", displayName="80_20     ", futureYears=futureYears, costs=0, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
       showSummaryForStrategy(def$typicalCAPE1,     displayName="CAPE no h.", futureYears=futureYears, costs=costs, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
@@ -543,4 +510,82 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost,
    showSummaryForStrategy(def$typicalBalanced,     displayName="balanced  ", futureYears=futureYears, costs=costs, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    print("")
+}
+
+
+
+
+# not to be used anymore
+calcTRnetOfTradingCost <- function(strategyName, tradingCost=def$tradingCost, force=F) {
+   warning("calcTRnetOfTradingCost() should not be used anymore.")
+   #    requireColInTR(strategyName)
+   #    index <- which(stats$strategy == strategyName)
+   #    
+   #    cost <- tradingCost/stats$turnover[index]/12
+   #     
+   #    if ( !(strategyName %in% colnames(alloc)) ) {# this means we ARE dealing with constant allocation (e.g. stocks)
+   #       if (tradingCost == 0.02)
+   #          netTR2[, strategyName] <<- TR[, strategyName] # no trading, no trading cost
+   #       else if(tradingCost == 0.04)
+   #          netTR4[, strategyName] <<- TR[, strategyName] 
+   #       else stop("No data frame \'netTR", round(tradingCost*100), "\' exists.")
+   #    } else {
+   #       if (tradingCost == 0.02) {
+   #          if (!(strategyName %in% colnames(netTR2)) | force) {
+   #             startIndex <- parameters$startIndex[which(parameters$strategy == strategyName)]      
+   #             netTR2[1 : (startIndex-1), strategyName] <<- NA
+   #             netTR2[startIndex, strategyName] <<- 1
+   #             for(i in (startIndex+1):numData) netTR2[i, strategyName] <<- netTR2[i-1, strategyName] * 
+   #                ( TR[i, strategyName] / TR[i-1, strategyName] - cost )
+   #          }
+   #       } else if(tradingCost == 0.04) {
+   #          if (!(strategyName %in% colnames(netTR4)) | force) {
+   #             startIndex <- parameters$startIndex[which(parameters$strategy == strategyName)]
+   #             netTR4[1 : (startIndex-1), strategyName] <<- NA
+   #             netTR4[startIndex, strategyName] <<- 1
+   #             for(i in (startIndex+1):numData) netTR4[i, strategyName] <<- netTR4[i-1, strategyName] * 
+   #                ( TR[i, strategyName] / TR[i-1, strategyName] - cost )
+   #          }
+   #       } else stop("No data frame \'netTR", round(tradingCost*100), "\' exists.")
+   #    }
+}
+
+## not used
+calcTurnoverAndTRnetOfTradingCost <- function(strategyName, futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
+   warning("calcTurnoverAndTRnetOfTradingCost() should not be used anymore.")
+   
+   #       time1 <- proc.time()      
+   #    if ( (strategyName %in% colnames(alloc)) ) {# this means we are not dealing with constant allocation (e.g. stocks)
+   #       dateRange <- def$startIndex:(numData-1)
+   #       index <- which(stats$strategy == strategyName)
+   # 
+   #       turnover <- numeric(numData)
+   #       turnover[1:def$startIndex] <- NA
+   #       turnover[dateRange+1] <- abs(alloc[dateRange+1, strategyName] - alloc[dateRange, strategyName])
+   #       stats$turnover[index] <<- 1/12/mean(turnover[dateRange+1], na.rm=F)
+   #       
+   #       if (tradingCost == 0.02) {
+   #          netTR2[def$startIndex, strategyName] <<- 1
+   #          for(i in dateRange+1)
+   #             netTR2[i, strategyName] <<-  netTR2[i-1, strategyName] * 
+   #             ( TR[i, strategyName] / TR[i-1, strategyName] - tradingCost*turnover[i] )
+   #          stats$netTR2[index] <<- exp( regression(netTR2$numericDate[dateRange+1], log(netTR2[dateRange+1, strategyName]))[[2]] ) - 1
+   #       }
+   #       else if(tradingCost == 0.04)  {
+   #          netTR4[def$startIndex, strategyName] <<- 1
+   #          for(i in (def$startIndex+1) : numData )
+   #             netTR4[i, strategyName] <<-  netTR4[i-1, strategyName] * 
+   #             ( TR[i, strategyName] / TR[i-1, strategyName] - tradingCost*turnover[i] )
+   #          stats$netTR4[index] <<- exp( regression(netTR4$numericDate[dateRange+1], log(netTR4[dateRange+1, strategyName]))[[2]] ) - 1    
+   #       } else stop("No data frame \'netTR", round(tradingCost*100), "\' exists.")
+   #       
+   #    } else { # constant allocation: no trading, no cost
+   #       if (tradingCost == 0.02) 
+   #          netTR2[, strategyName] <<- TR[, strategyName]
+   #       else if(tradingCost == 0.04) 
+   #          netTR4[, strategyName] <<- TR[, strategyName]
+   #       else stop("No data frame \'netTR", round(tradingCost*100), "\' exists.")
+   #    }
+   #    
+   #       print( c( "Time for turnover:", round(summary(proc.time())[[3]] - time1[[3]] , 2) ) )   
 }
