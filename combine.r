@@ -60,16 +60,28 @@ calcCombinedStrategySignal_weighted <- function(inputStrategyName1, inputStrateg
    if (!(strategyName %in% colnames(signal)) | force) { # if data do not exist yet or we force recalculation:   
       addNumColToSignal(strategyName)
       
-      if(fraction4==0) {
-         if(fraction3==0) # weigthed average with only fractions 1 and 2
-            signal[, strategyName] <<- fraction1*signal[, inputStrategyName1] + fraction2*signal[, inputStrategyName2]
-         else # weigthed average with only the first three fractions  
-            signal[, strategyName] <<- fraction1*signal[, inputStrategyName1] + 
-            fraction2*signal[, inputStrategyName2] + fraction3*signal[, inputStrategyName3]
+   if(fraction1!=0) {
+      signal[, strategyName] <<- fraction1*signal[, inputStrategyName1] 
+      if(fraction2!=0) 
+         signal[, strategyName] <<- signal[, strategyName] + fraction2*signal[, inputStrategyName2]
+   } else 
+      if(fraction2!=0) {
+         signal[, strategyName] <<- signal[, strategyName] + fraction2*signal[, inputStrategyName2]
       }
-      else # weigthed average with all four fractions
-         signal[, strategyName] <<- fraction1*signal[, inputStrategyName1] + fraction2*signal[, inputStrategyName2] + 
-         fraction3*signal[, inputStrategyName3] + fraction4*signal[, inputStrategyName4] 
+   else error("One of fraction1 and fraction2 must be > 0.")
+   if(fraction3!=0) signal[, strategyName] <<- signal[, strategyName] + fraction3*signal[, inputStrategyName3] 
+   if(fraction4!=0) signal[, strategyName] <<- signal[, strategyName] + fraction4*signal[, inputStrategyName4] 
+   
+#       if(fraction4==0) {
+#          if(fraction3==0) # weigthed average with only fractions 1 and 2
+#             signal[, strategyName] <<- fraction1*signal[, inputStrategyName1] + fraction2*signal[, inputStrategyName2]
+#          else # weigthed average with only the first three fractions  
+#             signal[, strategyName] <<- fraction1*signal[, inputStrategyName1] + 
+#             fraction2*signal[, inputStrategyName2] + fraction3*signal[, inputStrategyName3]
+#       }
+#       else # weigthed average with all four fractions
+#          signal[, strategyName] <<- fraction1*signal[, inputStrategyName1] + fraction2*signal[, inputStrategyName2] + 
+#          fraction3*signal[, inputStrategyName3] + fraction4*signal[, inputStrategyName4] 
    }
 }
 
@@ -382,7 +394,7 @@ searchForOptimalValue <- function(inputStrategyName1=def$typicalCAPE1, inputStra
                                   minF3=20L, maxF3=100L, byF3=2L, minF4=20L, maxF4=100L, 
                                   futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
                                   type="search", subtype="value",
-                                  minTR=0, maxVol=20, maxDD2=2, minTO=4, minScore=13.87,
+                                  minTR=0, maxVol=20, maxDD2=2, minTO=4, minScore=13.85,
                                   col=F, CPUnumber=def$CPUnumber, plotType="dots", combineMode="weighted", force=F) {
 
 #    print("While you are waiting, here are the four strategies being used.")
@@ -409,7 +421,7 @@ searchForOptimalTechnical <- function(inputStrategyName1=def$typicalSMA, inputSt
                                       minF3=24L, maxF3=100L, byF3=2L, minF4=0L,  maxF4=10L, 
                                       futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
                                       type="search", subtype="technical",
-                                      minTR=7, maxVol=17, maxDD2=1.4, minTO=1, minScore=15.54,
+                                      minTR=7, maxVol=17, maxDD2=1.6, minTO=1, minScore=15.5,
                                       col=F, CPUnumber=def$CPUnumber, plotType="dots", 
                                       combineMode="weighted", force=F) {
    

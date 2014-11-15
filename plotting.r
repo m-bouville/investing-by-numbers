@@ -16,15 +16,15 @@
 #default values of plotting parameters
 setPlottingDefaultValues <- function() {
    def$yTRmin    <<- 7.
-   def$yTRmax    <<- 9.5
+   def$yTRmax    <<- 9.2
    
    def$pngWidth  <<- 1024
    def$pngHeight <<- 768
    
    def$minVol    <<- 13
-   def$maxVol    <<- 19
+   def$maxVol    <<- 18.5
    def$minDD2    <<- 1.2
-   def$maxDD2    <<- 2.
+   def$maxDD2    <<- 3.2
    
    def$plotEndYear <<- 2015.
    def$maxTR     <<- 50000

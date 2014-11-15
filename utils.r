@@ -309,9 +309,9 @@ fixStrategies <- function() {
 
          # strategies as rows
          index          <- which(stats$strategy == stratName)
-         stats         <<- stats[-index, ] 
+         if (index > 0)    stats      <<- stats[-index, ] 
          index          <- which(parameters$strategy == stratName)
-         parameters    <<- parameters[-index, ]
+         if (index > 0)    parameters <<- parameters[-index, ]
          
          if (def$futureYears==5) {
             index             <- which( colnames(next5yrs) == stratName )
@@ -337,6 +337,9 @@ fixStrategies <- function() {
          counter        <- counter+1   # increment
       }
    print( paste("entries deleted:", counter) )
+   
+   if (dim(stats)[[1]] == 0)      warning("Oh my God you killed stats. You bastard!")
+   if (dim(parameters)[[1]] == 0) warning("Oh my God you killed parameters. You bastard!")
 }
 
    

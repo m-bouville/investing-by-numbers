@@ -67,7 +67,7 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
                   smoothConstantAlloc=F,      # calculates more constant-allocation portfolios, for smoother curves in plots
                   downloadAndCheckAllFiles=T, # downloads data files even if they exist locally,
                                               #    to check whether they are up to date
-                  futureYears=10L,            # to calculate the return over the next so many years
+                  futureYears=15L,            # to calculate the return over the next so many years
                   tradingCost=0.5/100,        # cost of turning the portfolio entirely 
                   otherAssetClasses=F,        # loads gold and UK house prices
                   newcomer=F,                 # displays some information on the code
@@ -88,7 +88,6 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
    source("SMA.r")
    #source("momentum.r") # I cannot get it to work well enough to be competitive
    source("reversal.r")
-   #source("inflation.r")
    source("combine.r")
    
    totTime <- proc.time()
@@ -100,7 +99,9 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
    ## or if we want to force the loading: we load the xls file
    if (!exists("dat") || numData<1500 || downloadAndCheckAllFiles) { 
       message("Starting to load the data from the xls file.")
-      message("Then we will also load a list of drawdowns, of gold prices and of UK house prices.")
+      if (otherAssetClasses)
+         message("Then we will also load a list of drawdowns, of gold prices and of UK house prices.")
+      else message("Then we will also load a list of drawdowns.")
       message("After that, we will create the basic data structures and calculate some basic strategies.")
       message()
       loadData(downloadAndCheckAllFiles=downloadAndCheckAllFiles)
@@ -132,8 +133,6 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
       dat$bondsMonthly[i] <<- dat$bonds[i] / dat$bonds[i-1] 
       dat$monthlyDifference[i] <<- dat$TRmonthly[i] - dat$bondsMonthly[i]
    }
-   
-   #addInflationToDat()
    
    addConstAllocToDat(smoothConstantAlloc, force=force)
    

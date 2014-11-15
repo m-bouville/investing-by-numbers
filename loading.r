@@ -56,7 +56,6 @@ setDefaultValues <- function(dataSplit, futureYears=10L, tradingCost=0.5/100, fo
    setBollDefaultValues()
    setSMAdefaultValues()
    setReversalDefaultValues()
-#    setInflationDefaultValues()
    setCombinedDefaultValues()
    
    def$typicalStrategies <<- c(def$typicalBalanced, def$typicalTechnical, def$typicalValue, "stocks")
@@ -297,7 +296,7 @@ makeStringsFactors <- function() {
    parameters$type    <<- factor(parameters$type, levels=allTypes) 
    parameters$subtype <<- factor(parameters$subtype, levels=allSubtypes)
    parameters$inputDF <<- factor(parameters$inputDF, 
-                                    levels = c( "dat", "signal", "alloc", "TR", "next10yrs", "next15yrs", "next20yrs", "next30yrs" ) )
+                                    levels = c( "dat", "signal", "alloc", "TR", "next5yrs", "next10yrs", "next15yrs", "next20yrs", "next30yrs" ) )
    
    stats$type         <<- factor(stats$type, levels=allTypes) 
    stats$subtype      <<- factor(stats$subtype, levels=allSubtypes)
