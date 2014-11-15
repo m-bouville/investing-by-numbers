@@ -288,7 +288,7 @@ plotReturnAndAlloc <- function(stratName1=def$typicalBalanced, stratName2=def$ty
                                stratName3=def$typicalValue, stratName4="stocks", 
                                col1=def$colBalanced, col2=def$colTechnical, 
                                col3=def$colValue, col4=def$colConstantAlloc, 
-                               lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=2,
+                               lwd1=3, lwd2=1.5, lwd3=1.5, lwd4=3,
                                startYear=def$plotStartYear, endYear=def$plotEndYear, costs=def$tradingCost, 
                                minTR=.9, maxTR=def$maxTR, yLabelReturn="", 
                                legendPlacement="topleft", net=T, normalize=T,
@@ -312,6 +312,26 @@ plotReturnAndAlloc <- function(stratName1=def$typicalBalanced, stratName2=def$ty
       dev.off()
       print( paste0("png file (", pngWidth, " by ", pngHeight, ") written to: ", pngName) )
    }
+}
+
+
+## same but with stocks, bonds and 80/20 alloc, and without value and technical
+plotReturnAndAllocBalanced <- function(stratName1=def$typicalBalanced, stratName2="constantAlloc80_20", 
+             stratName3="stocks", stratName4="bonds", 
+             col1=def$colBalanced, col2=def$colConstantAlloc, col3=def$colValue, col4=def$colValue, 
+             lwd1=3, lwd2=3, lwd3=1.5, lwd4=1.5,
+             startYear=def$plotStartYear, endYear=def$plotEndYear, costs=def$tradingCost, 
+             minTR=.9, maxTR=def$maxTR, yLabelReturn="", 
+             legendPlacement="topleft", net=T, normalize=T,
+             pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
+             pngName="figures/return_and_allocation_balanced.png") {
+
+   plotReturnAndAlloc(stratName1=stratName1, col1=col1, lwd1=lwd1, stratName2=stratName2, col2=col2, lwd2=lwd2,
+              stratName3=stratName3, col3=col3, lwd3=lwd3, stratName4=stratName4, col4=col4, lwd4=lwd4, 
+              startYear=startYear, endYear=endYear, costs=costs, 
+              minTR=minTR, maxTR=maxTR, normalize=normalize, 
+              yLabel=yLabelReturn, legendPlacement=legendPlacement, net=net,
+              pngOutput=pngOutput, pngWidth=pngWidth, pngHeight=pngHeight, pngName=pngName) 
 }
 
 
@@ -346,12 +366,12 @@ parametrizeFutureReturnPlot <- function(costs, yLabel="", futureYears, minTR, ma
 }
 
 
-plotFutureReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTechnical, 
-                             stratName3=def$typicalValue, stratName4="stocks", 
+plotFutureReturn <- function(stratName1=def$typicalBalanced, stratName2="constantAlloc80_20", 
+                             stratName3=def$typicalTechnical, stratName4=def$typicalValue, 
                              futureYears=def$futureYears, xVect=TR$numericDate, 
-                             col1=def$colBalanced, col2=def$colTechnical, 
-                             col3=def$colValue, col4=def$colConstantAlloc, 
-                             lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=2,
+                             col1=def$colBalanced, col2=def$colConstantAlloc, 
+                             col3=def$colTechnical, col4=def$colValue, 
+                             lwd1=3, lwd2=3, lwd3=1.5, lwd4=1.5, 
                              startYear=def$plotStartYear, endYear=def$plotEndYear, 
                              costs=def$tradingCost, extrapolate=0,
                              minTR="", maxTR="", yLabel="", legendPlacement="bottomleft",
@@ -421,11 +441,11 @@ plotFutureReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typi
 
 
 plotRelativeFutureReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTechnical, 
-                             stratName3=def$typicalValue, refStratName="stocks", 
+                             stratName3=def$typicalValue, refStratName="constantAlloc80_20", 
                              futureYears=def$futureYears, xVect=TR$numericDate, 
                              col1=def$colBalanced, col2=def$colTechnical, 
                              col3=def$colValue, col4=def$colConstantAlloc, 
-                             lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=2,
+                             lwd1=3, lwd2=1.5, lwd3=1.5, lwd4=3,
                              startYear=def$plotStartYear, endYear=def$plotEndYear, 
                              costs=def$tradingCost, 
                              minTR="", maxTR="", yLabel="", legendPlacement="topleft",
@@ -605,6 +625,8 @@ plotRelativeFutureReturnVsStocks <- function
       returnDF <- 100 *  next5yrs[, stratNames]
    else if (futureYears==10) 
       returnDF <- 100 * next10yrs[, stratNames]
+   else if (futureYears==15) 
+      returnDF <- 100 * next15yrs[, stratNames]
    else if (futureYears==20) 
       returnDF <- 100 * next20yrs[, stratNames]
    else if (futureYears==30) 
