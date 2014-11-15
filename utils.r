@@ -309,9 +309,9 @@ fixStrategies <- function() {
 
          # strategies as rows
          index          <- which(stats$strategy == stratName)
-         if (index > 0)    stats      <<- stats[-index, ] 
+         if (length(index) > 0)    stats      <<- stats[-index, ] 
          index          <- which(parameters$strategy == stratName)
-         if (index > 0)    parameters <<- parameters[-index, ]
+         if (length(index) > 0)    parameters <<- parameters[-index, ]
          
          if (def$futureYears==5) {
             index             <- which( colnames(next5yrs) == stratName )
@@ -501,7 +501,9 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost,
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
       showSummaryForStrategy(def$typicalBoll,      displayName="Bollinger ", futureYears=futureYears, costs=costs, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-      showSummaryForStrategy(def$typicalSMA,       displayName="SMA       ", futureYears=futureYears, costs=costs, 
+      showSummaryForStrategy(def$typicalSMA1,       displayName="SMA 1     ", futureYears=futureYears, costs=costs, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)   
+      showSummaryForStrategy(def$typicalSMA2,       displayName="SMA 2     ", futureYears=futureYears, costs=costs, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)   
       showSummaryForStrategy(def$typicalReversal,  displayName="reversal  ", futureYears=futureYears, costs=costs, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)

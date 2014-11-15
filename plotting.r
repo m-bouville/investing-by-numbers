@@ -252,10 +252,10 @@ plotAlloc <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTech
    }
 }
 
-plotReturnAndAllocTechnical <- function(stratName1=def$typicalSMA,       col1=def$colSMA,       lwd1=1.5,
-                                        stratName2=def$typicalBoll,      col2=def$colBoll,      lwd2=1.5,
-                                        stratName3=def$typicalReversal,  col3=def$colReversal,  lwd3=1.5,
-                                        stratName4=def$typicalTechnical, col4=def$colTechnical, lwd4=2, 
+plotReturnAndAllocTechnical <- function(stratName1=def$typicalSMA1,      col1=def$colSMA,      lwd1=1.5,
+                                        stratName2=def$typicalSMA2,      col2=def$colSMA,      lwd2=2,
+                                        stratName3=def$typicalBoll,      col3=def$colBoll,     lwd3=1.5,
+                                        stratName4=def$typicalReversal,  col4=def$colReversal, lwd4=2, 
                                         startYear=def$plotStartYear, endYear=def$plotEndYear, 
                                         yLabel="", net=T, minTR=0.8, maxTR=def$maxTR, costs=def$tradingCost,
                                         pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
@@ -268,10 +268,10 @@ plotReturnAndAllocTechnical <- function(stratName1=def$typicalSMA,       col1=de
               pngOutput=pngOutput, pngWidth=pngWidth, pngHeight=pngHeight, pngName=pngName) 
 }
 
-plotReturnAndAllocValue <- function(stratName1=def$typicalCAPE2,     col1=def$colCAPE,      lwd1=1.5,
-                                    stratName2=def$typicalDetrended1,col2=def$colDetrended, lwd2=1.5,
-                                    stratName3=def$typicalDetrended2,col3=def$colDetrended, lwd3=2,
-                                    stratName4=def$typicalValue,     col4=def$colValue,     lwd4=2, 
+plotReturnAndAllocValue <- function(stratName1=def$typicalCAPE1,     col1=def$colCAPE,      lwd1=1.5,
+                                    stratName2=def$typicalCAPE2,     col2=def$colCAPE,      lwd2=2,
+                                    stratName3=def$typicalDetrended1,col3=def$colDetrended, lwd3=1.5,
+                                    stratName4=def$typicalDetrended2,col4=def$colDetrended, lwd4=2,
                                     startYear=def$plotStartYear, endYear=def$plotEndYear, 
                                     yLabel="", net=T, minTR=0.8, maxTR=def$maxTR, costs=def$tradingCost,
                                     pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 

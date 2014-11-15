@@ -339,8 +339,14 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
                            futureYears=def$futureYears, costs=def$tradingCost, 
                            coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
    
-   createSMAstrategy(inputDF=def$SMAinputDF, inputName=def$SMAinputName, SMA1=def$SMA1, SMA2=def$SMA2, 
-                     bearish=def$SMAbearish, bullish=def$SMAbullish, 
+   createSMAstrategy(inputDF=def$SMAinputDF, inputName=def$SMAinputName, SMA1=def$SMA1_1, SMA2=def$SMA2_1, 
+                     bearish=def$SMAbearish1, bullish=def$SMAbullish1, 
+                     signalMin=def$signalMin, signalMax=def$signalMax,
+                     futureYears=def$futureYears, costs=def$tradingCost, 
+                     coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)   
+   
+   createSMAstrategy(inputDF=def$SMAinputDF, inputName=def$SMAinputName, SMA1=def$SMA1_2, SMA2=def$SMA2_2, 
+                     bearish=def$SMAbearish2, bullish=def$SMAbullish2, 
                      signalMin=def$signalMin, signalMax=def$signalMax,
                      futureYears=def$futureYears, costs=def$tradingCost, 
                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)   
@@ -357,16 +363,10 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
                           signalMin=def$signalMin, signalMax=def$signalMax,
                           futureYears=def$futureYears, costs=def$tradingCost, 
                           coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force) 
-   
-#    createInflationStrategy(avgOver=def$inflationAvgOver,  
-#                           bearish=def$inflationBearish, bullish=def$inflationBullish, 
-#                           signalMin=def$signalMin, signalMax=def$signalMax,
-#                           futureYears=def$futureYears, costs=def$tradingCost, 
-#                           coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force) 
-   
-   combineStrategies(def$typicalSMA, def$typicalBoll, def$typicalReversal, "",
-                     def$technicalFractionSMA, def$technicalFractionBoll, 
-                     def$technicalFractionReversal, 0, 
+  
+   combineStrategies(def$typicalSMA1, def$typicalSMA2, def$typicalBoll, def$typicalReversal, 
+                     def$technicalFractionSMA1, def$technicalFractionSMA2, 
+                     def$technicalFractionBoll, def$technicalFractionReversal, 
                      type="combined", subtype="technical", combineMode="weighted",
                      costs=def$tradingCost, 
                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)

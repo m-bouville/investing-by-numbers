@@ -88,6 +88,7 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
    source("SMA.r")
    #source("momentum.r") # I cannot get it to work well enough to be competitive
    source("reversal.r")
+   #source("inflation.r")
    source("combine.r")
    
    totTime <- proc.time()
@@ -174,10 +175,9 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
                   round(summary(proc.time())[[1]] - totTime[[1]] , 0), " s for calculations and " ,
                   round(summary(proc.time())[[3]]-summary(proc.time())[[1]] + totTime[[1]]-totTime[[3]] , 0), 
                   " s to load files and for XLConnect." ) )
-}
 
 start(dataSplit="search", downloadAndCheckAllFiles=F, force=T)
-# loadData()
+
 
 
 plotAllReturnsVsFour()
