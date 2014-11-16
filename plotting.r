@@ -45,6 +45,7 @@ setPlottingDefaultValues <- function() {
    def$Mpch         <<- 15L
    
    def$colConstantAlloc  <<- "green"
+   def$colBonds     <<- "gray"
    
    # plotAllReturnsVsX()
    def$type1 <<- "CAPE"
@@ -146,7 +147,8 @@ plotSomeSortOfReturn <- function(returnDF1, returnDF2, returnDF3, returnDF4,
       plot(xVect, returnDF4, col=col4, xlab="", ylab="", 
            log=logAxis, type="l", lwd=lwd4, xlim=xRange, ylim=yRange)
    }
-   legend( legendPlacement, c(stratName1,stratName2,stratName3,stratName4), 
+   if(legendPlacement!="none") 
+      legend( legendPlacement, c(stratName1,stratName2,stratName3,stratName4), 
           bty="n", lwd=c(lwd1, lwd2, lwd3, lwd4), lty = c(1,1,1,1), 
           col=c(col1, col2, col3, col4) )
    par(new=F)
@@ -186,9 +188,11 @@ plotReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTec
    if(net & costs>0) # reduce TR because of costs
       for (strat in 1:4) {
          index <- which(stats$strategy == stratNames[strat])
-         TOcost <- costs/12/stats$turnover[index]
-         for (i in startIndex:numData)
-            returnDF[i, strat] <- returnDF[i, strat] * exp(-TOcost*(i-startIndex))
+         if ( length(index>0) ) {
+            TOcost <- costs/12/stats$turnover[index]
+            for (i in startIndex:numData)
+               returnDF[i, strat] <- returnDF[i, strat] * exp(-TOcost*(i-startIndex))
+         }
       }
       
    if (normalize) 
@@ -318,7 +322,7 @@ plotReturnAndAlloc <- function(stratName1=def$typicalBalanced, stratName2=def$ty
 ## same but with stocks, bonds and 80/20 alloc, and without value and technical
 plotReturnAndAllocBalanced <- function(stratName1=def$typicalBalanced, stratName2="constantAlloc80_20", 
              stratName3="stocks", stratName4="bonds", 
-             col1=def$colBalanced, col2=def$colConstantAlloc, col3=def$colValue, col4=def$colValue, 
+             col1=def$colBalanced, col2=def$colConstantAlloc, col3=def$colValue, col4="gray", 
              lwd1=3, lwd2=3, lwd3=1.5, lwd4=1.5,
              startYear=def$plotStartYear, endYear=def$plotEndYear, costs=def$tradingCost, 
              minTR=.9, maxTR=def$maxTR, yLabelReturn="", 
@@ -332,6 +336,74 @@ plotReturnAndAllocBalanced <- function(stratName1=def$typicalBalanced, stratName
               minTR=minTR, maxTR=maxTR, normalize=normalize, 
               yLabel=yLabelReturn, legendPlacement=legendPlacement, net=net,
               pngOutput=pngOutput, pngWidth=pngWidth, pngHeight=pngHeight, pngName=pngName) 
+}
+
+
+## 15-year-long sideways markets & correlation with inflation
+plotReturnSideways <- function(stratName1=def$typicalBalanced, stratName2="stocks", 
+                               stratName3="CPI", stratName4="bonds", 
+                               col1=def$colBalanced,  col2=def$colConstantAlloc, 
+                               col3=def$colInflation, col4=def$colBonds, 
+                               lwd1=2, lwd2=3, lwd3=1.5, lwd4=1.5, minTR=0.6, maxTR=2.) {
+   par(mfrow = c(2, 2))   
+   plotReturn(startYear=1908, endYear=1921.5, minTR=minTR, maxTR=maxTR, 
+              stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4, 
+              col1=col1, col2=col2, col3=col3, col4=col4, lwd1=lwd1, lwd2=lwd2, lwd3=lwd3, lwd4=lwd4,
+              legendPlacement="none")
+   plotReturn(startYear=1936.5, endYear=1949.5, minTR=minTR, maxTR=maxTR, 
+              stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4,
+              col1=col1, col2=col2, col3=col3, col4=col4, lwd1=lwd1, lwd2=lwd2, lwd3=lwd3, lwd4=lwd4,
+              legendPlacement="topleft")
+   plotReturn(startYear=1965,   endYear=1982,   minTR=minTR, maxTR=maxTR, 
+              stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4,
+              col1=col1, col2=col2, col3=col3, col4=col4, lwd1=lwd1, lwd2=lwd2, lwd3=lwd3, lwd4=lwd4,
+              legendPlacement="none")
+   plotReturn(startYear=1999,   endYear=2011,   minTR=minTR, maxTR=maxTR,
+              stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4,
+              col1=col1, col2=col2, col3=col3, col4=col4, lwd1=lwd1, lwd2=lwd2, lwd3=lwd3, lwd4=lwd4,
+              legendPlacement="none")
+   par(mfrow = c(1, 1))
+   
+}
+
+plotInflationDerivatives <- function(startYear=1900) {
+   par(mfrow = c(2, 1))   
+#   plot(dat$numericDate, 100*dat$inflationDerivative5yr,   type="l", ylim=c(-8,10), xlim=c(startYear,2015) )
+   plot(dat$numericDate, 100*dat$inflationDerivative7.5yr, 
+        type="l", ylim=c(-8,10), xlim=c(startYear,2015), ylab="inflationDerivative7.5yr" )
+   plot(dat$numericDate, 100*dat$inflationDerivative10yr, 
+        type="l", ylim=c(-8,10), xlim=c(startYear,2015), ylab="inflationDerivative10yr" )
+   par(mfrow = c(1, 1))  
+}
+
+plotInflation2ndDerivatives <- function(startYear=1900) {
+   par(mfrow = c(3, 1))   
+   plot(dat$numericDate, 100*dat$inflation2ndDerivative5yr,   
+        type="l", ylim=c(-10,15), xlim=c(startYear,2015), ylab="inflation2ndDerivative5yr" )
+   plot(dat$numericDate, 100*dat$inflation2ndDerivative7.5yr, 
+        type="l", ylim=c(-10,15), xlim=c(startYear,2015), ylab="inflation2ndDerivative7.5yr" )
+   plot(dat$numericDate, 100*dat$inflation2ndDerivative10yr,  
+        type="l", ylim=c(-10,15), xlim=c(startYear,2015), ylab="inflation2ndDerivative10yr" )
+   par(mfrow = c(1, 1))  
+}
+
+plotInflation10yr <- function(startYear=1900) {
+   par(mfrow = c(3, 1))   
+   plot(dat$numericDate, 100*dat$inflation10yr, 
+        type="l", ylim=c(-3,9), xlim=c(startYear,2014), ylab="inflation10yr" )
+   plot(dat$numericDate, 100*dat$inflationDerivative10yr, 
+        type="l", ylim=c(-8,8), xlim=c(startYear,2014), ylab="inflationDerivative10yr" )
+   plot(dat$numericDate, 100*dat$inflation2ndDerivative10yr,  
+        type="l", ylim=c(-10,15), xlim=c(startYear,2014), ylab="inflation2ndDerivative10yr" )
+   par(mfrow = c(1, 1))  
+}
+
+plotInflationDerivativeAndFutureReturn <- function() {
+   par(mfrow = c(2, 1))   
+   plotFutureReturn(startYear=1885, endYear=2000)
+   plot(dat$numericDate, -100*dat$inflation2ndDerivative10yr, 
+        type="l", ylim=c(-15,10), xlim=c(1900,2015), ylab="- inflation2ndDerivative10yr" )
+   par(mfrow = c(1, 1))  
 }
 
 
@@ -366,6 +438,7 @@ parametrizeFutureReturnPlot <- function(costs, yLabel="", futureYears, minTR, ma
 }
 
 
+## future returns
 plotFutureReturn <- function(stratName1=def$typicalBalanced, stratName2="constantAlloc80_20", 
                              stratName3=def$typicalTechnical, stratName4=def$typicalValue, 
                              futureYears=def$futureYears, xVect=TR$numericDate, 
