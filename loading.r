@@ -78,6 +78,7 @@ createStatsDF <- function(futureYears=def$futureYears) {
                         invTurnover = numeric(), # 1 / turnover
                         DD2 = numeric(), # sum of the squares of the drawdowns
                         score = numeric(), 
+                        entropy = numeric(), 
                         stringsAsFactors=F)
    stats[, paste0("median", futureYears)] <<- numeric()
    stats[, paste0("five", futureYears)] <<- numeric()

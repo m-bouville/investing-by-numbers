@@ -67,7 +67,7 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
                   smoothConstantAlloc=F,      # calculates more constant-allocation portfolios, for smoother curves in plots
                   downloadAndCheckAllFiles=T, # downloads data files even if they exist locally,
                                               #    to check whether they are up to date
-                  futureYears=15L,            # to calculate the return over the next so many years
+                  futureYears=10L,            # to calculate the return over the next so many years
                   tradingCost=0.5/100,        # cost of turning the portfolio entirely 
                   otherAssetClasses=F,        # loads gold and UK house prices
                   newcomer=F,                 # displays some information on the code
@@ -86,9 +86,7 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
    source("detrended.r")
    source("Bollinger.r")
    source("SMA.r")
-   #source("momentum.r") # I cannot get it to work well enough to be competitive
    source("reversal.r")
-   #source("inflation.r")
    source("combine.r")
    
    totTime <- proc.time()
@@ -103,8 +101,6 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
       if (otherAssetClasses)
          message("Then we will also load a list of drawdowns, of gold prices and of UK house prices.")
       else message("Then we will also load a list of drawdowns.")
-      message("After that, we will create the basic data structures and calculate some basic strategies.")
-      message()
       loadData(downloadAndCheckAllFiles=downloadAndCheckAllFiles)
    }
    if (!exists("DD") | force) loadDDlist(otherAssetClasses=otherAssetClasses, force=force) # loading the dates of major drawdowns
@@ -175,10 +171,9 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
                   round(summary(proc.time())[[1]] - totTime[[1]] , 0), " s for calculations and " ,
                   round(summary(proc.time())[[3]]-summary(proc.time())[[1]] + totTime[[1]]-totTime[[3]] , 0), 
                   " s to load files and for XLConnect." ) )
+}
 
 start(dataSplit="search", downloadAndCheckAllFiles=F, force=T)
-
-
 
 plotAllReturnsVsFour()
 

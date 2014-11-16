@@ -292,34 +292,34 @@ regression <- function(x, y) { # y = a + b x
 
 deleteStrategy <- function(stratName) {
    # delete strategy from DFs where it is entered as a column
-   index          <- which( colnames (signal) == stratName )
+   index <- which( colnames(signal) == stratName )
    if(length(index) > 0) 
       signal[index] <<- NULL
    else warning(paste("Strategy", stratName, "cannot be found in 'signal'.") )
    
-   index          <- which( colnames(alloc) == stratName )
+   index <- which( colnames(alloc) == stratName )
    if(length(index) > 0) 
-      alloc[index]  <<- NULL
+      alloc[index] <<- NULL
    else warning(paste("Strategy", stratName, "cannot be found in 'alloc'.") )
    
-   index          <- which( colnames(TR) == stratName )
+   index <- which( colnames(TR) == stratName )
    if(length(index) > 0) 
-      TR[index]     <<- NULL
+      TR[index] <<- NULL
    else warning(paste("Strategy", stratName, "cannot be found in 'TR'.") )
    
-   index          <- which( colnames(DD) == stratName )
+   index <- which( colnames(DD) == stratName )
    if(length(index) > 0) 
-      DD[index]    <<- NULL
+      DD[index] <<- NULL
    else warning(paste("Strategy", stratName, "cannot be found in 'DD'.") )
       
    
    # delete strategy from DFs where it is entered as a row
-   index          <- which(stats$strategy == stratName)
+   index <- which(stats$strategy == stratName)
    if (length(index) > 0)    
-      stats      <<- stats[-index, ] 
+      stats <<- stats[-index, ] 
    else warning(paste("Strategy", stratName, "cannot be found in 'stats'.") )
 
-   index          <- which(parameters$strategy == stratName)
+   index <- which(parameters$strategy == stratName)
    if (length(index) > 0)    
       parameters <<- parameters[-index, ]
    else warning(paste("Strategy", stratName, "cannot be found in 'parameters'.") )
@@ -385,7 +385,7 @@ cleanUpStrategies <- function() {
 }
 
    
-calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears, costs, #=def$tradingCost, 
+calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears, costs, 
                                       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
    
    dateRange <- def$startIndex:numData
@@ -462,10 +462,10 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
    ## 2. I subtract off constants to reduce the variation of the score when coefficients change
 }
 
-showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def$futureYears, 
-                                   costs, #=def$tradingCost,
+showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def$futureYears, costs, 
                                    minTR=0, maxVol=Inf, maxDD2=Inf, minTO=0, minScore=-Inf, 
-                                   coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
+                                   coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
+                                   coeffEntropy=0, force=F) {
    
    if ( !(strategyName %in% stats$strategy) )
       calcStatisticsForStrategy(strategyName, futureYears=futureYears, costs=costs,
@@ -490,7 +490,9 @@ showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def
    med  <- 100*(stats[index, medianName] - TOcost) 
    five <- 100*(stats[index, fiveName] - TOcost) 
    DD2  <- stats$DD2[index]
-   score<- stats$score[index]
+   score<- stats$score[index] 
+   if(coeffEntropy > 0)
+      score <- score + coeffEntropy * (stats$entropy[index] - 1) 
       
    if (round(ret,2)%%1 == 0) retPad = "  "
       else retPad = ""
@@ -509,7 +511,7 @@ showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def
    if ((10*round(DD2,2))%%1 == 0) DD2Pad = " "
       else DD2Pad = ""
      
-   if(ret>minTR & vol<maxVol & DD2<maxDD2 & TO>minTO & score>minScore) {
+   if(ret>minTR & vol<maxVol & DD2<maxDD2 & TO>minTO & score>minScore) 
       print(paste0(displayName, " | ", round(ret,2), retPad, "% |   ", 
                    round(med,1), medPad, "%,  ", round(five,1), fivePad, "% | ",
                    round(vol,1), volPad, "% |     ",
@@ -517,7 +519,6 @@ showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def
                    TOpad, round(TO, 1), " | ",
                    round(DD2,2), DD2Pad, " | ", 
                    round(score,2) ) )
-   }
 }
 
 showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost, 
@@ -558,7 +559,6 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost,
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    print("")
 }
-
 
 
 
