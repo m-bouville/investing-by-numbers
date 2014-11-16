@@ -289,57 +289,99 @@ regression <- function(x, y) { # y = a + b x
    return( c(a, b) )
 }
 
+
+deleteStrategy <- function(stratName) {
+   # delete strategy from DFs where it is entered as a column
+   index          <- which( colnames (signal) == stratName )
+   if(length(index) > 0) 
+      signal[index] <<- NULL
+   else warning(paste("Strategy", stratName, "cannot be found in 'signal'.") )
+   
+   index          <- which( colnames(alloc) == stratName )
+   if(length(index) > 0) 
+      alloc[index]  <<- NULL
+   else warning(paste("Strategy", stratName, "cannot be found in 'alloc'.") )
+   
+   index          <- which( colnames(TR) == stratName )
+   if(length(index) > 0) 
+      TR[index]     <<- NULL
+   else warning(paste("Strategy", stratName, "cannot be found in 'TR'.") )
+   
+   index          <- which( colnames(DD) == stratName )
+   if(length(index) > 0) 
+      DD[index]    <<- NULL
+   else warning(paste("Strategy", stratName, "cannot be found in 'DD'.") )
+      
+   
+   # delete strategy from DFs where it is entered as a row
+   index          <- which(stats$strategy == stratName)
+   if (length(index) > 0)    
+      stats      <<- stats[-index, ] 
+   else warning(paste("Strategy", stratName, "cannot be found in 'stats'.") )
+
+   index          <- which(parameters$strategy == stratName)
+   if (length(index) > 0)    
+      parameters <<- parameters[-index, ]
+   else warning(paste("Strategy", stratName, "cannot be found in 'parameters'.") )
+   
+   
+   # delete strategy from nextNyears DF
+   if (def$futureYears==5) {
+      index             <- which( colnames(next5yrs) == stratName )
+      if (length(index) > 0)    
+         next5yrs[index]  <<- NULL
+      else warning(paste("Strategy", stratName, "cannot be found in 'next5yrs'.") )
+   }
+   else if (def$futureYears==10) {
+      index             <- which( colnames(next10yrs) == stratName )
+      if (length(index) > 0)    
+         next10yrs[index] <<- NULL
+      else warning(paste("Strategy", stratName, "cannot be found in 'next10yrs'.") )
+   }
+   else if (def$futureYears==15) {
+      index             <- which( colnames(next15yrs) == stratName )
+      if (length(index) > 0)    
+         next15yrs[index] <<- NULL
+      else warning(paste("Strategy", stratName, "cannot be found in 'next15yrs'.") )
+   }            
+   else if (def$futureYears==20) {
+      index             <- which( colnames(next20yrs) == stratName )
+      if (length(index) > 0)    
+         next20yrs[index] <<- NULL
+      else warning(paste("Strategy", stratName, "cannot be found in 'next20yrs'.") )
+   }            
+   else if (def$futureYears==30) {
+      index             <- which( colnames(next30yrs) == stratName )
+      if (length(index) > 0)    
+         next30yrs[index] <<- NULL
+      else warning(paste("Strategy", stratName, "cannot be found in 'next30yrs'.") )
+   }                    
+}
+
 ## Interrupting parameter searches can create a problem with the strategy being calculated,
 ##    which will crash subsequent runs.
-fixStrategies <- function() {
+cleanUpStrategies <- function() {
    counter <- 0 # number of entries deleted
    for ( i in (1:dim(TR)[[2]]) )
       if ( is.na(TR[numData, i]) || TR[numData, i]==0 ) {
-         stratName      <- colnames(TR[i])
-         print(paste(stratName, "has a problem.") )
-         
-         # delete bogus strategy from all DFs
-         TR[i]         <<- NULL # delete bogus entry from 'TR' DF (strategy as row)
-         index          <- which( colnames(alloc) == stratName )
-         alloc[index]  <<- NULL
-         index          <- which( colnames(DD) == stratName )
-         DD[index]     <<- NULL
-         index          <- which( colnames (signal) == stratName )
-         signal[index] <<- NULL
-
-         # strategies as rows
-         index          <- which(stats$strategy == stratName)
-         if (length(index) > 0)    stats      <<- stats[-index, ] 
-         index          <- which(parameters$strategy == stratName)
-         if (length(index) > 0)    parameters <<- parameters[-index, ]
-         
-         if (def$futureYears==5) {
-            index             <- which( colnames(next5yrs) == stratName )
-            next5yrs[index]  <<- NULL
-         }
-         else if (def$futureYears==10) {
-            index             <- which( colnames(next10yrs) == stratName )
-            next10yrs[index] <<- NULL
-         }
-         else if (def$futureYears==15) {
-            index             <- which( colnames(next15yrs) == stratName )
-            next15yrs[index] <<- NULL
-         }            
-         else if (def$futureYears==20) {
-            index             <- which( colnames(next20yrs) == stratName )
-            next20yrs[index] <<- NULL
-         }            
-         else if (def$futureYears==30) {
-            index             <- which( colnames(next30yrs) == stratName )
-            next30yrs[index] <<- NULL
-         }                    
-         
-         counter        <- counter+1   # increment
+         stratName <- colnames(TR[i])
+         print(paste(stratName, "has a problem: TR = 0.") )        
+         deleteStrategy(stratName)
+         counter   <- counter+1   # increment
       }
+
+   for ( i in (1:dim(stats)[[1]]) )
+      if ( is.na(DD[numDD, i]) || (DD[numDD-2, i]==0 && DD[numDD-1, i]==0 && DD[numDD, i]==0) ) {
+         stratName <- colnames(DD[i])
+         print(paste(stratName, "has a problem: DD = 0.") )        
+         deleteStrategy(stratName)
+         counter   <- counter+1   # increment
+      }
+   
    print( paste("entries deleted:", counter) )
    
-   if (dim(stats)[[1]] == 0)      warning("Oh my God you killed stats. You bastard!")
-   if (dim(parameters)[[1]] == 0) warning("Oh my God you killed parameters. You bastard!")
+   if (dim(stats)[[1]] == 0)      stop("Oh my God you killed stats. You bastard!")
+   if (dim(parameters)[[1]] == 0) stop("Oh my God you killed parameters. You bastard!")
 }
 
    
