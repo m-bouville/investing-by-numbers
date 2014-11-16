@@ -493,32 +493,52 @@ showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def
    score<- stats$score[index] 
    if(coeffEntropy > 0)
       score <- score + coeffEntropy * (stats$entropy[index] - 1) 
-      
-   if (round(ret,2)%%1 == 0) retPad = "  "
+
+   if (round(10*ret,1)%%1 == 0) retPad = " "
       else retPad = ""
    if (round(vol,1)%%1 == 0) volPad = "  "
       else volPad = ""
    if (round(med,1)%%1 == 0) medPad = "  "
       else medPad = ""
-   if (round(five,1)%%1 == 0) fivePad = "  "
-      else fivePad = ""
+   
+   if (five < 0) fivePad1 = ""   # allow room for the minus sign
+      else fivePad1 = " " 
+   if (round(abs(five),1)%%1 == 0) fivePad2 = "  " # no decimals
+      else fivePad2 = ""
+   
+   if (avgAlloc == 100) avgAllocPad = ""
+      else avgAllocPad = " "
+   
    if ( is.na(latestAlloc) ) latestAllocPad = " "
       else if (latestAlloc < 10-1e-6) latestAllocPad = "  "
       else if (latestAlloc == 100) latestAllocPad = ""
       else latestAllocPad = " "
-   if (TO>=10) TOpad = ""
-      else TOpad = " "
+   
+   if( is.infinite(TO) ) {
+      TOpad1 = " "
+      TOpad2 = ""
+   }
+   else {
+      if (TO>=10) TOpad1 = ""
+         else TOpad1 = " "
+      if (round(TO, 1)%%1 == 0) TOpad2 = "  " # no decimals
+         else TOpad2 = ""
+   }
+   
    if ((10*round(DD2,2))%%1 == 0) DD2Pad = " "
       else DD2Pad = ""
-     
+   
+   if (score>=10) scorePad = ""
+   else scorePad = " "
+   
    if(ret>minTR & vol<maxVol & DD2<maxDD2 & TO>minTO & score>minScore) 
       print(paste0(displayName, " | ", round(ret,2), retPad, "% |   ", 
-                   round(med,1), medPad, "%,  ", round(five,1), fivePad, "% | ",
-                   round(vol,1), volPad, "% |     ",
-                   round(avgAlloc), "%, ", latestAllocPad, round(latestAlloc), "% | ",
-                   TOpad, round(TO, 1), " | ",
+                   round(med,1), medPad, "%,", fivePad1, round(five,1), fivePad2, "% | ",
+                   round(vol,1), volPad, "% |  ",
+                   avgAllocPad, round(avgAlloc), "%, ", latestAllocPad, round(latestAlloc), "% | ",
+                   TOpad1, round(TO, 1), TOpad2, " | ",
                    round(DD2,2), DD2Pad, " | ", 
-                   round(score,2) ) )
+                   scorePad, round(score,2) ) )
 }
 
 showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost, 
@@ -526,14 +546,16 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost,
    # force pertains only to showSummaryForStrategy, not to calc...StrategyReturn (these are all set to F)
 
    print(paste0("* Statistics of the strategies (costs = ", round(100*costs,2), "% per year of turnover):"))
-   print(paste0("strategy   |  TR   |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score") )
-
+   print(paste0("strategy   |  TR   ", futureYears, " yrs: med, 5%| vol. alloc: avg, now|TO yrs| DD^2 | score") )
+   print("-----------+-------+--------------+-------+-------------+------+------+------")
+   
    showSummaryForStrategy("stocks", displayName="stocks    ", futureYears=futureYears, costs=0, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    
    if(detailed) {
       showSummaryForStrategy("constantAlloc80_20", displayName="80_20     ", futureYears=futureYears, costs=0, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+      print("-----------+-------+--------------+-------+-------------+------+------+------")
       showSummaryForStrategy(def$typicalCAPE1,     displayName="CAPE no h.", futureYears=futureYears, costs=costs, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
       showSummaryForStrategy(def$typicalCAPE2,     displayName="CAPE hyst ", futureYears=futureYears, costs=costs, 
@@ -542,6 +564,7 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost,
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
       showSummaryForStrategy(def$typicalDetrended2,displayName="detrended2", futureYears=futureYears, costs=costs, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+      print("-----------+-------+--------------+-------+-------------+------+------+------")
       showSummaryForStrategy(def$typicalBoll,      displayName="Bollinger ", futureYears=futureYears, costs=costs, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
       showSummaryForStrategy(def$typicalSMA1,       displayName="SMA 1     ", futureYears=futureYears, costs=costs, 
@@ -550,6 +573,7 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost,
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)   
       showSummaryForStrategy(def$typicalReversal,  displayName="reversal  ", futureYears=futureYears, costs=costs, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+      print("-----------+-------+--------------+-------+-------------+------+------+------")
    }
    showSummaryForStrategy(def$typicalValue,        displayName="value     ", futureYears=futureYears, costs=costs, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
