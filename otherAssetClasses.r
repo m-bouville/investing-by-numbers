@@ -59,7 +59,7 @@ createGoldStrategy <- function(strategyName="", goldAllocation=10, futureYears=d
    plotAssetClassesReturn(stratName1="stocks",            col1=def$colConstantAlloc, lwd1=2,
                           stratName2="gold",              col2="gold",               lwd2=2,
                           stratName3=def$typicalBalanced, col3=def$colBalanced,      lwd3=2,
-                          stratName4=strategyName,        col4="darkorange",                lwd4=2, 
+                          stratName4=strategyName,        col4="darkorange",         lwd4=2, 
                           startYear=1968.25, maxTR=50, 
                           pngOutput=F, pngName="figures/return_strategy_with_gold.png")
 }

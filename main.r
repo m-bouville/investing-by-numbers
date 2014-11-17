@@ -65,7 +65,7 @@ showForNewcomer <- function() {
 start <- function(dataSplit="none",           # "none" for all data, "search" and "testing" for half the data
                   extrapolateDividends=T,     # whether to extrapolate missing recent dividends (or remove incomplete months)
                   smoothConstantAlloc=F,      # calculates more constant-allocation portfolios, for smoother curves in plots
-                  downloadAndCheckAllFiles=T, # downloads data files even if they exist locally,
+                  downloadAndCheckAllFiles=F, # downloads data files even if they exist locally,
                                               #    to check whether they are up to date
                   futureYears=10L,            # to calculate the return over the next so many years
                   tradingCost=0.5/100,        # cost of turning the portfolio entirely 
@@ -80,6 +80,7 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
    source("utils.r")      # general functions (i.e. those not in another file)
    source("DD.r")         # drawdowns
    source("plotting.r")   # various functions that generate plots
+   source("inflation.r")
    
    # Strategies:
    source("CAPE.r")
@@ -131,8 +132,15 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
       dat$monthlyDifference[i] <<- dat$TRmonthly[i] - dat$bondsMonthly[i]
    }
    
+   addInflationToDat()
    addConstAllocToDat(smoothConstantAlloc, force=force)
    
+   if(newcomer) showForNewcomer()
+   
+   createTypicalStrategies(force=force)
+   
+   showSummaries()
+
    if(otherAssetClasses) 
       if (dat$numericDate[numData] < 1968) # if there are no data after 1968 in 'dat' (search mode) 
                                            #    then other asset classes are not available
@@ -141,27 +149,18 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
       else {
          source("otherAssetClasses.r")# gold and UK housing
          
-         if (!"gold" %in% colnames(dat) | !"gold" %in% stats$strategy | force) {
-            loadGoldData()
-            createGoldStrategy(futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, force=force)
-            message("Real gold prices were obtained from a local csv file.")
-         }
-         
          if (!"UKhousePrice" %in% colnames(dat) | !"UKhousePrice" %in% stats$strategy | downloadAndCheckAllFiles) {
             loadUKhousePriceData(downloadAndCheckAllFiles=downloadAndCheckAllFiles)
             createUKhousePriceStrategy(futureYears=def$futureYears, force=force)
             message("Real UK house prices were obtained from Nationwide; they are in pounds, and based on UK inflation.")
          }
+
+         if (!"gold" %in% colnames(dat) | !"gold" %in% stats$strategy | force) {
+            loadGoldData()
+            createGoldStrategy(futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, force=force)
+            message("Real gold prices were obtained from a local csv file.")
+         }
       }
-   
-#    if(!downloadAndCheckAllFiles)
-#       print( Sys.time() )
-      
-   if(newcomer) showForNewcomer()
-   
-   createTypicalStrategies(force=force)
-   
-   showSummaries()
    
    makeStringsFactors()
    
@@ -173,20 +172,9 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
                   " s to load files and for XLConnect." ) )
 }
 
-start(dataSplit="search", downloadAndCheckAllFiles=F, force=T)
-
-plotAllReturnsVsFour()
-
-# print("")
-# print("Running searchForOptimalBalanced() to optimize the \'balanced\' strategy.")
-# searchForOptimalBalanced(byF1=4.1, byF2=0.1)
-# plotAllReturnsVsFour(searchPlotType="line")
-
-
-## Zoomed-out version of the above plot:
-# plotAllReturnsVsFour(xMinVol=10, xMaxVol=20, xMinDD=0.15, xMaxDD=4.5, xMinAlloc=40, yMin=5)
-# plotReturnAndAlloc()
-# plotAssetClassesReturn()
+# start(dataSplit="search", futureYears=10L, downloadAndCheckAllFiles=F, force=T)
+# start(dataSplit="none",   futureYears=15L, downloadAndCheckAllFiles=F, force=T)
+# plotAllReturnsVsFour()
 
 
 ## Plotting to png files:
@@ -196,5 +184,3 @@ plotAllReturnsVsFour()
 #                      xMinAlloc=40, xMaxAlloc=100, xMinTO=0, xMaxTO=100, yMin=5, 
 #                      pngOutput=T, pngName="figures/return_vs_four_zoomed_out.png")
 #createStrategiesAndSavePlots()
-
-
