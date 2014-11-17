@@ -137,11 +137,14 @@ searchForOptimalSMA <- function(inputDF="dat", inputName="TR",
                                 minDelta=0, maxDelta=2, byDelta=0.5,  
                                 futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
                                 minTR=0, maxVol=20, maxDD2=2, minTO=1, minScore=14.9, 
-                                type="search", col=F, plotType="symbols", force=F) {
+                                type="search", col=F, plotType="symbols", 
+                                nameLength=23, plotEvery=def$plotEvery, force=F) {
    
    lastTimePlotted <- proc.time()
-   print(paste0("strategy           |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
-
+   print(paste0("strategy                |  TR   ", futureYears, 
+                " yrs: med, 5%| vol. alloc: avg, now|TO yrs| DD^2 | score") )
+   print("------------------------+-------+--------------+-------+-------------+------+------+------")
+   
    for ( SMA1 in seq(minSMA1, maxSMA1, by=bySMA1) ) 
       for ( SMA2 in seq(minSMA2, maxSMA2, by=bySMA2) )       
          for ( bear in seq(minBear, maxBear, by=byBear) ) {     
@@ -155,15 +158,16 @@ searchForOptimalSMA <- function(inputDF="dat", inputName="TR",
                                  bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
                                  strategyName=strategyName, force=force)                  
                showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
-                                      minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, force=F)
+                                      minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
+                                      nameLength=nameLength, force=F)
             }
-            if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > 5 ) { # we replot only if it's been a while
+            if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { # we replot only if it's been a while
                plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
                lastTimePlotted <- proc.time()
             }
          }
    print("")
-   showSummaryForStrategy(def$typicalSMA, costs=costs)
+   showSummaryForStrategy(def$typicalSMA, nameLength=nameLength, costs=costs)
    plotAllReturnsVsTwo(col=col, costs=costs, searchPlotType=plotType)
 }
 

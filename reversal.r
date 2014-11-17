@@ -23,6 +23,11 @@ setReversalDefaultValues <- function() {
    def$reversalBearish       <<- -50L
    def$reversalBullish       <<- -50L
    
+#    def$reversalAvgOver       <<- 6L
+#    def$reversalReturnToMean  <<- 5L
+#    def$reversalBearish       <<- 5L
+#    def$reversalBullish       <<- 6L
+   
    def$typicalReversal       <<- paste0("reversal_", def$reversalInputName, "_", 
                                         def$reversalAvgOver, "__", def$reversalReturnToMean, "_", 
                                         -def$reversalBearish, "_", -def$reversalBullish)
@@ -147,10 +152,12 @@ searchForOptimalReversal <-function(inputDF=def$reversalInputDF, inputName=def$r
                                     minDelta=0,  maxDelta=2, byDelta=0.5, 
                                     futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
                                     minTR=0, maxVol=20, maxDD2=5, minTO=1, minScore=14.8,
-                                    col=F, plotType="symbols", force=F) {
+                                    col=F, plotType="symbols", nameLength=25, plotEvery=def$plotEvery, force=F) {
    lastTimePlotted <- proc.time()  
-   print(paste0("strategy                 |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
-
+   print(paste0("strategy                  |  TR   ", futureYears, 
+                " yrs: med, 5%| vol. alloc: avg, now|TO yrs| DD^2 | score") )
+   print("--------------------------+-------+--------------+-------+-------------+------+------+------")
+   
    for ( avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver) ) 
       for ( RTM in seq(minRTM, maxRTM, by=byRTM) ) 
          for ( bear in seq(minBear, maxBear, by=byBear) ) {     
@@ -163,14 +170,15 @@ searchForOptimalReversal <-function(inputDF=def$reversalInputDF, inputName=def$r
                                       bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
                                       strategyName=strategyName, force=force)                  
                showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
-                                      minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, force=F)
+                                      minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
+                                      nameLength=nameLength, force=F)
             }
-         if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > 5 ) { # we replot only if it's been a while
+         if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { # we replot only if it's been a while
             plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
             lastTimePlotted <- proc.time()
          }
       }
    print("")
-   showSummaryForStrategy(def$typicalReversal, costs=costs)
+   showSummaryForStrategy(def$typicalReversal, nameLength=nameLength, costs=costs)
    plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
 }

@@ -111,14 +111,10 @@ calcCAPEsignalWithHysteresis <- function(CAPEname, hystLoopWidthMidpoint=def$hys
    processedCAPE <- numeric(numData)
       
    ## Initializing CAPEgoingUp
-   if ( CAPEinput[startIndex] <= (bullish+bearish)/2 ) { # if CAPE is low, 
-      #       moving <- T                                   # we consider that we are going up
-      processedCAPE[startIndex] <- signalMax                     # we consider that we should be in stocks
-   } else {
-      #       moving <- T
-      processedCAPE[startIndex] <- signalMin
-   }
-#    processedCAPE[startIndex] <- 0.5
+   if ( CAPEinput[startIndex] <= (bullish+bearish)/2 ) # if CAPE is low, 
+      processedCAPE[startIndex] <- signalMax           # we consider that we should be in stocks
+    else 
+       processedCAPE[startIndex] <- signalMin
    
    for (i in (startIndex+1):numData) {
       if( CAPEinput[i]<bearish & processedCAPE[i-1]>signalMax-0.01 )
@@ -130,41 +126,8 @@ calcCAPEsignalWithHysteresis <- function(CAPEname, hystLoopWidthMidpoint=def$hys
          if (processedCAPE[i] <= signalMin) processedCAPE[i] <- signalMin
          if (processedCAPE[i] >= signalMax) processedCAPE[i] <- signalMax
       }
-   }
-   
-#    for (i in (startIndex+1):numData) {
-#       if( CAPEinput[i]>bearish & CAPEgoingUp ) {
-#          processedCAPE[i] <- processedCAPE[i-1] - (CAPEinput[i]-CAPEinput[i-1]) * slope
-#          if (processedCAPE[i] <= signalMin) { # if we went down below signalMin
-#             processedCAPE[i] <- signalMin     # we saturate processedCAPE at signalMin
-#             CAPEgoingUp <- F                  # we get ready for the CAPE to go down
-#          }         
-#       } else if( CAPEinput[i]<bullish & !CAPEgoingUp ) {
-#          processedCAPE[i] <- processedCAPE[i-1] - (CAPEinput[i]-CAPEinput[i-1]) * slope         
-#          if (processedCAPE[i] >= signalMax) { # if we went up abobe signalMax
-#             processedCAPE[i] <- signalMax     # we saturate processedCAPE at signalMax
-#             CAPEgoingUp <- T                  # we get ready for the CAPE to go up
-#          }
-#       } else processedCAPE[i] <- processedCAPE[i-1]   
-#    }
-   #    print(tail(processedCAPE))
-
-#    plot(dat$numericDate[dateRange], processedCAPE[dateRange], type="l")
-#    par(new=T)
-#    plot(dat$numericDate[dateRange], CAPEinput[dateRange], type="l", col="blue")
-#    par(new=F)
-   
-#        plot(CAPEinput[dateRange], processedCAPE[dateRange], type="l", xlim=c(5,30))
-
+   } 
    signal[dateRange, strategyName] <<- processedCAPE[dateRange]
-   
-#    isZero <- tan ( pi * ( -signalMin / (signalMax - signalMin) - 1/2 ) ) 
-#    isOne <- tan ( pi * ( (1-signalMin) / (signalMax - signalMin) - 1/2 ) )
-#    a <- (isOne-isZero) / (bullish-bearish)
-#    b <- isOne - a * bullish
-#    signal[1:(startIndex-1), strategyName] <<- NA  
-#    signal[dateRange, strategyName] <<- ( atan( a * processedCAPE[dateRange] + b ) / pi + .5 ) * 
-#       (signalMax - signalMin) + signalMin   
 }
 
 
@@ -244,19 +207,21 @@ createCAPEstrategy <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver
 }
 
 
-searchForOptimalCAPEwithoutHysteresis <-function(minYears=10L, maxYears=10L, byYears=1L, cheat=2, 
-                                                 minAvgOver=32L, maxAvgOver=36L, byAvgOver=1L, 
-                                                 minBear=20, maxBear=22,  byBear=0.2, 
-                                                 minDelta=0, maxDelta=0.4, byDelta=0.2, 
-                                                 futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
-                                                 minTR=0, maxVol=20, maxDD2=5, minTO=5, minScore=12.1,
-                                                 coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
-                                                 CPUnumber=def$CPUnumber, col=F, plotType="symbols", force=F) {
+searchForOptimalCAPEwithoutHysteresis <-function
+      (minYears=10L, maxYears=10L, byYears=1L, cheat=2, 
+       minAvgOver=32L, maxAvgOver=36L, byAvgOver=1L, 
+       minBear=20, maxBear=22,  byBear=0.2, 
+       minDelta=0, maxDelta=0.4, byDelta=0.2, 
+       futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
+       minTR=0, maxVol=20, maxDD2=5, minTO=5, minScore=12.1,
+       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
+       CPUnumber=def$CPUnumber, col=F, plotType="symbols", nameLength=21, plotEvery=def$plotEvery, force=F) {
    
    lastTimePlotted <- proc.time()
-   print(paste0("strategy           |  TR  |", futureYears, 
-                " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score") )
-
+   print(paste0("strategy              |  TR   ", futureYears, 
+                " yrs: med, 5%| vol. alloc: avg, now|TO yrs| DD^2 | score") )
+   print("----------------------+-------+--------------+-------+-------------+------+------+------")
+   
    for (years in seq(minYears, maxYears, by=byYears)) {
          calcCAPE(years=years, cheat=cheat)
          for (avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver)) {
@@ -271,9 +236,10 @@ searchForOptimalCAPEwithoutHysteresis <-function(minYears=10L, maxYears=10L, byY
                                      hysteresis=F, type="search", futureYears=futureYears, force=force)
                   showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
                                          minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, 
-                                         minScore=minScore, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=F)
+                                         minScore=minScore, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, 
+                                         nameLength=nameLength, force=F)
                }
-               if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > 5 ) { # we replot only if it's been a while
+               if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { # we replot only if it's been a while
                   plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
                   lastTimePlotted <- proc.time()
                }
@@ -281,24 +247,25 @@ searchForOptimalCAPEwithoutHysteresis <-function(minYears=10L, maxYears=10L, byY
          }
       }
    print("")
-   showSummaryForStrategy(def$typicalCAPE1, costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
-#   showSummaryForStrategy(def$typicalCAPE2, costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
+   showSummaryForStrategy(def$typicalCAPE1, costs=costs, nameLength=nameLength, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
    plotAllReturnsVsTwo(col=col, costs=costs, searchPlotType=plotType)
 }
 
 searchForOptimalCAPEwithHysteresis <-function(minYears=10L, maxYears=10L, byYears=1L, cheat=2, 
-                                              minAvgOver=33L,maxAvgOver=35L, byAvgOver=1L, 
-                                              minMid =19.0,  maxMid =19.4,  byMid = .2, 
-                                              minWidth=5.8,  maxWidth=7.2,  byWidth=.2,
-                                              minSlope=2.0,  maxSlope=2.6,  bySlope=.2, 
-                                              futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
-                                              minTR=0, maxVol=20, maxDD2=5, minTO=5, minScore=13.02,
-                                              coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
-                                              CPUnumber=def$CPUnumber, col=F, plotType="symbols", force=F) {
+       minAvgOver=33L,maxAvgOver=35L, byAvgOver=1L, 
+       minMid =19.0,  maxMid =19.4,  byMid = .2, 
+       minWidth=5.8,  maxWidth=7.2,  byWidth=.2,
+       minSlope=2.0,  maxSlope=2.6,  bySlope=.2, 
+       futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
+       minTR=0, maxVol=20, maxDD2=5, minTO=5, minScore=13.02,
+       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
+       CPUnumber=def$CPUnumber, col=F, plotType="symbols", 
+       nameLength=30, plotEvery=def$plotEvery, force=F) {
    
    lastTimePlotted <- proc.time()
-   print(paste0("strategy                     |  TR  |", futureYears, 
-                " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score") )
+   print(paste0("strategy                       |  TR   ", futureYears, 
+                " yrs: med, 5%| vol. alloc: avg, now|TO yrs| DD^2 | score") )
+   print("-------------------------------+-------+--------------+-------+-------------+------+------+------")
    
    for (years in seq(minYears, maxYears, by=byYears)) {
       calcCAPE(years=years, cheat=cheat)
@@ -319,9 +286,10 @@ searchForOptimalCAPEwithHysteresis <-function(minYears=10L, maxYears=10L, byYear
                                      hysteresis=T, type="search", futureYears=futureYears, force=force)
                   showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
                                          minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
-                                         coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=F)
+                                         coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, 
+                                         nameLength=nameLength, force=F)
                }
-               if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > 5 ) { # we replot only if it's been a while
+               if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { # we replot only if it's been a while
                   plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
                   lastTimePlotted <- proc.time()
                }
@@ -329,8 +297,7 @@ searchForOptimalCAPEwithHysteresis <-function(minYears=10L, maxYears=10L, byYear
       }
    }
    print("")
-#   showSummaryForStrategy(def$typicalCAPE1, costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
-   showSummaryForStrategy(def$typicalCAPE2, costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
+   showSummaryForStrategy(def$typicalCAPE2, costs=costs, nameLength=nameLength, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
    plotAllReturnsVsTwo(col=col, searchPlotType=plotType, costs=costs)
 }
 

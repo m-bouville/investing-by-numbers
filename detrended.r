@@ -146,10 +146,14 @@ searchForOptimalDetrended <- function(inputDF=def$detrendedInputDF, inputName=de
                                       futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
                                       minTR=0, maxVol=20, maxDD2=5, minTO=4, minScore=14.2, 
                                       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, col=F, 
-                                      plotType="symbols", CPUnumber=def$CPUnumber, force=F) {
+                                      plotType="symbols", CPUnumber=def$CPUnumber, 
+                                      nameLength=28, plotEvery=def$plotEvery, force=F) {
    
    lastTimePlotted <- proc.time()
-   print(paste0("strategy                     |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score") )
+   print(paste0("strategy                     |  TR   ", futureYears, 
+                " yrs: med, 5%| vol. alloc: avg, now|TO yrs| DD^2 | score") )
+   print("-----------------------------+-------+--------------+-------+-------------+------+------+------")
+
    detrendedName <- paste0("detrended_", inputName)
    calcDetrended(inputDF=inputDF, inputName=inputName, detrendedName) 
    
@@ -167,18 +171,19 @@ searchForOptimalDetrended <- function(inputDF=def$detrendedInputDF, inputName=de
             
             showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
                                    minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, 
-                                   minScore=minScore, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=F)
+                                   minScore=minScore, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, 
+                                   nameLength=nameLength, force=F)
             
          }
-         if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > 5 ) { # we replot only if it's been a while
+         if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { # we replot only if it's been a while
             plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
             lastTimePlotted <- proc.time()
          }
       }
    }
    print("")
-   showSummaryForStrategy(def$typicalDetrended1, costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
-   showSummaryForStrategy(def$typicalDetrended2, costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
+   showSummaryForStrategy(def$typicalDetrended1, costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, nameLength=nameLength)
+   showSummaryForStrategy(def$typicalDetrended2, costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, nameLength=nameLength)
    plotAllReturnsVsTwo(col=col, costs=costs, searchPlotType=plotType)
 }
 
@@ -271,5 +276,3 @@ plotFutureReturnVsDetrended <- function(futureYears=def$futureYears) {
             
    }
 }
-
-# plotFutureReturnVsDetrended()

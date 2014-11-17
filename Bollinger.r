@@ -16,13 +16,13 @@
 
 #default values of parameters:
 setBollDefaultValues <- function() {
-   def$BollInputDF          <<- "dat"
-   def$BollInputName        <<- "TR"
-   def$BollAvgOver          <<- 14L
-   def$BollBearish          <<- -31
-   def$BollBullish          <<- -31
-   def$typicalBoll          <<- paste0("Boll_", def$BollInputName, "_", def$BollAvgOver, "__", 
-                                       -def$BollBearish, "_", def$BollBullish)
+   def$BollInputDF    <<- "dat"
+   def$BollInputName  <<- "TR"
+   def$BollAvgOver    <<- 14L
+   def$BollBearish    <<- -31
+   def$BollBullish    <<- -31
+   def$typicalBoll    <<- paste0("Boll_", def$BollInputName, "_", def$BollAvgOver, "__", 
+                                 -def$BollBearish, "_", def$BollBullish)
 }
 
 calcBollSignal <- function(inputDF=def$BollInputDF, inputName=def$BollInputName, avgOver=def$BollAvgOver, 
@@ -41,7 +41,6 @@ calcBollSignal <- function(inputDF=def$BollInputDF, inputName=def$BollInputName,
    else if (inputDF=="next30yrs")  input <- next30yrs[, inputName]
    else stop("data frame ", inputDF, " not recognized")
    
-   #    time1 <- proc.time()
    if ( !(avgName %in% colnames(dat)) | !(SDname %in% colnames(dat)) | force) {# if data do not exist yet or we force recalculation:
       addNumColToDat(avgName)
       addNumColToDat(SDname)
@@ -52,9 +51,7 @@ calcBollSignal <- function(inputDF=def$BollInputDF, inputName=def$BollInputName,
          dat[i, SDname]  <<-   sd(input[(i-avgOver+1):i])
       }
    }      
-   #    print( c( "Bollinger - calc-avg-&SD time:", round(summary(proc.time())[[1]] - time1[[1]] , 2) ) )
-   
-   #    time1 <- proc.time()    
+
    if ( !(strategyName %in% colnames(signal)) | force) {# if data do not exist yet or we force recalculation:
       rawSignal <- numeric(numData)
       rawSignal <- (input - dat[, avgName]) / dat[, SDname]
@@ -78,25 +75,18 @@ createBollStrategy <- function(inputDF=def$BollInputDF, inputName=def$BollInputN
    bullish <- bullish/100
    
    if (!(strategyName %in% colnames(TR)) | force) { # if data do not exist yet or we force recalculation:   
-      #       time0 <- proc.time()
       calcBollSignal(inputDF=inputDF, inputName=inputName, avgOver=avgOver, 
                      bearish=bearish, bullish=bullish, 
                      signalMin=signalMin, signalMax=signalMax,
                      strategyName=strategyName, force=force)
-      #       print( c( "Bollinger - calcBollSignal() time:", round(summary(proc.time())[[1]] - time0[[1]] , 2) ) )
-      
-      #       time0 <- proc.time()
+
       calcAllocFromSignal(strategyName)
-      #       print( c( "Bollinger - calcAllocFromSignal() time:", round(summary(proc.time())[[1]] - time0[[1]] , 2) ) )
-            
-      #       time0 <- proc.time()
+
       addNumColToTR(strategyName)
       startIndex <- sum(is.na(alloc[, strategyName])) + 1
       calcStrategyReturn(strategyName, startIndex)
-      #       print( c( "Bollinger - calcStrategyReturn() time:", round(summary(proc.time())[[1]] - time0[[1]] , 2) ) )
    }
    
-#    time0 <- proc.time()
    if ( !(strategyName %in% parameters$strategy) | force) {
       if ( !(strategyName %in% parameters$strategy) ) {
          parameters[nrow(parameters)+1, ] <<- NA
@@ -131,11 +121,13 @@ searchForOptimalBoll <- function(inputDF="dat", inputName="TR",
                                  minBull   =-34, maxBull   =-30, byBull= 0.5, 
                                  futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, type="search", 
                                  minTR=0, maxVol=20, maxDD2=4, minTO=1, minScore=14.78,
-                                 col=F, plotType="symbols", force=F) {
+                                 col=F, plotType="symbols", nameLength=def$plotEvery, plotEvery=10, force=F) {
    
    lastTimePlotted <- proc.time()
-   print(paste0("strategy         |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score") )
-
+   print(paste0("strategy             |  TR   ", futureYears, 
+                " yrs: med, 5%| vol. alloc: avg, now|TO yrs| DD^2 | score") )
+   print("---------------------+-------+--------------+-------+-------------+------+------+------")
+   
    for ( avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver) ) {
       for ( bear in seq(minBear, maxBear, by=byBear) ) {      
          for ( bull in seq(minBull, maxBull, by=byBull) ) {
@@ -148,17 +140,18 @@ searchForOptimalBoll <- function(inputDF="dat", inputName="TR",
                                   strategyName=strategyName, futureYears=futureYears, force=force)
                
                showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
-                                      minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, force=F)
+                                      minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
+                                      nameLength=nameLength, force=F)
             }
          }
-         if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > 5 ) { # we replot only if it's been a while
+         if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { # we replot only if it's been a while
             plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
             lastTimePlotted <- proc.time()
          }
       }
    }
    print("")
-   showSummaryForStrategy(def$typicalBoll, costs=costs)
+   showSummaryForStrategy(def$typicalBoll, nameLength=nameLength, costs=costs)
    plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
 }
 
