@@ -13,33 +13,32 @@
 
 
 # Add numeric column to DF if column does not already exist
-addNumColToDat <- function(colName) {
+addNumColToDat    <- function(colName) {
    if (!colName %in% colnames(dat)) dat[, colName] <<- numeric(numData)
 }
 addNumColToSignal <- function(colName) {
    if (!colName %in% colnames(signal)) signal[, colName] <<- numeric(numData)
 }
-addNumColToAlloc <- function(colName) {
+addNumColToAlloc  <- function(colName) {
    if (!colName %in% colnames(alloc)) alloc[, colName] <<- numeric(numData)
 }
-addNumColToTR <- function(colName) {
+addNumColToTR     <- function(colName) {
    if (!colName %in% colnames(TR)) TR[, colName] <<- numeric(numData)
 }
 
 # Stop if column does not exist in DF
-requireColInDat <- function(colName) {
+requireColInDat    <- function(colName) {
    if (!colName %in% colnames(dat)) stop(paste0("dat$", colName, " does not exist."))
 }
 requireColInSignal <- function(colName) {
    if (!colName %in% colnames(signal)) stop(paste0("signal$", colName, " does not exist."))
 }
-requireColInAlloc <- function(colName) {
+requireColInAlloc  <- function(colName) {
    if (!colName %in% colnames(alloc)) stop(paste0("alloc$", colName, " does not exist."))
 }
-requireColInTR <- function(colName) {
+requireColInTR     <- function(colName) {
    if (!colName %in% colnames(TR)) stop(paste0("TR$", colName, " does not exist."))
 }
-
 
 calcNext5YrsReturn  <- function(strategyName, force=F) {
    if (!strategyName %in% colnames(next5yrs) | force) {
@@ -465,7 +464,9 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
 showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def$futureYears, costs, 
                                    minTR=0, maxVol=Inf, maxDD2=Inf, minTO=0, minScore=-Inf, 
                                    coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
-                                   coeffEntropy=0, force=F) {
+                                   coeffEntropy=0, nameLength=10, force=F) {
+   
+   library(stringr)
    
    if ( !(strategyName %in% stats$strategy) )
       calcStatisticsForStrategy(strategyName, futureYears=futureYears, costs=costs,
@@ -488,22 +489,24 @@ showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def
    ret  <- 100*(stats$TR[index] - TOcost) 
    vol  <- 100*stats$volatility[index]
    med  <- 100*(stats[index, medianName] - TOcost) 
-   five <- 100*(stats[index, fiveName] - TOcost) 
+   five <- round(100*(stats[index, fiveName] - TOcost), 1)
    DD2  <- stats$DD2[index]
    score<- stats$score[index] 
    if(coeffEntropy > 0)
       score <- score + coeffEntropy * (stats$entropy[index] - 1) 
 
-   if (round(10*ret,1)%%1 == 0) retPad = " "
+   if (ret%%1 == 0) retPad = "   "    # no decimals
+   else if (round(10*ret,1)%%1 == 0) retPad = " "  # single decimal
       else retPad = ""
+   
    if (round(vol,1)%%1 == 0) volPad = "  "
       else volPad = ""
    if (round(med,1)%%1 == 0) medPad = "  "
       else medPad = ""
    
-   if (five < 0) fivePad1 = ""   # allow room for the minus sign
+   if ( five < 0 ) fivePad1 = ""   # allow room for the minus sign
       else fivePad1 = " " 
-   if (round(abs(five),1)%%1 == 0) fivePad2 = "  " # no decimals
+   if ( abs(five)%%1 == 0) fivePad2 = "  " # no decimals
       else fivePad2 = ""
    
    if (avgAlloc == 100) avgAllocPad = ""
@@ -525,15 +528,17 @@ showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def
          else TOpad2 = ""
    }
    
-   if ((10*round(DD2,2))%%1 == 0) DD2Pad = " "
+   if ((round(DD2,2))%%1 == 0) DD2Pad = "   " # no decimals
+   else if ((10*round(DD2,2))%%1 == 0) DD2Pad = " " # single decimal
       else DD2Pad = ""
    
    if (score>=10) scorePad = ""
    else scorePad = " "
    
    if(ret>minTR & vol<maxVol & DD2<maxDD2 & TO>minTO & score>minScore) 
-      print(paste0(displayName, " | ", round(ret,2), retPad, "% |   ", 
-                   round(med,1), medPad, "%,", fivePad1, round(five,1), fivePad2, "% | ",
+      print(paste0(str_pad(displayName, nameLength, side = "right"), " | ", 
+                   round(ret,2), retPad, "% |   ", 
+                   round(med,1), medPad, "%,", fivePad1, five, fivePad2, "% | ",
                    round(vol,1), volPad, "% |  ",
                    avgAllocPad, round(avgAlloc), "%, ", latestAllocPad, round(latestAlloc), "% | ",
                    TOpad1, round(TO, 1), TOpad2, " | ",
