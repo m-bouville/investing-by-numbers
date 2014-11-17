@@ -73,17 +73,6 @@ calcCombinedStrategySignal_weighted <- function(inputStrategyName1, inputStrateg
    else error("One of fraction1 and fraction2 must be > 0.")
    if(fraction3!=0) signal[, strategyName] <<- signal[, strategyName] + fraction3*signal[, inputStrategyName3] 
    if(fraction4!=0) signal[, strategyName] <<- signal[, strategyName] + fraction4*signal[, inputStrategyName4] 
-   
-#       if(fraction4==0) {
-#          if(fraction3==0) # weigthed average with only fractions 1 and 2
-#             signal[, strategyName] <<- fraction1*signal[, inputStrategyName1] + fraction2*signal[, inputStrategyName2]
-#          else # weigthed average with only the first three fractions  
-#             signal[, strategyName] <<- fraction1*signal[, inputStrategyName1] + 
-#             fraction2*signal[, inputStrategyName2] + fraction3*signal[, inputStrategyName3]
-#       }
-#       else # weigthed average with all four fractions
-#          signal[, strategyName] <<- fraction1*signal[, inputStrategyName1] + fraction2*signal[, inputStrategyName2] + 
-#          fraction3*signal[, inputStrategyName3] + fraction4*signal[, inputStrategyName4] 
    }
 }
 
@@ -340,7 +329,7 @@ searchForOptimalCombined <- function
        minTR=0, maxVol=20, maxDD2=5, minTO=0, minScore=0, 
        coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
        CPUnumber=def$CPUnumber, plotType="dots", 
-       col, combineMode="weighted", force=F) {
+       col, combineMode="weighted", nameLength, plotEvery=def$plotEvery, force=F) {
   
    lastTimePlotted <- proc.time()
    
@@ -390,8 +379,8 @@ searchForOptimalCombined <- function
                   showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
                                          minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
                                          coeffEntropy=coeffEntropy, coeffTR=coeffTR, 
-                                         coeffVol=coeffVol, coeffDD2=coeffDD2, force=F)
-                  if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > 5 ) { # we replot only if it's been a while
+                                         coeffVol=coeffVol, coeffDD2=coeffDD2, nameLength=nameLength, force=F)
+                  if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { # we replot only if it's been a while
                      plotAllReturnsVsTwo(col=col, searchPlotType=plotType, costs=costs)
                      lastTimePlotted <- proc.time()
                   }
@@ -413,18 +402,20 @@ searchForOptimalTechnical <- function
           type="search", subtype="technical", coeffEntropy=def$coeffEntropy, 
           minTR=8, maxVol=16, maxDD2=1.2, minTO=1, minScore=16.2,
           col=F, CPUnumber=def$CPUnumber, plotType="dots", 
-          combineMode="weighted", force=F) {
+          combineMode="weighted", nameLength=22, plotEvery=def$plotEvery, force=F) {
 
-print(paste0("strategy              |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score  ") )
+   print(paste0("strategy               |  TR   ", futureYears, " yrs: med, 5%| vol. alloc: avg, now|TO yrs| DD^2 | score") )
+   print("-----------------------+-------+--------------+-------+-------------+------+------+------")
    searchForOptimalCombined(inputStrategyName1=inputStrategyName1, inputStrategyName2=inputStrategyName2,
-                            inputStrategyName3=inputStrategyName3, inputStrategyName4=inputStrategyName4, 
-                            minF1=minF1, maxF1=maxF1, byF1=byF1, minF2=minF2, maxF2=maxF2, byF2=byF2, 
-                            minF3=minF3, maxF3=maxF3, byF3=byF3, minF4=minF4, maxF4=maxF4, 
-                            futureYears=futureYears, costs=costs, type=type, subtype=subtype,  coeffEntropy=coeffEntropy,
-                            minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore,
-                            col=col, CPUnumber=CPUnumber, plotType=plotType, combineMode=combineMode, force=force) 
+        inputStrategyName3=inputStrategyName3, inputStrategyName4=inputStrategyName4, 
+        minF1=minF1, maxF1=maxF1, byF1=byF1, minF2=minF2, maxF2=maxF2, byF2=byF2, 
+        minF3=minF3, maxF3=maxF3, byF3=byF3, minF4=minF4, maxF4=maxF4, 
+        futureYears=futureYears, costs=costs, type=type, subtype=subtype,  coeffEntropy=coeffEntropy,
+        minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore,
+        col=col, CPUnumber=CPUnumber, plotType=plotType, combineMode=combineMode, 
+        nameLength=nameLength, plotEvery=plotEvery, force=force) 
    print("")
-   showSummaryForStrategy(def$typicalTechnical, coeffEntropy=coeffEntropy, costs=costs)
+   showSummaryForStrategy(def$typicalTechnical, coeffEntropy=coeffEntropy, nameLength=nameLength, costs=costs)
 }
 
 searchForOptimalValue <- function
@@ -435,32 +426,37 @@ searchForOptimalValue <- function
        futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
        type="search", subtype="value", coeffEntropy=def$coeffEntropy, 
        minTR=0, maxVol=20, maxDD2=2, minTO=4, minScore=14.78,
-       col=F, CPUnumber=def$CPUnumber, plotType="dots", combineMode="weighted", force=F) {
+       col=F, CPUnumber=def$CPUnumber, plotType="dots", combineMode="weighted", 
+       nameLength=17, plotEvery=def$plotEvery, force=F) {
     
-   print(paste0("strategy          |  TR   |", futureYears, " yrs: med, 5% | vol.  |alloc: avg, now|TO yrs| DD^2 | score") )
+   print(paste0("strategy          |  TR   ", futureYears, " yrs: med, 5%| vol. alloc: avg, now|TO yrs| DD^2 | score") )
+   print("------------------+-------+--------------+-------+-------------+------+------+------")
    searchForOptimalCombined(inputStrategyName1=inputStrategyName1, inputStrategyName2=inputStrategyName2,
                             inputStrategyName3=inputStrategyName3, inputStrategyName4=inputStrategyName4, 
                             minF1=minF1, maxF1=maxF1, byF1=byF1, minF2=minF2, maxF2=maxF2, byF2=byF2, 
                             minF3=minF3, maxF3=maxF3, byF3=byF3, minF4=minF4, maxF4=maxF4, 
                             futureYears=futureYears, costs=costs, type=type, subtype=subtype, coeffEntropy=coeffEntropy, 
                             minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore,
-                            col=col, CPUnumber=CPUnumber, plotType=plotType, combineMode=combineMode, force=force) 
+                            col=col, CPUnumber=CPUnumber, plotType=plotType, combineMode=combineMode, 
+                            nameLength=nameLength, plotEvery=plotEvery, force=force) 
    print("")
-   showSummaryForStrategy(def$typicalValue,  coeffEntropy=coeffEntropy, costs=costs)
+   showSummaryForStrategy(def$typicalValue, coeffEntropy=coeffEntropy, nameLength=nameLength, costs=costs)
 }
 
-searchForOptimalBalanced <- function
-      (inputStrategyName1=def$typicalTechnical, inputStrategyName2=def$typicalValue, 
+searchForOptimalBalanced <- function(
+      inputStrategyName1=def$typicalTechnical, inputStrategyName2=def$typicalValue, 
        inputStrategyName3="", inputStrategyName4="", 
-       minF1=20L, maxF1=100L, byF1=1L, minF2=24L, maxF2=100L, byF2=1L, 
+       minF1=20L, maxF1=100L, byF1=2L, minF2=20L, maxF2=100L, byF2=1L, 
        minF3=0L, maxF3=0L, byF3=1L, minF4=0L, maxF4=0L, 
        futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
        type="search", subtype="balanced", speed=0, coeffEntropy=def$coeffEntropy, 
        minTR=5, maxVol=20, maxDD2=2.5, minTO=1.5, minScore=14.65,
        col=F, CPUnumber=def$CPUnumber, plotType="line", 
-       combineMode="weighted", force=F) {
-   totTime <- proc.time()
-   print(paste0("strategy       |  TR  |", futureYears, " yrs: med, 5%| vol.  |alloc: avg, now|TO yrs| DD^2 | score") )
+       combineMode="weighted", nameLength=15, plotEvery=def$plotEvery, force=F) {
+
+        # totTime <- proc.time()
+   print(paste0("strategy        |  TR   ", futureYears, " yrs: med, 5%| vol. alloc: avg, now|TO yrs| DD^2 | score") )
+   print("----------------+-------+--------------+-------+-------------+------+------+------")
    
    searchForOptimalCombined(inputStrategyName1=inputStrategyName1, inputStrategyName2=inputStrategyName2,
                             inputStrategyName3=inputStrategyName3, inputStrategyName4=inputStrategyName4, 
@@ -469,10 +465,11 @@ searchForOptimalBalanced <- function
                             futureYears=futureYears, costs=costs, 
                             type=type, subtype=subtype, speed=speed, coeffEntropy=coeffEntropy,
                             minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore,
-                            col=col, CPUnumber=CPUnumber, plotType=plotType, combineMode=combineMode, force=force) 
+                            col=col, CPUnumber=CPUnumber, plotType=plotType, combineMode=combineMode, 
+                            nameLength=nameLength, plotEvery=plotEvery, force=force) 
    print("")
-   showSummaryForStrategy(def$typicalBalanced, costs=costs, coeffEntropy=coeffEntropy)
+   showSummaryForStrategy(def$typicalBalanced, costs=costs, coeffEntropy=coeffEntropy, nameLength=nameLength)
    
-   print( paste("time for searchForOptimalBalanced():", round(summary(proc.time())[[3]] - totTime[[3]] , 2), " s." ) )   
+   #print( paste("time for searchForOptimalBalanced():", round(summary(proc.time())[[3]] - totTime[[3]] , 2), " s." ) )   
 }
 

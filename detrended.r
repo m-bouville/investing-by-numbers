@@ -172,8 +172,7 @@ searchForOptimalDetrended <- function(inputDF=def$detrendedInputDF, inputName=de
             showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
                                    minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, 
                                    minScore=minScore, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, 
-                                   nameLength=nameLength, force=F)
-            
+                                   nameLength=nameLength, force=F)            
          }
          if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { # we replot only if it's been a while
             plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
