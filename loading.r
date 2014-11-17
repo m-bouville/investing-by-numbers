@@ -32,7 +32,8 @@ setDefaultValues <- function(dataSplit, futureYears=10L, tradingCost=0.5/100, fo
    def$startIndex    <<- round(10.5*12+1)
    def$plotStartYear <<- (def$startIndex-1)/12+def$dataStartYear
    
-   def$CPUnumber     <<- 1 # Parallelization does not work
+   def$CPUnumber     <<-  1 # Parallelization does not work
+   def$plotEvery     <<- 10 # replot every n seconds when searchnig for parameters
    
    ## coefficients to calculate the score
    def$coeffTR       <<- 0.6

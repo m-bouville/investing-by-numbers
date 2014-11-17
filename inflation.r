@@ -23,44 +23,6 @@ setInflationDefaultValues <- function() {
 }
 
 
-addInflationDerivativesToDat <- function() {
-   ## derivatives
-   addNumColToDat("derivative5yrInflation5yr")
-   months <- 2*12*5
-   dat$derivative5yrInflation5yr[1:months]   <<- NA
-   dat$derivative5yrInflation5yr[(months+1):numData] <<- 
-      dat$inflation5yr[(months+1):numData] - dat$inflation5yr[((months+1):numData)-12*5]
-   
-   addNumColToDat("derivative7.5yrInflation7.5yr")
-   dat$derivative7.5yrInflation7.5yr[1:(12*15)]   <<- NA
-   dat$derivative7.5yrInflation7.5yr[(12*15+1):numData] <<- 
-      dat$inflation7.5yr[(12*15+1):numData] - dat$inflation7.5yr[((12*15+1):numData)-12*7.5]
-   
-   addNumColToDat("derivative10yrInflation10yr")
-   dat$derivative10yrInflation10yr[1:(12*20)]   <<- NA
-   dat$derivative10yrInflation10yr[(12*20+1):numData] <<- 
-      dat$inflation10yr[(12*20+1):numData] - dat$inflation10yr[((12*20+1):numData)-12*10]
-   
-   ## 2nd derivatives
-   addNumColToDat("inflation2ndDerivative5yr")
-   dat$inflation2ndDerivative5yr[1:(12*20)]   <<- NA
-   dat$inflation2ndDerivative5yr[(12*20+1):numData] <<- 
-      dat$inflationDerivative5yr[(12*20+1):numData] - 
-      dat$inflationDerivative5yr[((12*20+1):numData)-12*10]
-   
-   addNumColToDat("inflation2ndDerivative7.5yr")
-   dat$inflation2ndDerivative7.5yr[1:(12*30)]   <<- NA
-   dat$inflation2ndDerivative7.5yr[(12*30+1):numData] <<- 
-      dat$inflationDerivative7.5yr[(12*30+1):numData] - 
-      dat$inflationDerivative7.5yr[((12*30+1):numData)-12*15]
-   
-   addNumColToDat("inflation2ndDerivative10yr")
-   dat$inflation2ndDerivative10yr[1:(12*40)]   <<- NA
-   dat$inflation2ndDerivative10yr[(12*40+1):numData] <<- 
-      dat$inflationDerivative10yr[(12*40+1):numData] - 
-      dat$inflationDerivative10yr[((12*40+1):numData)-12*20]
-}
-
 addInflationToFutureReturns <- function() {   
    months   <- def$futureYears*12
    newRange <- 1:(numData-months)
@@ -142,14 +104,68 @@ addInflationToFutureReturns <- function() {
 #       next15yrs$inflation2ndDerivative15yrRescaled  <<- inflation2ndDerivative15yrRescaledBuff 
    }      
 }
+
+
+calcInflationDerivativeAndAddToDat <- function(inflationYears, derivativeYears) {
    
+   inflationName <- paste0("inflation",inflationYears,"yr")
+   if ( (!inflationName %in% colnames(dat)) || (!inflationName %in% colnames(TR)) ) {
+      print(paste("Calculating inflation over", inflationYears, "years.") )
+      calcInflationAndAddToDat(inflationYears)
+   }
+   
+   inflationMonths  <- inflationYears *12
+   derivativeMonths <- derivativeYears*12
+   months <- inflationMonths+derivativeMonths
+   
+   derivativeBuff <- numeric(numData)
+   derivativeBuff[1:months] <- NA
+   
+   for ( index in months:numData ) {
+      dateRange <- (index-derivativeMonths+1):index
+      fitPara <- regression(dat$numericDate[dateRange], dat[dateRange, inflationName])
+      derivativeBuff[index] <- fitPara[[2]]
+   }
+   
+   # adding to 'dat'
+   derivativeName <- paste0("derivative", derivativeYears, "yrInflation", inflationYears,"yr")
+   addNumColToDat(derivativeName)
+   dat[derivativeName] <<- derivativeBuff
+   
+   # dummy for plotReturnSideways()
+   TR[derivativeName] <<- numeric(numData)
+}
+
+addInflationDerivativesToDat <- function() {
+   
+   calcInflationDerivativeAndAddToDat(inflationYears= 5, derivativeYears= 5)
+   calcInflationDerivativeAndAddToDat(inflationYears= 5, derivativeYears=10)
+   calcInflationDerivativeAndAddToDat(inflationYears=10, derivativeYears= 5)
+   calcInflationDerivativeAndAddToDat(inflationYears=10, derivativeYears=10)   
+   
+   
+#    addNumColToDat("derivative5yrInflation5yr")
+#    months <- 2*12*5
+#    dat$derivative5yrInflation5yr[1:months]   <<- NA
+#    dat$derivative5yrInflation5yr[(months+1):numData] <<- 
+#       dat$inflation5yr[(months+1):numData] - dat$inflation5yr[((months+1):numData)-12*5]
+      
+   ## 2nd derivatives
+#    addNumColToDat("inflation2ndDerivative5yr")
+#    dat$inflation2ndDerivative5yr[1:(12*20)]   <<- NA
+#    dat$inflation2ndDerivative5yr[(12*20+1):numData] <<- 
+#       dat$inflationDerivative5yr[(12*20+1):numData] - 
+#       dat$inflationDerivative5yr[((12*20+1):numData)-12*10]
+}
+
+
 calcInflationAndAddToDat <- function(inflationYears) {
    
    months <- 12*inflationYears   
    inflationBuff <- numeric(numData)
    inflationBuff[1:months] <- NA
    
-   for ( index in (months):numData ) {
+   for ( index in months:numData ) {
       dateRange <- (index-months+1):index
       fitPara <- regression(dat$numericDate[dateRange], log(dat$CPI[dateRange]))
       inflationBuff[index] <- fitPara[[2]]
@@ -164,7 +180,6 @@ calcInflationAndAddToDat <- function(inflationYears) {
    TR[inflationName] <<- numeric(numData)
 }
 
-
 addInflationToDat <- function() {
    
    calcInflationAndAddToDat( 1)
@@ -172,36 +187,16 @@ addInflationToDat <- function() {
    calcInflationAndAddToDat( 5)
    calcInflationAndAddToDat( 7)
    calcInflationAndAddToDat(10)
-#    calcInflationAndAddToDat(15)
-   
-   
-   
-#    addNumColToDat("inflation2yr")
-#    addNumColToDat("inflation5yr")
-#    addNumColToDat("inflation7.5yr")
-#    addNumColToDat("inflation10yr")
-#    addNumColToDat("inflation15yr")
-#    
-#    dat$inflation2yr[1:(12*2)]   <<- NA
-#    dat$inflation5yr[1:(12*5)]   <<- NA
-#    dat$inflation7.5yr[1:(12*7.5)] <<- NA
-#    dat$inflation10yr[1:(12*10)] <<- NA
-#    dat$inflation15yr[1:(12*15)] <<- NA   
-#    
-#    dat$inflation2yr[(12*2 +1):numData]  <<- ( dat$CPI[    (12*2+1):numData] / 
-#                                                  dat$CPI[  ((12*2+1):numData)-12*2]  ) ^ (1/2)  - 1
-#    dat$inflation5yr[(12*5 +1):numData]  <<- ( dat$CPI[    (12*5+1):numData] / 
-#                                                  dat$CPI[  ((12*5+1):numData)-12*5]  ) ^ (1/5)  - 1
-#    dat$inflation7.5yr[(12*7.5+1):numData]<<-( dat$CPI[  (12*7.5+1):numData] / 
-#                                                  dat$CPI[((12*7.5+1):numData)-12*7.5]) ^ (1/7.5)- 1
-#    dat$inflation10yr[(12*10+1):numData] <<- ( dat$CPI[   (12*10+1):numData] / 
-#                                                  dat$CPI[ ((12*10+1):numData)-12*10] ) ^ (1/10) - 1
-#    dat$inflation15yr[(12*15+1):numData] <<- ( dat$CPI[   (12*15+1):numData] / 
-#                                                  dat$CPI[ ((12*15+1):numData)-12*15] ) ^ (1/15) - 1
+
    TR$CPI          <<- dat$CPI
       
+#    addNumColToDat("inflation2yr")
+#    dat$inflation2yr[1:(12*2)]   <<- NA
+#    dat$inflation2yr[(12*2 +1):numData]  <<- ( dat$CPI[    (12*2+1):numData] / 
+#                                                  dat$CPI[  ((12*2+1):numData)-12*2]  ) ^ (1/2)  - 1
+      
 #    addInflationDerivativesToDat()
-   addInflationToFutureReturns()   
+#   addInflationToFutureReturns()   
 }
 
 
@@ -396,7 +391,6 @@ plotInflation10yr <- function(startYear=1900) {
    par(mfrow = c(1, 1))  
 }
 
-## 15-year-long sideways markets & correlation with inflation
 plotInflationDerivativeAndFutureReturn <- function
       (stratName3="derivative10yrInflation10yrRescaled", 
        stratName4="derivative7.5yrInflation7.5yrRescaled", startYear=1895, endYear=2000) {

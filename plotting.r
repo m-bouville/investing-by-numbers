@@ -345,12 +345,20 @@ plotReturnAndInflation <- function(stratName1=def$typicalBalanced, stratName2="s
                                startYear=def$plotStartYear, endYear=def$plotEndYear, 
                                minTR=0.9, maxTR=def$maxTR, yLabelReturn="", 
                                legendPlacement="topleft", net=T, 
-                               inflationYears=7, inflationCol=def$colInflation) {
+                               inflationYears=7, derivativeYears=5, inflationCol=def$colInflation) {
    
-   inflationName <- paste0("inflation",inflationYears,"yr")
-   if ( (!inflationName %in% colnames(dat)) || (!inflationName %in% colnames(TR)) ) {
-      print(paste("Calculating inflation over", inflationYears, "years.") )
-      calcInflationAndAddToDat(inflationYears)
+   if(derivativeYears=="" || derivativeYears==0) {
+      inflationName <- paste0("inflation",inflationYears,"yr")
+      if ( (!inflationName %in% colnames(dat)) || (!inflationName %in% colnames(TR)) ) {
+         print(paste("Calculating inflation over", inflationYears, "years.") )
+         calcInflationAndAddToDat(inflationYears)
+      }
+   } else { # using the derivative of the inflation
+      inflationName <- paste0("derivative", derivativeYears, "yrInflation", inflationYears,"yr")
+      if ( (!inflationName %in% colnames(dat)) || (!inflationName %in% colnames(TR)) ) {
+         print(paste0("Calculating derivative over ", derivativeYears, " years of ", inflationYears, "-year inflation.") )
+         calcInflationDerivativeAndAddToDat(inflationYears=inflationYears, derivativeYears=derivativeYears)
+      }
    }
    
    par(mfrow = c(2, 1))
@@ -363,29 +371,6 @@ plotReturnAndInflation <- function(stratName1=def$typicalBalanced, stratName2="s
    par(mfrow = c(1, 1))
 }
 
-plotReturnAndInflationDerivative <- function(stratName1=def$typicalBalanced, stratName2="stocks", stratName3="bonds", 
-                                   col1=def$colBalanced,  col2=def$colConstantAlloc, col3=def$colBonds, 
-                                   lwd1=2, lwd2=3, lwd3=1.5, lwd4=1.5, 
-                                   startYear=def$plotStartYear, endYear=def$plotEndYear, 
-                                   minTR=0.9, maxTR=def$maxTR, yLabelReturn="", 
-                                   legendPlacement="topleft", net=T, 
-                                   inflationYears=5, derivativeYears=5, inflationCol=def$colInflation) {
-   
-   derivativeName <- paste0("derivative", derivativeYears, "yrInflation", inflationYears,"yr")
-   if ( (!derivativeName %in% colnames(dat)) || (!derivativeName %in% colnames(TR)) ) {
-      print(paste0("Calculating derivative over ", derivativeYears, " years of ", inflationYears, "-year inflation.") )
-      calcInflationDerivativeAndAddToDat(inflationYears=inflationYears, derivativeYears=derivativeYears)
-   }
-   
-   par(mfrow = c(2, 1))
-   plotReturn(stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=derivativeName, 
-              col1=col1, col2=col2, col3=col3, col4=inflationCol, lwd1=lwd1, lwd2=lwd2, lwd3=lwd3, lwd4=lwd4,
-              startYear=startYear, endYear=endYear, minTR=minTR, maxTR=maxTR,
-              yLabel=yLabelReturn, legendPlacement=legendPlacement, net=net)
-   plot(dat$numericDate, 100*dat[[derivativeName]], xlim=c(startYear, endYear), type="l", col=inflationCol, 
-        ylab=paste0("derivative over ", derivativeYears, " years of ", inflationYears, "-year inflation (%)") )  
-   par(mfrow = c(1, 1))
-}
 
 ## 15-year-long sideways markets
 plotReturnSideways <- function(stratName1=def$typicalBalanced, stratName2="stocks", stratName3="bonds", 
