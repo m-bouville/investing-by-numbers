@@ -22,7 +22,7 @@ setBollDefaultValues <- function() {
    def$BollBearish    <<- -31
    def$BollBullish    <<- -31
    def$typicalBoll    <<- paste0("Boll_", def$BollInputName, "_", def$BollAvgOver, "__", 
-                                 -def$BollBearish, "_", def$BollBullish)
+                                 def$BollBearish, "_", def$BollBullish)
 }
 
 calcBollSignal <- function(inputDF=def$BollInputDF, inputName=def$BollInputName, avgOver=def$BollAvgOver, 
@@ -69,7 +69,7 @@ createBollStrategy <- function(inputDF=def$BollInputDF, inputName=def$BollInputN
                                strategyName="", type="", futureYears=def$futureYears, costs=def$tradingCost, 
                                coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
    if(strategyName=="")  
-      strategyName <- paste0("Boll_", inputName, "_", avgOver, "__", -bearish, "_", bullish)
+      strategyName <- paste0("Boll_", inputName, "_", avgOver, "__", bearish, "_", bullish)
    if (bullish == bearish) bullish <- bearish + 1e-3 # bearish==bullish creates problems
    bearish <- bearish/100
    bullish <- bullish/100
@@ -116,37 +116,35 @@ createBollStrategy <- function(inputDF=def$BollInputDF, inputName=def$BollInputN
 
 
 searchForOptimalBoll <- function(inputDF="dat", inputName="TR", 
-                                 minAvgOver=13L, maxAvgOver=15L, byAvgOver=1L, 
-                                 minBear   =-34, maxBear   =-30, byBear= 0.5, 
-                                 minBull   =-34, maxBull   =-30, byBull= 0.5, 
+                                 minAvgOver= 13L, maxAvgOver =15L, byAvgOver=1L, 
+                                 minBear   =-34,  maxBear   =-30,  byBear  = 0.5, 
+                                 minDelta  =  0,  maxDelta  =  2,  byDelta = 0.5,  
                                  futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, type="search", 
                                  minTR=0, maxVol=20, maxDD2=4, minTO=0.7, minScore=14.78,
-                                 col=F, plotType="symbols", nameLength=20, plotEvery=def$plotEvery, force=F) {
+                                 col=F, plotType="symbols", nameLength=23, plotEvery=def$plotEvery, force=F) {
    
    lastTimePlotted <- proc.time()
-   print(paste0("strategy             |  TR   ", futureYears, 
+   print(paste0("strategy                |  TR   ", futureYears, 
                 " yrs: med, 5%| vol. alloc: avg, now|TO yrs| DD^2 | score") )
-   print("---------------------+-------+--------------+-------+-------------+------+------+------")
+   print("------------------------+-------+--------------+-------+-------------+------+------+------")
    
    for ( avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver) ) {
       for ( bear in seq(minBear, maxBear, by=byBear) ) {      
-         for ( bull in seq(minBull, maxBull, by=byBull) ) {
-             if (bear < bull + 1e-3 ) 
-               {
-               strategyName <- paste0("Boll_", inputName, "_", avgOver, "_", -bear, "_", bull)
+         for ( delta in seq(minDelta, maxDelta, by=byDelta) ) {
+            bull = bear + delta               
+            strategyName <- paste0("Boll_", inputName, "_", avgOver, "_", bear, "_", bull)
                
-               createBollStrategy(inputDF, inputName, avgOver=avgOver, type=type,
-                                  bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
-                                  strategyName=strategyName, futureYears=futureYears, force=force)
+            createBollStrategy(inputDF, inputName, avgOver=avgOver, type=type,
+                               bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
+                               strategyName=strategyName, futureYears=futureYears, force=force)
                
-               showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
-                                      minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
-                                      nameLength=nameLength, force=F)
+            showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
+                                   minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
+                                   nameLength=nameLength, force=F)            
+            if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { # we replot only if it's been a while
+               plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
+               lastTimePlotted <- proc.time()
             }
-         }
-         if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { # we replot only if it's been a while
-            plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
-            lastTimePlotted <- proc.time()
          }
       }
    }
