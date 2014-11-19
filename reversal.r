@@ -18,19 +18,22 @@
 setReversalDefaultValues <- function() {
    def$reversalInputDF       <<- "dat"
    def$reversalInputName     <<- "TR"
-   def$reversalAvgOver       <<- 9L
-   def$reversalReturnToMean  <<- 14L
-   def$reversalBearish       <<- -50L
-   def$reversalBullish       <<- -50L
    
-#    def$reversalAvgOver       <<- 6L
-#    def$reversalReturnToMean  <<- 5
-#    def$reversalBearish       <<- 5.5
-#    def$reversalBullish       <<- 5.5
+   def$reversalAvgOver1      <<- 9L
+   def$reversalReturnToMean1 <<- 14L
+   def$reversalBearish1      <<- -50L
+   def$reversalBullish1      <<- -50L
+   def$typicalReversal1      <<- paste0("reversal_", def$reversalInputName, "_", 
+                                        def$reversalAvgOver1, "__", def$reversalReturnToMean1, "_", 
+                                        -def$reversalBearish1, "_", -def$reversalBullish1)
    
-   def$typicalReversal       <<- paste0("reversal_", def$reversalInputName, "_", 
-                                        def$reversalAvgOver, "__", def$reversalReturnToMean, "_", 
-                                        -def$reversalBearish, "_", -def$reversalBullish)
+   def$reversalAvgOver2      <<- 6L
+   def$reversalReturnToMean2 <<- 5
+   def$reversalBearish2      <<- 5.5
+   def$reversalBullish2      <<- 5.5   
+   def$typicalReversal2      <<- paste0("reversal_", def$reversalInputName, "_", 
+                                        def$reversalAvgOver2, "__", def$reversalReturnToMean2, "_", 
+                                        -def$reversalBearish2, "_", -def$reversalBullish2)
 }
 
 
