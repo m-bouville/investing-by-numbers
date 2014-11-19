@@ -573,7 +573,9 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost,
       showSummaryForStrategy(def$typicalDetrended2,displayName="detrended 2 ", futureYears=futureYears, costs=costs, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
       print("-------------+-------+--------------+-------+-------------+------+------+------")
-      showSummaryForStrategy(def$typicalBoll,       displayName="Bollinger   ", futureYears=futureYears, costs=costs, 
+      showSummaryForStrategy(def$typicalBoll1,      displayName="Bollinger 1 ", futureYears=futureYears, costs=costs, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+      showSummaryForStrategy(def$typicalBoll2,      displayName="Bollinger 2 ", futureYears=futureYears, costs=costs, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
       showSummaryForStrategy(def$typicalSMA1,       displayName="SMA 1       ", futureYears=futureYears, costs=costs, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)   

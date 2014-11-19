@@ -329,15 +329,19 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
                      signalMin=def$signalMin, signalMax=def$signalMax,
                      futureYears=def$futureYears, costs=def$tradingCost, 
                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)   
-   
    createSMAstrategy(inputDF=def$SMAinputDF, inputName=def$SMAinputName, SMA1=def$SMA1_2, SMA2=def$SMA2_2, 
                      bearish=def$SMAbearish2, bullish=def$SMAbullish2, 
                      signalMin=def$signalMin, signalMax=def$signalMax,
                      futureYears=def$futureYears, costs=def$tradingCost, 
-                     coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)   
+                     coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
    
-   createBollStrategy(inputDF=def$BollInputDF, inputName=def$BollInputName, avgOver=def$BollAvgOver, 
-                      bearish=def$BollBearish, bullish=def$BollBullish, 
+   createBollStrategy(inputDF=def$BollInputDF, inputName=def$BollInputName, avgOver=def$BollAvgOver1, 
+                      bearish=def$BollBearish1, bullish=def$BollBullish1, 
+                      signalMin=def$signalMin, signalMax=def$signalMax,
+                      futureYears=def$futureYears, costs=def$tradingCost, 
+                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force) 
+   createBollStrategy(inputDF=def$BollInputDF, inputName=def$BollInputName, avgOver=def$BollAvgOver2, 
+                      bearish=def$BollBearish2, bullish=def$BollBullish2, 
                       signalMin=def$signalMin, signalMax=def$signalMax,
                       futureYears=def$futureYears, costs=def$tradingCost, 
                       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)   
@@ -348,7 +352,6 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
                           signalMin=def$signalMin, signalMax=def$signalMax,
                           futureYears=def$futureYears, costs=def$tradingCost, 
                           coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force) 
-
    createReversalStrategy(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
                           avgOver=def$reversalAvgOver2, returnToMean=def$reversalReturnToMean2, 
                           bearish=def$reversalBearish2, bullish=def$reversalBullish2, 

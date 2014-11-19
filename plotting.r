@@ -256,10 +256,10 @@ plotAlloc <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTech
    }
 }
 
-plotReturnAndAllocTechnical <- function(stratName1=def$typicalSMA1,      col1=def$colSMA,      lwd1=1.5,
-                                        stratName2=def$typicalSMA2,      col2=def$colSMA,      lwd2=2,
-                                        stratName3=def$typicalBoll,      col3=def$colBoll,     lwd3=1.5,
-                                        stratName4=def$typicalReversal,  col4=def$colReversal, lwd4=2, 
+plotReturnAndAllocTechnical <- function(stratName1=def$typicalSMA2,      col1=def$colSMA,      lwd1=2,
+                                        stratName2=def$typicalBoll1,     col2=def$colBoll,     lwd2=2,
+                                        stratName3=def$typicalBoll2,     col3=def$colBoll,     lwd3=1.5,
+                                        stratName4=def$typicalReversal1, col4=def$colReversal, lwd4=1.5, 
                                         startYear=def$plotStartYear, endYear=def$plotEndYear, 
                                         yLabel="", net=T, minTR=0.8, maxTR=def$maxTR, costs=def$tradingCost,
                                         pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
@@ -1150,7 +1150,6 @@ plotAllReturnsVsTwo <- function(type1=def$type1, col1=def$col1, pch1=def$pch1,
                                 Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
                                 lineCol=def$lineCol, searchPlotType="dots",
                                 xMinVol=def$minVol, xMaxVol=def$maxVol, xMinDD2=def$minDD2, xMaxDD2=def$maxDD2, 
-                                xMinAlloc=40, xMaxAlloc=98, xMinTO=2, xMaxTO=100, 
                                 yStatsName=def$yStatsName, yFactor=100, col=F,
                                 yMin=def$yTRmin, yMax=def$yTRmax, costs=def$tradingCost,
                                 figureTitle="", 

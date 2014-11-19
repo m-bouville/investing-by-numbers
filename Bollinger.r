@@ -18,11 +18,18 @@
 setBollDefaultValues <- function() {
    def$BollInputDF    <<- "dat"
    def$BollInputName  <<- "TR"
-   def$BollAvgOver    <<- 14L
-   def$BollBearish    <<- -31
-   def$BollBullish    <<- -31
-   def$typicalBoll    <<- paste0("Boll_", def$BollInputName, "_", def$BollAvgOver, "__", 
-                                 def$BollBearish, "_", def$BollBullish)
+   
+   def$BollAvgOver1    <<-  14L
+   def$BollBearish1    <<- -31
+   def$BollBullish1    <<- -31
+   def$typicalBoll1    <<- paste0("Boll_", def$BollInputName, "_", def$BollAvgOver1, "__", 
+                                 def$BollBearish1, "_", def$BollBullish1)
+   
+   def$BollAvgOver2    <<- 10L
+   def$BollBearish2    <<- 49
+   def$BollBullish2    <<- 49
+   def$typicalBoll2    <<- paste0("Boll_", def$BollInputName, "_", def$BollAvgOver2, "__", 
+                                  def$BollBearish2, "_", def$BollBullish2)
 }
 
 calcBollSignal <- function(inputDF=def$BollInputDF, inputName=def$BollInputName, avgOver=def$BollAvgOver, 
@@ -121,13 +128,14 @@ searchForOptimalBoll <- function(inputDF="dat", inputName="TR",
                                  minDelta  =  0,  maxDelta  =  2,  byDelta = 0.5,  
                                  futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, type="search", 
                                  minTR=0, maxVol=20, maxDD2=4, minTO=0.7, minScore=14.78,
-                                 col=F, plotType="symbols", nameLength=23, plotEvery=def$plotEvery, force=F) {
+                                 xMinVol=def$xMinVol, xMaxVol=17, xMinDD2=0.5, xMaxDD2=1.3,
+                                 col=F, plotType="symbols", nameLength=21, plotEvery=def$plotEvery, force=F) {
    
    lastTimePlotted <- proc.time()
-   print(paste0("strategy                |  TR   ", futureYears, 
+   print(paste0("strategy              |  TR   ", futureYears, 
                 " yrs: med, 5%| vol. alloc: avg, now|TO yrs| DD^2 | score") )
-   print("------------------------+-------+--------------+-------+-------------+------+------+------")
-   
+   print("----------------------+-------+--------------+-------+-------------+------+------+------")
+      
    for ( avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver) ) {
       for ( bear in seq(minBear, maxBear, by=byBear) ) {      
          for ( delta in seq(minDelta, maxDelta, by=byDelta) ) {
@@ -142,13 +150,14 @@ searchForOptimalBoll <- function(inputDF="dat", inputName="TR",
                                    minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
                                    nameLength=nameLength, force=F)            
             if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { # we replot only if it's been a while
-               plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
+               plotAllReturnsVsTwo(col=col, searchPlotType=plotType, 
+                                   xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2)
                lastTimePlotted <- proc.time()
             }
          }
       }
    }
-   print("")
+   print("----------------------+-------+--------------+-------+-------------+------+------+------")
    showSummaryForStrategy(def$typicalBoll, nameLength=nameLength, costs=costs)
    plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
 }
