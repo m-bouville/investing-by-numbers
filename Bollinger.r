@@ -120,8 +120,8 @@ searchForOptimalBoll <- function(inputDF="dat", inputName="TR",
                                  minBear   =-34, maxBear   =-30, byBear= 0.5, 
                                  minBull   =-34, maxBull   =-30, byBull= 0.5, 
                                  futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, type="search", 
-                                 minTR=0, maxVol=20, maxDD2=4, minTO=1, minScore=14.78,
-                                 col=F, plotType="symbols", nameLength=def$plotEvery, plotEvery=10, force=F) {
+                                 minTR=0, maxVol=20, maxDD2=4, minTO=0.7, minScore=14.78,
+                                 col=F, plotType="symbols", nameLength=20, plotEvery=def$plotEvery, force=F) {
    
    lastTimePlotted <- proc.time()
    print(paste0("strategy             |  TR   ", futureYears, 

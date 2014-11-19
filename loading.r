@@ -110,6 +110,10 @@ createParametersDF <- function() {
                              fraction2 = numeric(), 
                              inputStrategyName3 = character(),
                              fraction3 = numeric(),
+                             inputStrategyName4 = character(),
+                             fraction4 = numeric(),
+                             inputStrategyName5 = character(),
+                             fraction5 = numeric(),
                              stringsAsFactors=F)
 }
 
@@ -339,28 +343,29 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
                       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)   
    
    createReversalStrategy(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
-                          avgOver=def$reversalAvgOver, returnToMean=def$reversalReturnToMean, 
-                          bearish=def$reversalBearish, bullish=def$reversalBullish, 
+                          avgOver=def$reversalAvgOver1, returnToMean=def$reversalReturnToMean1, 
+                          bearish=def$reversalBearish1, bullish=def$reversalBullish1, 
                           signalMin=def$signalMin, signalMax=def$signalMax,
                           futureYears=def$futureYears, costs=def$tradingCost, 
                           coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force) 
-  
-   combineStrategies(def$typicalSMA1, def$typicalSMA2, def$typicalBoll, def$typicalReversal, 
-                     def$technicalFractionSMA1, def$technicalFractionSMA2, 
-                     def$technicalFractionBoll, def$technicalFractionReversal, 
-                     type="combined", subtype="technical", combineMode="weighted",
-                     costs=def$tradingCost, 
-                     coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
+
+   createReversalStrategy(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
+                          avgOver=def$reversalAvgOver2, returnToMean=def$reversalReturnToMean2, 
+                          bearish=def$reversalBearish2, bullish=def$reversalBullish2, 
+                          signalMin=def$signalMin, signalMax=def$signalMax,
+                          futureYears=def$futureYears, costs=def$tradingCost, 
+                          coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force) 
    
-   combineStrategies(inputStrategyName1=def$typicalCAPE1, inputStrategyName2=def$typicalCAPE2, 
-                     inputStrategyName3=def$typicalDetrended1, inputStrategyName4=def$typicalDetrended2,
-                     def$valueFractionCAPE1, def$valueFractionCAPE2, 
-                     def$valueFractionDetrended1, def$valueFractionDetrended2,
+   
+   combineStrategies(def$technicalStrategies, def$technicalFractions, 
+                     type="combined", subtype="technical", combineMode="weighted", costs=def$tradingCost, 
+                     coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
+
+   combineStrategies(def$valueStrategies, def$valueFractions,
                      type="combined", subtype="value", combineMode="weighted", costs=def$tradingCost, 
                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
    
-   combineStrategies(def$typicalTechnical, def$typicalValue, "", "",
-                     def$balancedFractionTechnical, def$balancedFractionValue, 0, 0,
+   combineStrategies(def$balancedStrategies, def$balancedFractions,
                      type="combined", subtype="balanced", combineMode=def$balancedCombineMode,
                      costs=def$tradingCost, 
                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)

@@ -24,9 +24,9 @@ setReversalDefaultValues <- function() {
    def$reversalBullish       <<- -50L
    
 #    def$reversalAvgOver       <<- 6L
-#    def$reversalReturnToMean  <<- 5L
-#    def$reversalBearish       <<- 5L
-#    def$reversalBullish       <<- 6L
+#    def$reversalReturnToMean  <<- 5
+#    def$reversalBearish       <<- 5.5
+#    def$reversalBullish       <<- 5.5
    
    def$typicalReversal       <<- paste0("reversal_", def$reversalInputName, "_", 
                                         def$reversalAvgOver, "__", def$reversalReturnToMean, "_", 
@@ -151,7 +151,7 @@ searchForOptimalReversal <-function(inputDF=def$reversalInputDF, inputName=def$r
                                     minBear=-54, maxBear=-42, byBear=2, 
                                     minDelta=0,  maxDelta=2, byDelta=0.5, 
                                     futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
-                                    minTR=0, maxVol=20, maxDD2=5, minTO=1, minScore=14.8,
+                                    minTR=0, maxVol=20, maxDD2=5, minTO=0.7, minScore=14.8,
                                     col=F, plotType="symbols", nameLength=25, plotEvery=def$plotEvery, force=F) {
    lastTimePlotted <- proc.time()  
    print(paste0("strategy                  |  TR   ", futureYears, 

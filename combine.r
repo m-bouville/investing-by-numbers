@@ -18,126 +18,125 @@ setCombinedDefaultValues <- function() {
    ##   This is to avoid idiosyncrasies: if what was the best strategy when fitting 
    ##   is bad when testing, then other strategies can counterbalance it to an extent.
    ##   Ceteris paribus, the combination of 4 strategies with similar weights is safer than a single strategy.
-   def$coeffEntropy               <<- 2
+   def$coeffEntropy         <<- 2
    
-   def$valueFractionCAPE1         <<- 10
-   def$valueFractionCAPE2         <<- 20
-   def$valueFractionDetrended1    <<- 35
-   def$valueFractionDetrended2    <<- 35
-   def$typicalValue               <<- paste0("value_", def$valueFractionCAPE1, "_", def$valueFractionCAPE2, "_", 
-                                             def$valueFractionDetrended1, "_", def$valueFractionDetrended2)
+   def$valueStrategies      <<- c(def$typicalCAPE1, def$typicalCAPE2, def$typicalDetrended1, def$typicalDetrended2)
+   def$valueFractions       <<- c(10, 20, 35, 35)
+   def$typicalValue         <<- paste0("value_", def$valueFractions[1], "_", def$valueFractions[2], "_", 
+                                             def$valueFractions[3], "_", def$valueFractions[4] )
    
-   def$technicalFractionSMA1     <<- 33
-   def$technicalFractionSMA2     <<- 15
-   def$technicalFractionBoll     <<- 20
-   def$technicalFractionReversal <<- 32
-   def$typicalTechnical          <<- paste0("technical_", def$technicalFractionSMA1, "_", def$technicalFractionSMA2, "_", 
-                                            def$technicalFractionBoll, "_", def$technicalFractionReversal)
+   def$technicalStrategies  <<- c(def$typicalSMA1, def$typicalSMA2, def$typicalBoll, def$typicalReversal1, def$typicalReversal2)
+   def$technicalFractions   <<- c(22, 12, 20, 24, 22)
+   def$typicalTechnical     <<- paste0("technical_", def$technicalFractions[1], "_", def$technicalFractions[2], "_", 
+                                            def$technicalFractions[3], "_", def$technicalFractions[4], "_", def$technicalFractions[5])
    
-   def$balancedFractionTechnical <<- 60
-   def$balancedFractionValue     <<- 40
-   def$balancedCombineMode       <<- "weighted"
+   def$balancedStrategies   <<- c(def$typicalTechnical, def$typicalValue)
+   def$balancedFractions    <<- c(60, 40)
+   def$balancedCombineMode  <<- "weighted"
    if (def$balancedCombineMode == "weighted")
-      def$typicalBalanced        <<- paste0("balanced_", def$balancedFractionTechnical, "_", def$balancedFractionValue)
-   else def$typicalBalanced      <<- paste0("balanced_", def$balancedCombineMode)
+      def$typicalBalanced   <<- paste0("balanced_", def$balancedFractions[1], "_", def$balancedFractions[2])
+   else def$typicalBalanced <<- paste0("balanced_", def$balancedCombineMode)
 }
 
 
-## Calculate the weighted average of the signals of up to 4 strategies
-calcCombinedStrategySignal_weighted <- function(inputStrategyName1, inputStrategyName2, 
-                                                inputStrategyName3, inputStrategyName4, 
-                                                fraction1, fraction2, fraction3, fraction4, 
-                                                strategyName, force=F) {
+## Calculate the weighted average of the signals of several strategies
+calcCombinedStrategySignal_weighted <- function(inputStrategyName, fraction, strategyName, force=F) {
    
-   sumCoeff <- fraction1 + fraction2 + fraction3 + fraction4
+   if ( length(inputStrategyName) != length(fraction) )
+      stop("inputStrategyName and fraction must have the same length.")      
+   numLoops <- length(inputStrategyName)
+   
+   sumCoeff <- sum(fraction)
    if (abs(sumCoeff-1)>1e-6) stop(paste("Sum of coefficients must be 1, not", sumCoeff))
    
-   requireColInSignal(inputStrategyName1)
-   requireColInSignal(inputStrategyName2)
-   if (!(inputStrategyName3 %in% colnames(signal)) & fraction3 != 0) 
-      stop(paste0("signal$", inputStrategyName3, " does not exist."))
-   if (!(inputStrategyName4 %in% colnames(signal)) & fraction4 != 0) 
-      stop(paste0("signal$", inputStrategyName4, " does not exist."))
+   for(i in 1:numLoops)
+      requireColInSignal(inputStrategyName[i])
+#    requireColInSignal(inputStrategyName[2])
+#    if (!(inputStrategyName[3] %in% colnames(signal)) & fraction[3] != 0) 
+#       stop(paste0("signal$", inputStrategyName[3], " does not exist."))
+#    if (!(inputStrategyName[4] %in% colnames(signal)) & fraction[4] != 0) 
+#       stop(paste0("signal$", inputStrategyName[4], " does not exist."))
 
    if (!(strategyName %in% colnames(signal)) | force) { # if data do not exist yet or we force recalculation:   
       addNumColToSignal(strategyName)
       
-   if(fraction1!=0) {
-      signal[, strategyName] <<- fraction1*signal[, inputStrategyName1] 
-      if(fraction2!=0) 
-         signal[, strategyName] <<- signal[, strategyName] + fraction2*signal[, inputStrategyName2]
-   } else 
-      if(fraction2!=0) {
-         signal[, strategyName] <<- signal[, strategyName] + fraction2*signal[, inputStrategyName2]
-      }
-   else error("One of fraction1 and fraction2 must be > 0.")
-   if(fraction3!=0) signal[, strategyName] <<- signal[, strategyName] + fraction3*signal[, inputStrategyName3] 
-   if(fraction4!=0) signal[, strategyName] <<- signal[, strategyName] + fraction4*signal[, inputStrategyName4] 
-   }
+   signal[, strategyName] <<- 0
+   for (i in 1:numLoops) 
+      if(fraction[i]!=0) 
+         signal[, strategyName] <<- signal[, strategyName] + fraction[i]*signal[, inputStrategyName[i] ]
+   
+#    if(fraction[1]!=0) {
+#       signal[, strategyName] <<- fraction[1]*signal[, inputStrategyName[1] ] 
+#       if(fraction[2]!=0) 
+#          signal[, strategyName] <<- signal[, strategyName] + fraction[2]*signal[, inputStrategyName[2] ]
+#    } else 
+#       if(fraction[2]!=0) {
+#          signal[, strategyName] <<- signal[, strategyName] + fraction[2]*signal[, inputStrategyName[2] ]
+#       }
+#    else error("One of fraction1 and fraction2 must be > 0.")
+#    if(fraction[3]!=0) signal[, strategyName] <<- signal[, strategyName] + fraction[3]*signal[, inputStrategyName[3] ]
+#    if(fraction[4]!=0) signal[, strategyName] <<- signal[, strategyName] + fraction[4]*signal[, inputStrategyName[4] ]
+   }    
 }
 
 
 ## Combine the signals of up to 4 strategies 
 ## by getting into the stock market if any of the strategies wants in.
-calcCombinedStrategySignal_or <- function(inputStrategyName1, inputStrategyName2, 
-                                          inputStrategyName3, inputStrategyName4, 
-                                          strategyName, force=F) {
+calcCombinedStrategySignal_or <- function(inputStrategyName, strategyName, force=F) {
    
-   if ( inputStrategyName1 != "" ) requireColInSignal(inputStrategyName1)
-   if ( inputStrategyName2 != "" ) requireColInSignal(inputStrategyName2)
-   if ( inputStrategyName3 != "" ) requireColInSignal(inputStrategyName3)
-   if ( inputStrategyName4 != "" ) requireColInSignal(inputStrategyName4)
+   numLoops <- length(inputStrategyName)   
+   for (i in 1:numLoops) requireColInSignal(inputStrategyName[i])
    
    if (!(strategyName %in% colnames(signal)) | force) { # if data do not exist yet or we force recalculation:   
       addNumColToSignal(strategyName)
       
-      if(inputStrategyName4 == "") {
-         if(inputStrategyName3 == "") # with only 2 input strategies
-            for (i in 1:numData) 
-               signal[i, strategyName] <<- max( signal[i, inputStrategyName1], signal[i, inputStrategyName2] )
-         else # with only the first three input strategies  
-            for (i in 1:numData) 
-               signal[i, strategyName] <<- max( signal[i, inputStrategyName1], 
-                                                signal[i, inputStrategyName2], signal[i, inputStrategyName3] )
-      }
-      else # with all four input strategies
-         for (i in 1:numData) 
-            signal[i, strategyName] <<- max( signal[i, inputStrategyName1], signal[i, inputStrategyName2], 
-                                             signal[i, inputStrategyName3], signal[i, inputStrategyName4] )
-      
+      signal[i, strategyName] <<- max( signal[i, inputStrategyName ] )
+
+#       if(inputStrategyName[4] == "") {
+#          if(inputStrategyName[3] == "") # with only 2 input strategies
+#             for (i in 1:numData) 
+#                signal[i, strategyName] <<- max( signal[i, inputStrategyName[1] ], signal[i, inputStrategyName[2] ] )
+#          else # with only the first three input strategies  
+#             for (i in 1:numData) 
+#                signal[i, strategyName] <<- max( signal[i, inputStrategyName[1] ], 
+#                                                 signal[i, inputStrategyName[2] ], signal[i, inputStrategyName[3] ] )
+#       }
+#       else # with all four input strategies
+#          for (i in 1:numData) 
+#             signal[i, strategyName] <<- max( signal[i, inputStrategyName[1] ], signal[i, inputStrategyName[2] ], 
+#                                              signal[i, inputStrategyName[3] ], signal[i, inputStrategyName[4] ] )
+
       for (i in 1:numData)
          signal[i, strategyName] <<- max( min(signal[i, strategyName], def$signalMax), def$signalMin)
    }
 }
 
 
-## Combine the signals of up to 4 strategies 
+## Combine the signals of several strategies 
 ## by getting into the stock market if all strategies want in.
-calcCombinedStrategySignal_and <- function(inputStrategyName1, inputStrategyName2, 
-                                           inputStrategyName3, inputStrategyName4, 
-                                           strategyName, force=F) {   
+calcCombinedStrategySignal_and <- function(inputStrategyName, strategyName, force=F) {   
    
-   if ( inputStrategyName1 != "" ) requireColInSignal(inputStrategyName1)
-   if ( inputStrategyName2 != "" ) requireColInSignal(inputStrategyName2)
-   if ( inputStrategyName3 != "" ) requireColInSignal(inputStrategyName3)
-   if ( inputStrategyName4 != "" ) requireColInSignal(inputStrategyName4)
+   numLoops <- length(inputStrategyName)   
+   for (i in 1:numLoops) requireColInSignal(inputStrategyName[i])
    
    if (!(strategyName %in% colnames(signal)) | force) { # if data do not exist yet or we force recalculation:   
       addNumColToSignal(strategyName)
       
-      if(inputStrategyName4 == "") {
-         if(inputStrategyName3 == "") # with only 2 input strategies
-            for (i in 1:numData) 
-               signal[i, strategyName] <<- min( signal[i, inputStrategyName1], signal[i, inputStrategyName2] )
-         else # with only the first three input strategies  
-            for (i in 1:numData) 
-               signal[i, strategyName] <<- min( signal[i, inputStrategyName1], 
-                                                signal[i, inputStrategyName2], signal[i, inputStrategyName3] )
-      }
-      else # with all four input strategies
-         for (i in 1:numData) 
-            signal[i, strategyName] <<- min( signal[i, inputStrategyName1], signal[i, inputStrategyName2], 
-                                             signal[i, inputStrategyName3], signal[i, inputStrategyName4] )
+      signal[i, strategyName] <<- min( signal[i, inputStrategyName ] )
+
+#       if(inputStrategyName[4] == "") {
+#          if(inputStrategyName[3] == "") # with only 2 input strategies
+#             for (i in 1:numData) 
+#                signal[i, strategyName] <<- min( signal[i, inputStrategyName[1] ], signal[i, inputStrategyName[2] ] )
+#          else # with only the first three input strategies  
+#             for (i in 1:numData) 
+#                signal[i, strategyName] <<- min( signal[i, inputStrategyName[1] ], 
+#                                                 signal[i, inputStrategyName[2] ], signal[i, inputStrategyName[3] ] )
+#       }
+#       else # with all four input strategies
+#          for (i in 1:numData) 
+#             signal[i, strategyName] <<- min( signal[i, inputStrategyName[1] ], signal[i, inputStrategyName[2] ], 
+#                                              signal[i, inputStrategyName[3] ], signal[i, inputStrategyName[4] ] )
       
       for (i in 1:numData)
          signal[i, strategyName] <<- max( min(signal[i, strategyName], def$signalMax), def$signalMin)
@@ -146,21 +145,21 @@ calcCombinedStrategySignal_and <- function(inputStrategyName1, inputStrategyName
    
 ## Combine the signals of (exactly) 2 strategies dynamically.
 ## The output signal moves towards the input instead of being set to it
-calcCombinedStrategySignal_dynamic <- function(inputStrategyName1, inputStrategyName2,
+calcCombinedStrategySignal_dynamic <- function(inputStrategyName,
                                            strategyName, speed, force=F) {   
    
-   requireColInSignal(inputStrategyName1)
-   requireColInSignal(inputStrategyName2)
+   requireColInSignal(inputStrategyName[1])
+   requireColInSignal(inputStrategyName[2])
    
    if (!(strategyName %in% colnames(signal)) | force) { # if data do not exist yet or we force recalculation:      
       ## Find which strategy is slower and which faster
-      if(stats$turnover[ which(stats$strategy == inputStrategyName1) ] > 
-            stats$turnover[ which(stats$strategy == inputStrategyName2) ]) {
-         slowStrat <- alloc[, inputStrategyName1]
-         fastStrat <- alloc[, inputStrategyName2]      
+      if(stats$turnover[ which(stats$strategy == inputStrategyName[1]) ] > 
+            stats$turnover[ which(stats$strategy == inputStrategyName[2]) ]) {
+         slowStrat <- alloc[, inputStrategyName[1] ]
+         fastStrat <- alloc[, inputStrategyName[2] ]      
       } else {
-         slowStrat <- alloc[, inputStrategyName2]
-         fastStrat <- alloc[, inputStrategyName1]      
+         slowStrat <- alloc[, inputStrategyName[2] ]
+         fastStrat <- alloc[, inputStrategyName[1] ]      
       }     
       
       addNumColToSignal(strategyName)
@@ -205,29 +204,20 @@ calcCombinedStrategySignal_dynamic <- function(inputStrategyName1, inputStrategy
 }
 
 
-## Combine the signals of up to 4 strategies
+## Combine the signals of several strategies
 calcCombinedStrategySignal <- function
-      (inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
-       fraction1, fraction2, fraction3, fraction4, 
+      (inputStrategyName, fraction, 
        strategyName, subtype, combineMode="weighted", speed="", force=F) {
    
    if (combineMode=="weighted")   
-      calcCombinedStrategySignal_weighted(inputStrategyName1, inputStrategyName2, 
-                                          inputStrategyName3, inputStrategyName4, 
-                                          fraction1, fraction2, fraction3, fraction4, 
-                                          strategyName, force)
+      calcCombinedStrategySignal_weighted(inputStrategyName, fraction, strategyName, force)
    else if (combineMode=="or") 
-      calcCombinedStrategySignal_or(inputStrategyName1, inputStrategyName2, 
-                                    inputStrategyName3, inputStrategyName4, 
-                                    strategyName=strategyName, force)
+      calcCombinedStrategySignal_or(inputStrategyName, strategyName=strategyName, force)
    else if (combineMode=="and") 
-      calcCombinedStrategySignal_and(inputStrategyName1, inputStrategyName2, 
-                                     inputStrategyName3, inputStrategyName4, 
-                                     strategyName=strategyName, force)
+      calcCombinedStrategySignal_and(inputStrategyName, strategyName=strategyName, force)
    else if (combineMode=="dynamic") {
-      if (inputStrategyName3=="" & inputStrategyName4=="")
-         calcCombinedStrategySignal_dynamic(inputStrategyName1, inputStrategyName2, 
-                                            strategyName=strategyName, speed=speed, force)
+      if ( length(inputStrategyName)>2 )
+         calcCombinedStrategySignal_dynamic(inputStrategyName, strategyName=strategyName, speed=speed, force)
       else stop("Only two strategies can be used with combineMode==\'dynamic\'.")
    }
    else stop(combineMode, " is not a valid value for combineMode.")
@@ -235,22 +225,29 @@ calcCombinedStrategySignal <- function
 
 
 combineStrategies <- function
-      (inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
-       fraction1=25, fraction2=25, fraction3=25, fraction4=25, 
+      (inputStrategyName, fraction, 
        strategyName="", type="combined", subtype, combineMode="weighted", speed=0,
        futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
        coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
    
+   if ( length(inputStrategyName) != length(fraction) )
+      stop("inputStrategyName and fraction must have the same length.")         
+   numLoops <- length(inputStrategyName)
+         
    if(strategyName=="") {
       if (combineMode=="weighted") {
-         if(fraction4==0) {
-            if(fraction3==0) # name with only fractions 1 and 2
-               strategyName <- paste0(subtype, "_", fraction1, "_", fraction2) 
-            else # name with only the first three fractions
-               strategyName <- paste0(subtype, "_", fraction1, "_", fraction2, "_", fraction3) 
-         }
-         else # name with all four fractions
-            strategyName <- paste0(subtype, "_", fraction1, "_", fraction2, "_", fraction3, "_", fraction4)
+         strategyName <- paste0(subtype)
+         for (i in 1:numLoops) strategyName <- paste0(strategyName, "_", fraction[i])
+         
+         
+#          if(fraction[4]==0) {
+#             if(fraction[3]==0) # name with only fractions 1 and 2
+#                strategyName <- paste0(subtype, "_", fraction[1], "_", fraction[2]) 
+#             else # name with only the first three fractions
+#                strategyName <- paste0(subtype, "_", fraction[1], "_", fraction[2], "_", fraction[3]) 
+#          }
+#          else # name with all four fractions
+#             strategyName <- paste0(subtype, "_", fraction[1], "_", fraction[2], "_", fraction[3], "_", fraction[4])
       }
       else if (combineMode=="or") 
          strategyName <- paste0(subtype, "_or") 
@@ -261,17 +258,21 @@ combineStrategies <- function
    }
    
    if (!(strategyName %in% colnames(alloc)) | force) {   
-      calcCombinedStrategySignal(inputStrategyName1=inputStrategyName1, inputStrategyName2=inputStrategyName2, 
-                                 inputStrategyName3=inputStrategyName3, inputStrategyName4=inputStrategyName4, 
-                                 fraction1=fraction1/100, fraction2=fraction2/100, fraction3=fraction3/100, fraction4=fraction4/100, 
+      calcCombinedStrategySignal(inputStrategyName=inputStrategyName, fraction=fraction/100, 
                                  strategyName=strategyName, subtype=subtype, combineMode=combineMode, speed=speed, force=force)
       calcAllocFromSignal(strategyName)
    }
    
-   startIndex <- max( parameters$startIndex[ which(parameters$strategy == inputStrategyName1) ],
-                      parameters$startIndex[ which(parameters$strategy == inputStrategyName2) ],
-                      parameters$startIndex[ which(parameters$strategy == inputStrategyName3) ],
-                      parameters$startIndex[ which(parameters$strategy == inputStrategyName4) ] )
+   startIndex <- 0
+   for (i in 1:numLoops) { # startIndex = max(startIndex_i)
+      index <- parameters$startIndex[ which(parameters$strategy == inputStrategyName[i]) ]
+      if ( index > startIndex )
+      startIndex <- index
+   }
+# max( parameters$startIndex[ which(parameters$strategy == inputStrategyName[1]) ],
+#                       parameters$startIndex[ which(parameters$strategy == inputStrategyName[2]) ],
+#                       parameters$startIndex[ which(parameters$strategy == inputStrategyName[3]) ],
+#                       parameters$startIndex[ which(parameters$strategy == inputStrategyName[4]) ] )
    
    if (!(strategyName %in% colnames(TR)) | force) { # if data do not exist yet or we force recalculation:   
       addNumColToTR(strategyName)
@@ -290,15 +291,19 @@ combineStrategies <- function
       parameters$subtype[index]    <<- subtype
       parameters$startIndex[index] <<- startIndex
       
-      parameters$inputStrategyName1[index] <<- inputStrategyName1
-      parameters$inputStrategyName2[index] <<- inputStrategyName2
-      parameters$inputStrategyName3[index] <<- inputStrategyName3
-      parameters$inputStrategyName4[index] <<- inputStrategyName4
+      parameters$inputStrategyName1[index] <<- inputStrategyName[1]
+      parameters$inputStrategyName2[index] <<- inputStrategyName[2]
+      if(numLoops >= 3) parameters$inputStrategyName3[index] <<- inputStrategyName[3]
+      if(numLoops >= 4) parameters$inputStrategyName4[index] <<- inputStrategyName[4]
+      if(numLoops >= 5) parameters$inputStrategyName5[index] <<- inputStrategyName[5]
+      if(numLoops >= 6) parameters$inputStrategyName6[index] <<- inputStrategyName[6]
       if (combineMode=="weighted") {
-         parameters$fraction1[index] <<- fraction1
-         parameters$fraction2[index] <<- fraction2
-         parameters$fraction3[index] <<- fraction3
-         parameters$fraction4[index] <<- fraction4         
+         parameters$fraction1[index] <<- fraction[1]
+         parameters$fraction2[index] <<- fraction[2]
+         if(numLoops >= 3) parameters$fraction3[index] <<- fraction[3]
+         if(numLoops >= 4) parameters$fraction4[index] <<- fraction[4]         
+         if(numLoops >= 5) parameters$fraction5[index] <<- fraction[5]
+         if(numLoops >= 6) parameters$fraction6[index] <<- fraction[6]         
       }
       parameters$name1[index] <<- "combineMode"
       parameters$value1[index] <<- combineMode
@@ -312,18 +317,34 @@ combineStrategies <- function
    stats$subtype[indexStats] <<- parameters$subtype[indexParameters]
    
    entropy <- 0
-   if (fraction1>0) entropy   <- entropy - fraction1/100 * log(fraction1/100)
-   if (fraction2>0) entropy   <- entropy - fraction2/100 * log(fraction2/100)
-   if (fraction3>0) entropy   <- entropy - fraction3/100 * log(fraction3/100)
-   if (fraction4>0) entropy   <- entropy - fraction4/100 * log(fraction4/100)
+   for (i in 1:numLoops)
+      if (fraction[i]>0) entropy <- entropy - fraction[i]/100 * log(fraction[i]/100)
    stats$entropy[indexStats] <<- entropy
 }
 
+gcd2 <- function(x, y) {
+   if (x>y)
+      r <- x%%y
+   else
+      r <- y%%x
+   return( ifelse(r, gcd2(y, r), min(x, y) ) )
+}
+gcd3 <- function(x, y, z) {
+   return( gcd2(x, gcd2(y, z) ) )
+}
+gcd4 <- function(w, x, y, z) {
+   return( gcd2(gcd2(w, x), gcd2(y, z)) )
+}
+gcd  <- function(vec) {
+   if (length(vec)==1) return( vec[1] )
+   else if (length(vec)==2) return( gcd2(vec[1], vec[2] ) )
+   else if (length(vec)==3) return( gcd3(vec[1], vec[2], vec[3] ) )
+   else if (length(vec)==4) return( gcd4(vec[1], vec[2], vec[3], vec[4] ) )
+   else stop("gcd() can handle only 1 to 4 numbers")
+}
 
 searchForOptimalCombined <- function
-      (inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
-       minF1=minF1, maxF1=maxF1, byF1=byF1, minF2=minF2, maxF2=maxF2, byF2=byF2, 
-       minF3=minF3, maxF3=maxF3, byF3=byF3, minF4=minF4, maxF4=maxF4,
+      (inputStrategyName, minF, maxF, byF,
        futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
        type="search", subtype, speed=0, coeffEntropy=def$coeffEntropy,
        minTR=0, maxVol=20, maxDD2=5, minTO=0, minScore=0, 
@@ -333,9 +354,35 @@ searchForOptimalCombined <- function
   
    lastTimePlotted <- proc.time()
    
+   if ( max( length(inputStrategyName), length(minF), length(maxF), length(byF) ) != 
+        min( length(inputStrategyName), length(minF), length(maxF), length(byF) ) )
+      stop("inputStrategyName, minF, maxF and byF must have the same length.")
+   
+   numLoops <- length(inputStrategyName)
+   
+   while( maxF[numLoops]==0 ) { # if maxF=0 then that fraction will always be 0, we can ignore it
+      minF[numLoops] = 0
+      byF [numLoops] = 0
+      warning(paste("Strategy number", numLoops, "will not be used (maxF=0).") )
+      numLoops <- numLoops-1
+   }
+   if (numLoops > 6)
+      stop("Only 6 strategies can be handled.")
+   
+   #    # if last byF has no value, set it to the greatest common divisor of others 
+   #    if( is.na(byF[numLoops]) || byF[numLoops]==0 )
+   #       byF[numLoops] = gcd( byF[1:(numLoops-1)] ) 
+   
+   minF[(numLoops+1):6] <- 0 # pad with 0 to have 6 elements (1 per loop)
+   maxF[(numLoops+1):6] <- 0 # beyond numLoops, this will give "f6 in seq(0, 0, by=0)", i.e. f6=0
+   byF [(numLoops+1):6] <- 0
+   # print(minF)
+   # print(maxF)
+   # print(byF)
+   # print(numLoops)
+
    if (combineMode=="or" | combineMode=="all" ) {
-      combineStrategies(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
-                        strategyName=paste0(subtype,"_or"), type=type, subtype=subtype, 
+      combineStrategies(inputStrategyName, strategyName=paste0(subtype,"_or"), type=type, subtype=subtype, 
                         costs=costs, combineMode="or", force=force)   
       showSummaryForStrategy(strategyName=paste0(subtype,"_or"), futureYears=futureYears, costs=costs, 
                              minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
@@ -343,8 +390,7 @@ searchForOptimalCombined <- function
    }
    
    if (combineMode=="and" | combineMode=="all" ) {
-      combineStrategies(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
-                        strategyName=paste0(subtype,"_and"), type=type, subtype=subtype, 
+      combineStrategies(inputStrategyName, strategyName=paste0(subtype,"_and"), type=type, subtype=subtype, 
                         costs=costs, combineMode="and", force=force)   
       showSummaryForStrategy(strategyName=paste0(subtype,"_and"), futureYears=futureYears, costs=costs, 
                              minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
@@ -352,8 +398,7 @@ searchForOptimalCombined <- function
    }
 
    if (combineMode=="dynamic" | combineMode=="all" ) {
-      combineStrategies(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
-                        strategyName=paste0(subtype,"_dyn",speed), type=type, subtype=subtype, 
+      combineStrategies(inputStrategyName, strategyName=paste0(subtype,"_dyn",speed), type=type, subtype=subtype, 
                         costs=costs, combineMode="dynamic", speed=speed, force=force)   
       showSummaryForStrategy(strategyName=paste0(subtype,"_dyn",speed), futureYears=futureYears, costs=costs, 
                              minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
@@ -361,32 +406,35 @@ searchForOptimalCombined <- function
    }
    
    if (combineMode=="weighted" | combineMode=="all" )
-      for(f1 in seq(minF1, maxF1, by=byF1)) 
-         for(f2 in seq(minF2, maxF2, by=byF2)) {
-            for(f3 in seq(minF3, maxF3, by=byF3)) {
-               f4 <- round(100 - f1 - f2 - f3, 2)
-               if ((f4 >= minF4) & (f4 <= maxF4)) {
-                  strategyName <- paste0(subtype)
-                  if (maxF1 > 0) strategyName <- paste0(strategyName, "_", f1)
-                  if (maxF2 > 0) strategyName <- paste0(strategyName, "_", f2)
-                  if (maxF3 > 0) strategyName <- paste0(strategyName, "_", f3)
-                  if (maxF4 > 0) strategyName <- paste0(strategyName, "_", f4)
-                  
-                  combineStrategies(inputStrategyName1, inputStrategyName2, inputStrategyName3, inputStrategyName4, 
-                                    f1, f2, f3, f4, strategyName=strategyName, costs=costs,
-                                    type=type, subtype=subtype, combineMode="weighted", force=force)
-                  
-                  showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
-                                         minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
-                                         coeffEntropy=coeffEntropy, coeffTR=coeffTR, 
-                                         coeffVol=coeffVol, coeffDD2=coeffDD2, nameLength=nameLength, force=F)
-                  if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { # we replot only if it's been a while
-                     plotAllReturnsVsTwo(col=col, searchPlotType=plotType, costs=costs)
-                     lastTimePlotted <- proc.time()
-                  }
-               }
-            }
-         }
+      for(f1 in seq(minF[1], maxF[1], by=byF[1])) 
+         for(f2 in seq(minF[2], maxF[2], by=byF[2])) 
+            for(f3 in seq(minF[3], maxF[3], by=byF[3])) 
+               for(f4 in seq(minF[4], maxF[4], by=byF[4])) 
+                  for(f5 in seq(minF[5], maxF[5], by=byF[5])) 
+                     for(f6 in seq(minF[6], maxF[6], by=byF[6])) {
+                           
+                        f <- c(f1, f2, f3, f4, f5, f6)
+                        f <- f[1:numLoops]
+                        if( byF[numLoops]==100 ) 
+                           f[numLoops] <- 100 - sum(f[1:(numLoops-1)]) # enforcing a sum of 100%
+                           
+                        if ( sum(f)==100 && sum(abs(f))==100 ) { # only is the sum of weigths is 100% does it make sense
+                           strategyName <- paste0(subtype)
+                           for (i in 1:numLoops) strategyName <- paste0(strategyName, "_", f[i])
+                           
+                           combineStrategies(inputStrategyName, f, strategyName=strategyName, costs=costs,
+                                             type=type, subtype=subtype, combineMode="weighted", force=force)
+                           
+                           showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
+                                                  minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
+                                                  coeffEntropy=coeffEntropy, coeffTR=coeffTR, 
+                                                  coeffVol=coeffVol, coeffDD2=coeffDD2, nameLength=nameLength, force=F)
+                           if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { # we replot only if it's been a while
+                              plotAllReturnsVsTwo(col=col, searchPlotType=plotType, costs=costs)
+                              lastTimePlotted <- proc.time()
+                           }
+                        }
+                     }
    ## we replot only if we have not just plotted (literally) a second ago
    if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > 1 ) 
       plotAllReturnsVsTwo(col=col, searchPlotType=plotType, costs=costs) 
@@ -394,22 +442,17 @@ searchForOptimalCombined <- function
 
 
 searchForOptimalTechnical <- function
-         (inputStrategyName1=def$typicalSMA1, inputStrategyName2=def$typicalSMA2,
-          inputStrategyName3=def$typicalBoll, inputStrategyName4=def$typicalReversal, 
-          minF1=28L, maxF1=40L, byF1=2L, minF2=8L, maxF2=20L, byF2=2L, 
-          minF3=12L, maxF3=28L, byF3=2L, minF4=24L, maxF4=38L, 
+         (inputStrategyName = c(def$typicalSMA1, def$typicalSMA2, def$typicalBoll, def$typicalReversal1, def$typicalReversal2), 
+          minF = c(28L, 8L, 12L, 24L, 10L), maxF = c(40L, 20L, 28L, 38L, 30L), byF = c(2L, 2L, 2L, 2L, 100L), 
           futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
           type="search", subtype="technical", coeffEntropy=def$coeffEntropy, 
-          minTR=8, maxVol=16, maxDD2=1.2, minTO=1, minScore=16.2,
+          minTR=8, maxVol=16, maxDD2=1.2, minTO=1, minScore=16.8,
           col=F, CPUnumber=def$CPUnumber, plotType="dots", 
-          combineMode="weighted", nameLength=22, plotEvery=def$plotEvery, force=F) {
+          combineMode="weighted", nameLength=25, plotEvery=def$plotEvery, force=F) {
 
-   print(paste0("strategy               |  TR   ", futureYears, " yrs: med, 5%| vol. alloc: avg, now|TO yrs| DD^2 | score") )
-   print("-----------------------+-------+--------------+-------+-------------+------+------+------")
-   searchForOptimalCombined(inputStrategyName1=inputStrategyName1, inputStrategyName2=inputStrategyName2,
-        inputStrategyName3=inputStrategyName3, inputStrategyName4=inputStrategyName4, 
-        minF1=minF1, maxF1=maxF1, byF1=byF1, minF2=minF2, maxF2=maxF2, byF2=byF2, 
-        minF3=minF3, maxF3=maxF3, byF3=byF3, minF4=minF4, maxF4=maxF4, 
+   print(paste0("strategy                  |  TR   ", futureYears, " yrs: med, 5%| vol. alloc: avg, now|TO yrs| DD^2 | score") )
+   print("--------------------------+-------+--------------+-------+-------------+------+------+------")
+   searchForOptimalCombined(inputStrategyName=inputStrategyName, minF=minF, maxF=maxF, byF=byF, 
         futureYears=futureYears, costs=costs, type=type, subtype=subtype,  coeffEntropy=coeffEntropy,
         minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore,
         col=col, CPUnumber=CPUnumber, plotType=plotType, combineMode=combineMode, 
@@ -419,10 +462,8 @@ searchForOptimalTechnical <- function
 }
 
 searchForOptimalValue <- function
-      (inputStrategyName1=def$typicalCAPE1, inputStrategyName2=def$typicalCAPE2, 
-       inputStrategyName3=def$typicalDetrended1, inputStrategyName4=def$typicalDetrended2, 
-       minF1= 6L, maxF1=16L, byF1=2L, minF2=16L, maxF2=24L, byF2=2L, 
-       minF3=32L, maxF3=44L, byF3=2L, minF4=28L, maxF4=40L, 
+      (inputStrategyName = c(def$typicalCAPE1, def$typicalCAPE2, def$typicalDetrended1, def$typicalDetrended2), 
+       minF = c(6L, 16L, 32L, 28L), maxF = c(16L, 24L, 44L, 40L), byF = c(2L, 2L, 2L, 100L), 
        futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
        type="search", subtype="value", coeffEntropy=def$coeffEntropy, 
        minTR=0, maxVol=20, maxDD2=2, minTO=4, minScore=14.78,
@@ -431,10 +472,7 @@ searchForOptimalValue <- function
     
    print(paste0("strategy          |  TR   ", futureYears, " yrs: med, 5%| vol. alloc: avg, now|TO yrs| DD^2 | score") )
    print("------------------+-------+--------------+-------+-------------+------+------+------")
-   searchForOptimalCombined(inputStrategyName1=inputStrategyName1, inputStrategyName2=inputStrategyName2,
-                            inputStrategyName3=inputStrategyName3, inputStrategyName4=inputStrategyName4, 
-                            minF1=minF1, maxF1=maxF1, byF1=byF1, minF2=minF2, maxF2=maxF2, byF2=byF2, 
-                            minF3=minF3, maxF3=maxF3, byF3=byF3, minF4=minF4, maxF4=maxF4, 
+   searchForOptimalCombined(inputStrategyName=inputStrategyName, minF=minF, maxF=maxF, byF=byF, 
                             futureYears=futureYears, costs=costs, type=type, subtype=subtype, coeffEntropy=coeffEntropy, 
                             minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore,
                             col=col, CPUnumber=CPUnumber, plotType=plotType, combineMode=combineMode, 
@@ -444,13 +482,11 @@ searchForOptimalValue <- function
 }
 
 searchForOptimalBalanced <- function(
-      inputStrategyName1=def$typicalTechnical, inputStrategyName2=def$typicalValue, 
-       inputStrategyName3="", inputStrategyName4="", 
-       minF1=20L, maxF1=100L, byF1=2L, minF2=20L, maxF2=100L, byF2=1L, 
-       minF3=0L, maxF3=0L, byF3=1L, minF4=0L, maxF4=0L, 
+      inputStrategyName = c(def$typicalTechnical, def$typicalValue), 
+       minF = c(20L, 20L), maxF = c(100L, 100L), byF = c(2L, 100L),
        futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
        type="search", subtype="balanced", speed=0, coeffEntropy=def$coeffEntropy, 
-       minTR=5, maxVol=20, maxDD2=2.5, minTO=1.5, minScore=14.65,
+       minTR=5, maxVol=20, maxDD2=2.5, minTO=1.4, minScore=14.9,
        col=F, CPUnumber=def$CPUnumber, plotType="line", 
        combineMode="weighted", nameLength=15, plotEvery=def$plotEvery, force=F) {
 
@@ -458,10 +494,7 @@ searchForOptimalBalanced <- function(
    print(paste0("strategy        |  TR   ", futureYears, " yrs: med, 5%| vol. alloc: avg, now|TO yrs| DD^2 | score") )
    print("----------------+-------+--------------+-------+-------------+------+------+------")
    
-   searchForOptimalCombined(inputStrategyName1=inputStrategyName1, inputStrategyName2=inputStrategyName2,
-                            inputStrategyName3=inputStrategyName3, inputStrategyName4=inputStrategyName4, 
-                            minF1=minF1, maxF1=maxF1, byF1=byF1, minF2=minF2, maxF2=maxF2, byF2=byF2, 
-                            minF3=minF3, maxF3=maxF3, byF3=byF3, minF4=minF4, maxF4=maxF4, 
+   searchForOptimalCombined(inputStrategyName=inputStrategyName, minF=minF, maxF=maxF, byF=byF, 
                             futureYears=futureYears, costs=costs, 
                             type=type, subtype=subtype, speed=speed, coeffEntropy=coeffEntropy,
                             minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore,
