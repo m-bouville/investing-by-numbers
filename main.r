@@ -173,7 +173,8 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
 }
 
 # start(dataSplit="search", futureYears=10L, downloadAndCheckAllFiles=F, force=T)
-# start(dataSplit="none",   futureYears=15L, downloadAndCheckAllFiles=F, force=T)
+# start(dataSplit="none", futureYears=15L, downloadAndCheckAllFiles=F, force=T)
+# start(dataSplit="testing", futureYears=10L, downloadAndCheckAllFiles=F, force=T)
 # plotAllReturnsVsFour()
 
 

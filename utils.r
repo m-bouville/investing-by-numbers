@@ -593,6 +593,7 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost,
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    showSummaryForStrategy(def$typicalBalanced,     displayName="balanced    ", futureYears=futureYears, costs=costs, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+   print("-------------+-------+--------------+-------+-------------+------+------+------")
    print("")
 }
 

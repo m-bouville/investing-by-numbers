@@ -25,7 +25,7 @@ setReversalDefaultValues <- function() {
    def$reversalBullish1      <<- -50L
    def$typicalReversal1      <<- paste0("reversal_", def$reversalInputName, "_", 
                                         def$reversalAvgOver1, "__", def$reversalReturnToMean1, "_", 
-                                        -def$reversalBearish1, "_", -def$reversalBullish1)
+                                        def$reversalBearish1, "_", def$reversalBullish1)
    
    def$reversalAvgOver2      <<- 6L
    def$reversalReturnToMean2 <<- 5
@@ -33,14 +33,14 @@ setReversalDefaultValues <- function() {
    def$reversalBullish2      <<- 5.5   
    def$typicalReversal2      <<- paste0("reversal_", def$reversalInputName, "_", 
                                         def$reversalAvgOver2, "__", def$reversalReturnToMean2, "_", 
-                                        -def$reversalBearish2, "_", -def$reversalBullish2)
+                                        def$reversalBearish2, "_", def$reversalBullish2)
 }
 
 
 ## calculating trend reversal (essentially a second derivative)
 calcReversal <- function(inputDF, inputName, avgOver=def$reversalAvgOver, reversalName) {
    if (inputDF=="dat")             input <- dat[, inputName]
-   else if (inputDF=="signal") input <- signal[, inputName]
+   else if (inputDF=="signal")     input <- signal[, inputName]
    else if (inputDF=="alloc")      input <- alloc[, inputName]
    else if (inputDF=="TR")         input <- TR[, inputName]
    else if (inputDF=="next30yrs")  input <- next30yrs[, inputName]
@@ -82,7 +82,7 @@ createReversalStrategy <- function(inputDF=def$reversalInputDF, inputName=def$re
 
    reversalName <- paste0("reversal_", inputName, "_", avgOver)
    if (strategyName=="") 
-      strategyName <- paste0(reversalName, "__", returnToMean, "_", -bearish, "_", -bullish)
+      strategyName <- paste0(reversalName, "__", returnToMean, "_", bearish, "_", bullish)
    if (bearish==bullish) bullish = bearish + 1e-3 # bear==bull creates problems
    
    if (!(strategyName %in% colnames(TR)) | force) { # if data do not exist yet or we force recalculation:   
@@ -148,7 +148,7 @@ createReversalStrategy <- function(inputDF=def$reversalInputDF, inputName=def$re
 }
 
 
-searchForOptimalReversal <-function(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
+searchForOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
                                     minAvgOver=8L, maxAvgOver=10L, byAvgOver=1L, 
                                     minRTM = 10, maxRTM = 16, byRTM=1,
                                     minBear=-54, maxBear=-42, byBear=2, 
@@ -167,7 +167,7 @@ searchForOptimalReversal <-function(inputDF=def$reversalInputDF, inputName=def$r
             for ( delta in seq(minDelta, maxDelta, by=byDelta) ) {
                bull = bear + delta
                strategyName <- paste0("reversal_", inputName, "_", avgOver, "__", 
-                                      RTM, "_", -bear, "_", -bull)
+                                      RTM, "_", bear, "_", bull)
                
                createReversalStrategy(inputDF=inputDF, inputName=inputName, avgOver=avgOver, returnToMean=RTM, 
                                       bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,

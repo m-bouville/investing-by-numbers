@@ -177,7 +177,7 @@ calcInflationAndAddToDat <- function(inflationYears) {
    dat[inflationName] <<- inflationBuff
    
    # dummy for plotReturnSideways()
-   TR[inflationName] <<- numeric(numData)
+   TR[inflationName] <<- rep(NA, numData)
 }
 
 addInflationToDat <- function() {
