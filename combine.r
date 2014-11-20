@@ -18,22 +18,24 @@ setCombinedDefaultValues <- function() {
    ##   This is to avoid idiosyncrasies: if what was the best strategy when fitting 
    ##   is bad when testing, then other strategies can counterbalance it to an extent.
    ##   Ceteris paribus, the combination of 4 strategies with similar weights is safer than a single strategy.
-   def$coeffEntropy         <<- 2
-   
-   def$valueStrategies      <<- c(def$typicalCAPE1, def$typicalCAPE2, def$typicalDetrended1, def$typicalDetrended2)
-   def$valueFractions       <<- c(10, 20, 35, 35)
-   def$typicalValue         <<- paste0("value_", def$valueFractions[1], "_", def$valueFractions[2], "_", 
-                                             def$valueFractions[3], "_", def$valueFractions[4] )
+   def$coeffEntropyTechnical <<- 3
+   def$coeffEntropyValue     <<- 3
+   def$coeffEntropyBalanced  <<- 1
    
    def$technicalStrategies  <<- c(def$typicalSMA1, def$typicalSMA2, def$typicalBoll1, def$typicalBoll2,
                                   def$typicalReversal1, def$typicalReversal2)
-   def$technicalFractions   <<- c(18, 10, 16, 14, 20, 22)
+   def$technicalFractions   <<- c(16, 12, 16, 15, 20, 21)
    def$typicalTechnical     <<- paste0("technical_", def$technicalFractions[1], "_", def$technicalFractions[2], "_", 
                                        def$technicalFractions[3], "_", def$technicalFractions[4], "_", 
                                        def$technicalFractions[5], "_", def$technicalFractions[6])
    
+   def$valueStrategies      <<- c(def$typicalCAPE1, def$typicalCAPE2, def$typicalDetrended1, def$typicalDetrended2)
+   def$valueFractions       <<- c(12, 20, 35, 33)
+   def$typicalValue         <<- paste0("value_", def$valueFractions[1], "_", def$valueFractions[2], "_", 
+                                       def$valueFractions[3], "_", def$valueFractions[4] )
+   
    def$balancedStrategies   <<- c(def$typicalTechnical, def$typicalValue)
-   def$balancedFractions    <<- c(65, 35)
+   def$balancedFractions    <<- c(63, 37)
    def$balancedCombineMode  <<- "weighted"
    if (def$balancedCombineMode == "weighted")
       def$typicalBalanced   <<- paste0("balanced_", def$balancedFractions[1], "_", def$balancedFractions[2])
@@ -367,11 +369,11 @@ searchForOptimalCombined <- function
 searchForOptimalTechnical <- function
          (inputStrategyName = c(def$typicalSMA1, def$typicalSMA2, def$typicalBoll1, def$typicalBoll2, 
                                 def$typicalReversal1, def$typicalReversal2), 
-          minF = c(14L,  8L, 12L, 12L, 16L, 20L), 
+          minF = c(14L,  8L, 14L, 12L, 16L, 20L), 
           maxF = c(20L, 14L, 18L, 16L, 22L, 26L), 
           byF  = c( 2L,  2L,  2L,  2L,  2L,  2L), 
           futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
-          type="search", subtype="technical", coeffEntropy=def$coeffEntropy, 
+          type="search", subtype="technical", coeffEntropy=def$coeffEntropyTechnical, 
           minTR=8, maxVol=16, maxDD2=1.2, minTO=1, minScore=17.15,
           col=F, CPUnumber=def$CPUnumber, plotType="dots", 
           combineMode="all", nameLength=27, plotEvery=def$plotEvery, 
@@ -391,9 +393,9 @@ searchForOptimalTechnical <- function
 
 searchForOptimalValue <- function
       (inputStrategyName = c(def$typicalCAPE1, def$typicalCAPE2, def$typicalDetrended1, def$typicalDetrended2), 
-       minF = c(6L, 16L, 32L, 28L), maxF = c(16L, 24L, 44L, 40L), byF = c(2L, 2L, 2L, 100L), 
+       minF = c(6L, 10L, 34L, 30L), maxF = c(14L, 22L, 42L, 42L), byF = c(2L, 2L, 2L, 100L), 
        futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
-       type="search", subtype="value", coeffEntropy=def$coeffEntropy, 
+       type="search", subtype="value", coeffEntropy=def$coeffEntropyValue, 
        minTR=0, maxVol=20, maxDD2=2, minTO=4, minScore=14.78,
        col=F, CPUnumber=def$CPUnumber, plotType="dots", combineMode="all", 
        nameLength=17, plotEvery=def$plotEvery, 
@@ -415,7 +417,7 @@ searchForOptimalBalanced <- function(
       inputStrategyName = c(def$typicalTechnical, def$typicalValue), 
        minF = c(20L, 20L), maxF = c(100L, 100L), byF = c(1L, 1L),
        futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
-       type="search", subtype="balanced", speed=0, coeffEntropy=def$coeffEntropy, 
+       type="search", subtype="balanced", speed=0, coeffEntropy=def$coeffEntropyBalanced, 
        minTR=5, maxVol=20, maxDD2=2.5, minTO=1.3, minScore=15,
        col=F, CPUnumber=def$CPUnumber, plotType="line", 
        combineMode="weighted", nameLength=15, plotEvery=def$plotEvery, 
