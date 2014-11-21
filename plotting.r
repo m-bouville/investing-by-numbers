@@ -15,19 +15,20 @@
 
 #default values of plotting parameters
 setPlottingDefaultValues <- function() {
-   def$yTRmin    <<- 7.
-   def$yTRmax    <<- 9.2
+   def$yTRmin    <<- 6.
+   def$yTRmax    <<- 9.5
    
    def$pngWidth  <<- 1024
    def$pngHeight <<- 768
    
-   def$minVol    <<- 13
-   def$maxVol    <<- 18.5
-   def$minDD2    <<- 1.2
-   def$maxDD2    <<- 3.2
+   def$minVol    <<-  11.
+   def$maxVol    <<-  18.
+   def$minDD2    <<-   0.5
+   def$maxDD2    <<-   3.
+   def$maxTO     <<- 160
    
    def$plotEndYear <<- 2015.
-   def$maxTR     <<- 50000
+   def$maxTR     <<- 100000
    
    #Colors consistently used for the various tsrategies
    def$colCAPE      <<- "cyan"
@@ -256,10 +257,10 @@ plotAlloc <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTech
    }
 }
 
-plotReturnAndAllocTechnical <- function(stratName1=def$typicalSMA2,      col1=def$colSMA,      lwd1=2,
-                                        stratName2=def$typicalBoll1,     col2=def$colBoll,     lwd2=2,
-                                        stratName3=def$typicalBoll2,     col3=def$colBoll,     lwd3=1.5,
-                                        stratName4=def$typicalReversal1, col4=def$colReversal, lwd4=1.5, 
+plotReturnAndAllocTechnical <- function(stratName1=def$typicalSMA,      col1=def$colSMA,      lwd1=2,
+                                        stratName2=def$typicalBoll1,    col2=def$colBoll,     lwd2=2,
+                                        stratName3=def$typicalBoll2,    col3=def$colBoll,     lwd3=1.5,
+                                        stratName4=def$typicalReversal, col4=def$colReversal, lwd4=1.5, 
                                         startYear=def$plotStartYear, endYear=def$plotEndYear, 
                                         yLabel="", net=T, minTR=0.8, maxTR=def$maxTR, costs=def$tradingCost,
                                         pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
@@ -274,8 +275,8 @@ plotReturnAndAllocTechnical <- function(stratName1=def$typicalSMA2,      col1=de
 
 plotReturnAndAllocValue <- function(stratName1=def$typicalCAPE1,     col1=def$colCAPE,      lwd1=1.5,
                                     stratName2=def$typicalCAPE2,     col2=def$colCAPE,      lwd2=2,
-                                    stratName3=def$typicalDetrended1,col3=def$colDetrended, lwd3=1.5,
-                                    stratName4=def$typicalDetrended2,col4=def$colDetrended, lwd4=2,
+                                    stratName3=def$typicalDetrended, col3=def$colDetrended, lwd3=1.5,
+                                    stratName4=def$typicalValue,     col4=def$colValue,     lwd4=2,
                                     startYear=def$plotStartYear, endYear=def$plotEndYear, 
                                     yLabel="", net=T, minTR=0.8, maxTR=def$maxTR, costs=def$tradingCost,
                                     pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
@@ -1075,9 +1076,9 @@ plotAllReturnsVsFour <- function(type1=def$type1, col1=def$col1, pch1=def$pch1,
                                  Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
                                  lineCol=def$lineCol, searchPlotType="dots",
                                  xMinVol=def$minVol, xMaxVol=def$maxVol, xMinDD2=def$minDD2, xMaxDD2=def$maxDD2, 
-                                 xMinAlloc=40, xMaxAlloc=98, xMinTO=2, xMaxTO=100, 
+                                 xMinAlloc=40, xMaxAlloc=98, xMinTO=2, xMaxTO=def$maxTO, 
                                  yStatsName=def$yStatsName, yFactor=100,
-                                 yMin=def$yTRmin, yMax=def$yTRmax, costs=def$tradingCost,
+                                 yMin=def$yTRmin, yMax=def$yTRmax, costs=def$tradingCost+def$riskAsCost,
                                  figureTitle="", 
                                  pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
                                  pngName="figures/return_vs_four.png") {
@@ -1151,7 +1152,7 @@ plotAllReturnsVsTwo <- function(type1=def$type1, col1=def$col1, pch1=def$pch1,
                                 lineCol=def$lineCol, searchPlotType="dots",
                                 xMinVol=def$minVol, xMaxVol=def$maxVol, xMinDD2=def$minDD2, xMaxDD2=def$maxDD2, 
                                 yStatsName=def$yStatsName, yFactor=100, col=F,
-                                yMin=def$yTRmin, yMax=def$yTRmax, costs=def$tradingCost,
+                                yMin=def$yTRmin, yMax=def$yTRmax, costs=def$tradingCost+def$riskAsCost,
                                 figureTitle="", 
                                 pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
                                 pngName="figures/return_vs_two.png") {

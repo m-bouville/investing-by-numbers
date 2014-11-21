@@ -159,6 +159,7 @@ searchForOptimalBoll <- function(inputDF="dat", inputName="TR",
    }
    print("----------------------+-------+--------------+-------+-------------+------+------+------")
    showSummaryForStrategy(def$typicalBoll, nameLength=nameLength, costs=costs)
-   plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
+   plotAllReturnsVsTwo(col=col, searchPlotType=plotType,
+                       xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2)
 }
 

@@ -32,13 +32,13 @@ setCAPEdefaultValues <- function() {
    
    
    ## CAPE strategy with hysteresis
-   def$CAPEavgOver2 <<- 34L
+   def$CAPEavgOver2   <<- 34L
    def$hystLoopWidthMidpoint2 <<- 19.1
    def$hystLoopWidth2 <<- 6.4
-   def$slope2 <<- 2.1
-   def$typicalCAPE2 <<- paste0("CAPE", def$CAPEyears, "avg", def$CAPEavgOver2, "__hyst_", 
+   def$slope2         <<- 2.1
+   def$typicalCAPE2   <<- paste0("CAPE", def$CAPEyears, "avg", def$CAPEavgOver2, "__hyst_", 
                                 def$hystLoopWidthMidpoint2, "_", def$hystLoopWidth2, "_", def$slope2)
-   
+
    def$initialOffset <<- (def$CAPEyears-def$CAPEcheat)*12 + max(def$CAPEavgOver1, def$CAPEavgOver2)
    def$CAPEstrategies <<- c(def$typicalCAPE1, def$typicalCAPE2, def$typicalCAPE1, def$typicalCAPE2)
 }
@@ -254,9 +254,8 @@ calcOptimalCAPEwithoutHysteresis <-function
       }
    }
    if(countOnly)
-      print (paste0(counterTot, " strategies (", counterNew, " new)"))
+      print (paste0("Running ", counterTot, " parameter sets (", counterNew, " new)"))
 }
-
 
 searchForOptimalCAPEwithoutHysteresis <-function
       (minYears=10L, maxYears=10L, byYears=1L, cheat=2, 
@@ -292,6 +291,7 @@ searchForOptimalCAPEwithoutHysteresis <-function
    plotAllReturnsVsTwo(col=col, costs=costs, searchPlotType=plotType,
                        xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2)
 }
+
 
 calcOptimalCAPEwithHysteresis <- function(minYears, maxYears, byYears, cheat, 
        minAvgOver, maxAvgOver, byAvgOver, minMid, maxMid, byMid, 
@@ -343,21 +343,20 @@ calcOptimalCAPEwithHysteresis <- function(minYears, maxYears, byYears, cheat,
       }
    }
    if(countOnly)
-      print (paste0(counterTot, " strategies (", counterNew, " new)"))
+      print (paste0("Running ", counterTot, " parameter sets (", counterNew, " new)"))
 }
 
-
 searchForOptimalCAPEwithHysteresis <-function(minYears=10L, maxYears=10L, byYears=1L, cheat=2, 
-                                              minAvgOver=33L,maxAvgOver=35L, byAvgOver=1L, 
-                                              minMid =19.0,  maxMid =19.4,  byMid = .2, 
-                                              minWidth=5.8,  maxWidth=7.2,  byWidth=.2,
-                                              minSlope=2.0,  maxSlope=2.6,  bySlope=.2, 
-                                              futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
-                                              minTR=0, maxVol=20, maxDD2=5, minTO=5, minScore=13.02,
-                                              coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
-                                              xMinVol=15, xMaxVol=22, xMinDD2=1, xMaxDD2=2,
-                                              CPUnumber=def$CPUnumber, col=F, plotType="symbols", 
-                                              nameLength=30, plotEvery=def$plotEvery, force=F) {
+       minAvgOver=33L,maxAvgOver=35L, byAvgOver=1L, 
+       minMid =19.0,  maxMid =19.4,  byMid = .2, 
+       minWidth=5.8,  maxWidth=7.2,  byWidth=.2,
+       minSlope=2.0,  maxSlope=2.6,  bySlope=.2, 
+       futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
+       minTR=0, maxVol=20, maxDD2=5, minTO=5, minScore=13.02,
+       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
+       xMinVol=15, xMaxVol=22, xMinDD2=1, xMaxDD2=2,
+       CPUnumber=def$CPUnumber, col=F, plotType="symbols", 
+       nameLength=30, plotEvery=def$plotEvery, force=F) {
    
    # calculate how many parameters sets will be run
    calcOptimalCAPEwithHysteresis(minYears, maxYears, byYears, cheat, 
@@ -496,12 +495,14 @@ searchForOptimalMetaCAPE <-function(stratName1=def$CAPEstrategies[[1]], stratNam
 #          #print(name)
 #          if ((f3 > minF3 - 1e-6) & (f3 < maxF3 + 1e-6)) {
 #             calcMultiStrategyReturn(name1=stratName1, name2=stratName2, name3=stratName3, name4=stratName4, 
-#                                     f1/100, f2/100, f3/100, f4/100, strategyName=strategyName, 10*12, delta="", force=force)
+#                  f1/100, f2/100, f3/100, f4/100, strategyName=strategyName, 10*12, delta="", force=force)
 #             showSummaryStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, 
-#                                 cutoffScore=cutoffScore, displayName=displayName, force=force)
+#                 cutoffScore=cutoffScore, displayName=displayName, force=force)
 #          }
 #       }
-#    showSummaryStrategy("CAPE10avg24",  futureYears=futureYears, tradingCost=tradingCost, displayName="CAPE10  ", force=F)
-#    showSummaryStrategy("balanced40_25_10_25", futureYears=futureYears, tradingCost=tradingCost, displayName="balanced", force=F)
+#    showSummaryStrategy("CAPE10avg24",  futureYears=futureYears, 
+#       tradingCost=tradingCost, displayName="CAPE10  ", force=F)
+#    showSummaryStrategy("balanced40_25_10_25", futureYears=futureYears, 
+#       tradingCost=tradingCost, displayName="balanced", force=F)
 }
 

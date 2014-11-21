@@ -522,16 +522,17 @@ showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def
    
    if( is.infinite(TO) ) {
       TOpad1 = " "
-      TOpad2 = ""
+      TOpad2 = " "
    }
    else {
       if (TO>=10) TOpad1 = ""
          else TOpad1 = " "
-      if (round(TO, 1)%%1 == 0) TOpad2 = "  " # no decimals
-         else TOpad2 = ""
+      if (round(TO, 2)%%1 == 0) TOpad2 = ".  " # no decimals
+      else if (round(10*TO, 1)%%1 == 0) TOpad2 = " " # single decimal
+      else TOpad2 = ""
    }
    
-   if ((round(DD2,2))%%1 == 0) DD2Pad = ".  " # no decimals
+   if (round(DD2,2)%%1 == 0) DD2Pad = ".  " # no decimals
    else if ((10*round(DD2,2))%%1 == 0) DD2Pad = " " # single decimal
       else DD2Pad = ""
    
@@ -544,63 +545,57 @@ showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def
                    round(med,1), medPad, "%, ", fivePad1, five, fivePad2, "% | ",
                    round(vol,1), volPad, "% |  ",
                    avgAllocPad, round(avgAlloc), "%, ", latestAllocPad, round(latestAlloc), "% | ",
-                   TOpad1, round(TO, 1), TOpad2, " | ",
+                   TOpad1, round(TO, 2), TOpad2, " | ",
                    round(DD2,2), DD2Pad, " | ", 
                    scorePad, round(score,2) ) )
 }
 
-showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost, 
+showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
                           coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, detailed=T, force=F) {
    # force pertains only to showSummaryForStrategy, not to calc...StrategyReturn (these are all set to F)
 
    print(paste0("* Statistics of the strategies (costs = ", round(100*costs,2), "% per year of turnover):"))
-   print(paste0("strategy     |  TR   ", futureYears, " yrs: med, 5%| vol. alloc: avg, now|TO yrs| DD^2 | score") )
-   print("-------------+-------+--------------+-------+-------------+------+------+------")
+   print(paste0("strategy      |  TR   ", futureYears, " yrs: med, 5%| vol. alloc: avg, now|TO yrs | DD^2 | score") )
+   print("--------------+-------+--------------+-------+-------------+-------+------+------")
    
-   showSummaryForStrategy("stocks", displayName="stocks      ", futureYears=futureYears, costs=0, 
+   showSummaryForStrategy("stocks", displayName="stocks       ", futureYears=futureYears, costs=0, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    
    if(detailed) {
-      showSummaryForStrategy("constantAlloc80_20", displayName="80_20       ", futureYears=futureYears, costs=0, 
+      showSummaryForStrategy("constantAlloc80_20", displayName="80_20        ", futureYears=futureYears, costs=0, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-      print("-------------+-------+--------------+-------+-------------+------+------+------")
-      showSummaryForStrategy(def$typicalCAPE1,     displayName="CAPE no hys.", futureYears=futureYears, costs=costs, 
+      print("--------------+-------+--------------+-------+-------------+-------+------+------")
+      showSummaryForStrategy(def$typicalBoll1,      displayName="Bollinger 1  ", futureYears=futureYears, costs=costs, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-      showSummaryForStrategy(def$typicalCAPE2,     displayName="CAPE hyster.", futureYears=futureYears, costs=costs, 
+      showSummaryForStrategy(def$typicalBoll2,      displayName="Bollinger 2  ", futureYears=futureYears, costs=costs, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-      showSummaryForStrategy(def$typicalDetrended1,displayName="detrended 1 ", futureYears=futureYears, costs=costs, 
-                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-      showSummaryForStrategy(def$typicalDetrended2,displayName="detrended 2 ", futureYears=futureYears, costs=costs, 
-                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-      print("-------------+-------+--------------+-------+-------------+------+------+------")
-      showSummaryForStrategy(def$typicalBoll1,      displayName="Bollinger 1 ", futureYears=futureYears, costs=costs, 
-                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-      showSummaryForStrategy(def$typicalBoll2,      displayName="Bollinger 2 ", futureYears=futureYears, costs=costs, 
-                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-      showSummaryForStrategy(def$typicalSMA1,       displayName="SMA 1       ", futureYears=futureYears, costs=costs, 
+      showSummaryForStrategy(def$typicalSMA,        displayName="SMA          ", futureYears=futureYears, costs=costs, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)   
-      showSummaryForStrategy(def$typicalSMA2,       displayName="SMA 2       ", futureYears=futureYears, costs=costs, 
-                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)   
-      showSummaryForStrategy(def$typicalReversal1,  displayName="reversal 1  ", futureYears=futureYears, costs=costs, 
+      showSummaryForStrategy(def$typicalReversal,   displayName="reversal     ", futureYears=futureYears, costs=costs, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-      showSummaryForStrategy(def$typicalReversal2,  displayName="reversal 2  ", futureYears=futureYears, costs=costs, 
+      print("--------------+-------+--------------+-------+-------------+-------+------+------")
+      showSummaryForStrategy(def$typicalCAPE1,     displayName="CAPE no hyst.", futureYears=futureYears, costs=costs, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-      print("-------------+-------+--------------+-------+-------------+------+------+------")
+      showSummaryForStrategy(def$typicalCAPE2,     displayName="CAPE hyster. ", futureYears=futureYears, costs=costs, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+      showSummaryForStrategy(def$typicalDetrended, displayName="detrended    ", futureYears=futureYears, costs=costs, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+      print("--------------+-------+--------------+-------+-------------+-------+------+------")
    }
-   showSummaryForStrategy(def$typicalValue,        displayName="value       ", futureYears=futureYears, costs=costs, 
+   showSummaryForStrategy(def$typicalTechnical,    displayName="technical    ", futureYears=futureYears, costs=costs, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-   showSummaryForStrategy(def$typicalTechnical,    displayName="technical   ", futureYears=futureYears, costs=costs, 
+   showSummaryForStrategy(def$typicalValue,        displayName="value        ", futureYears=futureYears, costs=costs, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-   showSummaryForStrategy(def$typicalBalanced,     displayName="balanced    ", futureYears=futureYears, costs=costs, 
+   showSummaryForStrategy(def$typicalBalanced,     displayName="balanced     ", futureYears=futureYears, costs=costs, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-   print("-------------+-------+--------------+-------+-------------+------+------+------")
+   print("--------------+-------+--------------+-------+-------------+-------+------+------")
    print("")
 }
 
 
 
 # not to be used anymore
-calcTRnetOfTradingCost <- function(strategyName, tradingCost=def$tradingCost, force=F) {
+calcTRnetOfTradingCost <- function(strategyName, tradingCost=def$tradingCost+def$riskAsCost, force=F) {
    warning("calcTRnetOfTradingCost() should not be used anymore.")
    #    requireColInTR(strategyName)
    #    index <- which(stats$strategy == strategyName)
@@ -635,7 +630,8 @@ calcTRnetOfTradingCost <- function(strategyName, tradingCost=def$tradingCost, fo
 }
 
 ## not used
-calcTurnoverAndTRnetOfTradingCost <- function(strategyName, futureYears=def$futureYears, tradingCost=def$tradingCost, force=F) {
+calcTurnoverAndTRnetOfTradingCost <- function(strategyName, futureYears=def$futureYears, 
+                                              tradingCost=def$tradingCost+def$riskAsCost, force=F) {
    warning("calcTurnoverAndTRnetOfTradingCost() should not be used anymore.")
    
    #       time1 <- proc.time()      

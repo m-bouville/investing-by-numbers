@@ -18,20 +18,20 @@ setSMAdefaultValues <- function() {
    def$SMAinputDF    <<- "dat"
    def$SMAinputName  <<- "TR"
 
-   def$SMA1_1         <<- 10L
-   def$SMA2_1         <<- 5L
-   def$SMAbearish1    <<- 19L
-   def$SMAbullish1    <<- 18L
-   def$typicalSMA1    <<- paste0("SMA_", def$SMAinputName, "_", def$SMA1_1, "_", def$SMA2_1, "__", 
-                                 def$SMAbearish1, "_", def$SMAbullish1)
+#    def$SMA1_1         <<- 10L
+#    def$SMA2_1         <<- 5L
+#    def$SMAbearish1    <<- 19L
+#    def$SMAbullish1    <<- 18L
+#    def$typicalSMA1    <<- paste0("SMA_", def$SMAinputName, "_", def$SMA1_1, "_", def$SMA2_1, "__", 
+#                                  def$SMAbearish1, "_", def$SMAbullish1)
 
    # lower volatility and lower DD (but lower retrurn too)
-   def$SMA1_2         <<- 14L
-   def$SMA2_2         <<- 1L
-   def$SMAbearish2    <<- 12L
-   def$SMAbullish2    <<- 12L
-   def$typicalSMA2    <<- paste0("SMA_", def$SMAinputName, "_", def$SMA1_2, "_", def$SMA2_2, "__", 
-                                 def$SMAbearish2, "_", def$SMAbullish2)
+   def$SMA1        <<- 14L
+   def$SMA2        <<- 1L
+   def$SMAbearish  <<- 12L
+   def$SMAbullish  <<- 12L
+   def$typicalSMA  <<- paste0("SMA_", def$SMAinputName, "_", def$SMA1, "_", def$SMA2, "__", 
+                                 def$SMAbearish, "_", def$SMAbullish)
 }
 
 ## calculating simple moving average (SMA)
