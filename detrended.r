@@ -139,6 +139,56 @@ createDetrendedStrategy <- function(inputDF=def$detrendedInputDF, inputName=def$
 }
 
 
+calcOptimalDetrended <- function(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOver, 
+      minBear, maxBear, byBear, minDelta, maxDelta, byDelta, 
+      futureYears, costs, minTR, maxVol, maxDD2, minTO, minScore, 
+      coeffTR, coeffVol, coeffDD2, countOnly,
+      col, plotType, xMinVol, xMaxVol, xMinDD2, xMaxDD2,
+      CPUnumber, nameLength, plotEvery, force) {
+   
+   counterTot <- 0; counterNew <- 0
+   lastTimePlotted <- proc.time()
+   
+   detrendedName <- paste0("detrended_", inputName)
+   if(!countOnly) 
+      calcDetrended(inputDF=inputDF, inputName=inputName, detrendedName) 
+   
+   for (avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver)) {
+      if(!countOnly) 
+         calcAvgDetrended(detrendedName, avgOver=avgOver)
+      for ( bear in seq(minBear, maxBear, by=byBear) ) {      
+         for ( delta in seq(minDelta, maxDelta, by=byDelta) ) {
+            bull = bear - delta
+            strategyName <- paste0(detrendedName, "_avg", avgOver, "__", bear, "_", bull)
+            if (delta==0) bull = bear - 1e-3 # bear=bull creates problems
+            
+            counterTot <- counterTot + 1 
+            if(countOnly) {
+               if ( !(strategyName %in% colnames(TR)) | !(strategyName %in% colnames(alloc)) )
+                  counterNew <- counterNew + 1                  
+            } else {
+               createDetrendedStrategy(inputDF=inputDF, inputName=inputName, avgOver=avgOver, strategyName=strategyName, 
+                                    bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
+                                    type="search", futureYears=futureYears, force=force)
+            
+               showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
+                                   minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, 
+                                   minScore=minScore, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, 
+                                   nameLength=nameLength, force=F)            
+            }
+         }
+         if ( !countOnly && (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { 
+            # we replot only if it's been a while
+            plotAllReturnsVsTwo(col=col, searchPlotType=plotType,
+                                xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2)
+            lastTimePlotted <- proc.time()
+         }
+      }
+   }
+   if(countOnly)
+      print (paste0("Running ", counterTot, " parameter sets (", counterNew, " new)"))
+}
+
 searchForOptimalDetrended <- function(inputDF=def$detrendedInputDF, inputName=def$detrendedInputName, 
                                       minAvgOver=20L, maxAvgOver=42L, byAvgOver=2L, 
                                       minBear=22, maxBear=32, byBear=1, 
@@ -147,42 +197,35 @@ searchForOptimalDetrended <- function(inputDF=def$detrendedInputDF, inputName=de
                                       minTR=0, maxVol=20, maxDD2=5, minTO=4, minScore=14.2, 
                                       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, col=F, 
                                       plotType="symbols", CPUnumber=def$CPUnumber, 
+                                      xMinVol=13, xMaxVol=22, xMinDD2=1, xMaxDD2=1.8,
                                       nameLength=28, plotEvery=def$plotEvery, force=F) {
    
-   lastTimePlotted <- proc.time()
+   # calculate how many parameters sets will be run   
+   calcOptimalDetrended(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOver, 
+                        minBear, maxBear, byBear, minDelta, maxDelta, byDelta, 
+                        futureYears, costs, minTR, maxVol, maxDD2, minTO, minScore, 
+                        coeffTR, coeffVol, coeffDD2, countOnly=T,
+                        col, plotType, xMinVol, xMaxVol, xMinDD2, xMaxDD2,
+                        CPUnumber, nameLength, plotEvery, force)   
+   
    print(paste0("strategy                     |  TR   ", futureYears, 
                 " yrs: med, 5%| vol. alloc: avg, now|TO yrs| DD^2 | score") )
    print("-----------------------------+-------+--------------+-------+-------------+------+------+------")
 
-   detrendedName <- paste0("detrended_", inputName)
-   calcDetrended(inputDF=inputDF, inputName=inputName, detrendedName) 
-   
-   for (avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver)) {
-      calcAvgDetrended(detrendedName, avgOver=avgOver)
-      for ( bear in seq(minBear, maxBear, by=byBear) ) {      
-         for ( delta in seq(minDelta, maxDelta, by=byDelta) ) {
-            bull = bear - delta
-            strategyName <- paste0(detrendedName, "_avg", avgOver, "__", bear, "_", bull)
-            if (delta==0) bull = bear - 1e-3 # bear=bull creates problems
-            
-            createDetrendedStrategy(inputDF=inputDF, inputName=inputName, avgOver=avgOver, strategyName=strategyName, 
-                                    bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
-                                    type="search", futureYears=futureYears, force=force)
-            
-            showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
-                                   minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, 
-                                   minScore=minScore, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, 
-                                   nameLength=nameLength, force=F)            
-         }
-         if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { # we replot only if it's been a while
-            plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
-            lastTimePlotted <- proc.time()
-         }
-      }
-   }
+
+   # actually calculating
+   calcOptimalDetrended(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOver, 
+                        minBear, maxBear, byBear, minDelta, maxDelta, byDelta, 
+                        futureYears, costs, minTR, maxVol, maxDD2, minTO, minScore, 
+                        coeffTR, coeffVol, coeffDD2, countOnly=F,
+                        col, plotType, xMinVol, xMaxVol, xMinDD2, xMaxDD2,
+                        CPUnumber, nameLength, plotEvery, force)
+
    print("")
-   showSummaryForStrategy(def$typicalDetrended1, costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, nameLength=nameLength)
-   showSummaryForStrategy(def$typicalDetrended2, costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, nameLength=nameLength)
+   showSummaryForStrategy(def$typicalDetrended1, costs=costs, 
+                          coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, nameLength=nameLength)
+   showSummaryForStrategy(def$typicalDetrended2, costs=costs, 
+                          coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, nameLength=nameLength)
    plotAllReturnsVsTwo(col=col, costs=costs, searchPlotType=plotType)
 }
 
