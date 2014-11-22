@@ -18,20 +18,12 @@ setSMAdefaultValues <- function() {
    def$SMAinputDF    <<- "dat"
    def$SMAinputName  <<- "TR"
 
-#    def$SMA1_1         <<- 10L
-#    def$SMA2_1         <<- 5L
-#    def$SMAbearish1    <<- 19L
-#    def$SMAbullish1    <<- 18L
-#    def$typicalSMA1    <<- paste0("SMA_", def$SMAinputName, "_", def$SMA1_1, "_", def$SMA2_1, "__", 
-#                                  def$SMAbearish1, "_", def$SMAbullish1)
-
    # lower volatility and lower DD (but lower retrurn too)
    def$SMA1        <<- 14L
    def$SMA2        <<- 1L
    def$SMAbearish  <<- 12L
    def$SMAbullish  <<- 12L
-   def$typicalSMA  <<- paste0("SMA_", def$SMAinputName, "_", def$SMA1, "_", def$SMA2, "__", 
-                                 def$SMAbearish, "_", def$SMAbullish)
+   def$typicalSMA  <<- paste0("SMA_", def$SMA1, "_", def$SMA2, "__", def$SMAbearish, "_", def$SMAbullish)
 }
 
 ## calculating simple moving average (SMA)
@@ -73,7 +65,7 @@ createSMAstrategy <- function(inputDF="dat", inputName="TR", SMA1=def$SMA1, SMA2
                               coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
    
    if (strategyName=="") 
-      strategyName <- paste0("SMA_", inputName, "_", SMA1, "_", SMA2, "__", bearish, "_", bullish)
+      strategyName <- paste0("SMA_", SMA1, "_", SMA2, "__", bearish, "_", bullish)
    if (bullish == bearish) 
       bullish = bearish - 1e-3 # bearish=bullish creates problems
    bearish <- bearish/1000
@@ -136,14 +128,14 @@ searchForOptimalSMA <- function(inputDF="dat", inputName="TR",
                                 minBear=18, maxBear=20, byBear=0.5, 
                                 minDelta=0, maxDelta=2, byDelta=0.5,  
                                 futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
-                                minTR=0, maxVol=20, maxDD2=2, minTO=0.7, minScore=14.85, 
+                                minTR=0, maxVol=20, maxDD2=2, minTO=0.7, minScore=8.45, 
                                 type="search", col=F, plotType="symbols", 
                                 nameLength=23, plotEvery=def$plotEvery, force=F) {
    
    lastTimePlotted <- proc.time()
    print(paste0("strategy                |  TR   ", futureYears, 
-                " yrs: med, 5%| vol. alloc: avg, now|TO yrs| DD^2 | score") )
-   print("------------------------+-------+--------------+-------+-------------+------+------+------")
+                " yrs: med, 5%| vol. alloc: avg, now|TO yrs | DD^2 | score") )
+   print("------------------------+-------+--------------+-------+-------------+-------+------+------")
    
    for ( SMA1 in seq(minSMA1, maxSMA1, by=bySMA1) ) 
       for ( SMA2 in seq(minSMA2, maxSMA2, by=bySMA2) )       
@@ -151,7 +143,7 @@ searchForOptimalSMA <- function(inputDF="dat", inputName="TR",
             for ( delta in seq(minDelta, maxDelta, by=byDelta) ) {
                bull = bear - delta               
                
-               strategyName <- paste0("SMA_", inputName, "_", SMA1, "_", SMA2, "__", bear, "_", bull)
+               strategyName <- paste0("SMA_", SMA1, "_", SMA2, "__", bear, "_", bull)
                if (delta==0) bull = bear - 1e-3 # bear=bull creates problems
                
                createSMAstrategy(inputDF=inputDF, inputName=inputName, SMA1=SMA1, SMA2=SMA2,
@@ -166,28 +158,27 @@ searchForOptimalSMA <- function(inputDF="dat", inputName="TR",
                lastTimePlotted <- proc.time()
             }
          }
-   print("")
-   showSummaryForStrategy(def$typicalSMA1, nameLength=nameLength, costs=costs)
-   showSummaryForStrategy(def$typicalSMA2, nameLength=nameLength, costs=costs)
+   print("------------------------+-------+--------------+-------+-------------+-------+------+------")
+   showSummaryForStrategy(def$typicalSMA, nameLength=nameLength, costs=costs)
    plotAllReturnsVsTwo(col=col, costs=costs, searchPlotType=plotType)
 }
 
 
-
-searchForTwoOptimalSMA <-function(plotType="symbols", force=F) {
-   print("SMA1")
-   searchForOptimalSMA(minSMA1=9L, maxSMA1=11L, bySMA1=1L,
-                       minSMA2=4L, maxSMA2=6L, bySMA2=1L, 
-                       minBear=18, maxBear=20, byBear=0.5, 
-                       minDelta=0, maxDelta=2, byDelta=0.5, minScore=14.85)
-   print("")
-   
-   print("SMA2")
-   searchForOptimalSMA(minSMA1=13L, maxSMA1=15L, bySMA1= 1L,
-                       minSMA2= 1L, maxSMA2= 2L, bySMA2= 1L, 
-                       minBear= 11, maxBear= 13, byBear= 0.5, 
-                       minDelta= 0, maxDelta= 2, byDelta=0.5, minScore=14.25)
-}
+# 
+# searchForTwoOptimalSMA <-function(plotType="symbols", force=F) {
+#    print("SMA1")
+#    searchForOptimalSMA(minSMA1=9L, maxSMA1=11L, bySMA1=1L,
+#                        minSMA2=4L, maxSMA2=6L, bySMA2=1L, 
+#                        minBear=18, maxBear=20, byBear=0.5, 
+#                        minDelta=0, maxDelta=2, byDelta=0.5, minScore=14.85)
+#    print("")
+#    
+#    print("SMA2")
+#    searchForOptimalSMA(minSMA1=13L, maxSMA1=15L, bySMA1= 1L,
+#                        minSMA2= 1L, maxSMA2= 2L, bySMA2= 1L, 
+#                        minBear= 11, maxBear= 13, byBear= 0.5, 
+#                        minDelta= 0, maxDelta= 2, byDelta=0.5, minScore=14.25)
+# }
 
 ## OBSOLETE
 plotSMA <- function(SMA1=def$SMA1, SMA2=def$SMA2, futureYears=def$FutureYears, startYear=1885) {

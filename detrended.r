@@ -20,17 +20,17 @@ setDetrendedDefaultValues <- function() {
    def$detrendedInputName   <<- "TR"
    
    ## detrended strategy in stocks 90% of the time, just dodging the worst bubbles
-#    def$detrendedAvgOver1    <<- 40L
-#    def$detrendedBearish1    <<- 29.4
-#    def$detrendedBullish1    <<- 29.4
-#    def$typicalDetrended1    <<- paste0("detrended_", def$detrendedInputName, "_avg", def$detrendedAvgOver1, "__", 
-#                                              def$detrendedBearish1, "_", def$detrendedBullish1)
+   #    def$detrendedAvgOver1    <<- 40L
+   #    def$detrendedBearish1    <<- 29.4
+   #    def$detrendedBullish1    <<- 29.4
+   #    def$typicalDetrended1    <<- paste0("detrended_", def$detrendedAvgOver1, "_", 
+   #                                        def$detrendedBearish1, "_", def$detrendedBullish1)
    
    ## detrended strategy with lower stock allocation (and vol and DD)
    def$detrendedAvgOver    <<- 23L
    def$detrendedBearish    <<- 22.4
    def$detrendedBullish    <<- 22.2
-   def$typicalDetrended    <<- paste0("detrended_", def$detrendedInputName, "_avg", def$detrendedAvgOver, "__", 
+   def$typicalDetrended    <<- paste0("detrended_", def$detrendedAvgOver, "_", 
                                        def$detrendedBearish, "_", def$detrendedBullish)
 }
 
@@ -96,8 +96,8 @@ createDetrendedStrategy <- function(inputDF=def$detrendedInputDF, inputName=def$
                                     coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {   
    if (strategyName=="") {
       if( is.numeric(avgOver) )
-         strategyName <- paste0("detrended_", inputName, "_avg", avgOver, "__", bearish, "_", bullish)
-      else strategyName <- paste0("detrended_", inputName, "__", bearish, "_", bullish)
+         strategyName <- paste0("detrended_", avgOver, "_", bearish, "_", bullish)
+      else strategyName <- paste0("detrended_", bearish, "_", bullish)
    }
    if (bullish == bearish) bullish = bearish - 1e-3 # bearish=bullish creates problems
    
@@ -159,7 +159,7 @@ calcOptimalDetrended <- function(inputDF, inputName, minAvgOver, maxAvgOver, byA
       for ( bear in seq(minBear, maxBear, by=byBear) ) {      
          for ( delta in seq(minDelta, maxDelta, by=byDelta) ) {
             bull = bear - delta
-            strategyName <- paste0(detrendedName, "_avg", avgOver, "__", bear, "_", bull)
+            strategyName <- paste0("detrended_", avgOver, "_", bear, "_", bull)
             if (delta==0) bull = bear - 1e-3 # bear=bull creates problems
             
             counterTot <- counterTot + 1 
@@ -198,7 +198,7 @@ searchForOptimalDetrended <- function(inputDF=def$detrendedInputDF, inputName=de
                                       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, col=F, 
                                       plotType="symbols", CPUnumber=def$CPUnumber, 
                                       xMinVol=13, xMaxVol=22, xMinDD2=1, xMaxDD2=1.8,
-                                      nameLength=28, plotEvery=def$plotEvery, force=F) {
+                                      nameLength=25, plotEvery=def$plotEvery, force=F) {
    
    # calculate how many parameters sets will be run   
    calcOptimalDetrended(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOver, 
@@ -208,10 +208,9 @@ searchForOptimalDetrended <- function(inputDF=def$detrendedInputDF, inputName=de
                         col, plotType, xMinVol, xMaxVol, xMinDD2, xMaxDD2,
                         CPUnumber, nameLength, plotEvery, force)   
    
-   print(paste0("strategy                     |  TR   ", futureYears, 
-                " yrs: med, 5%| vol. alloc: avg, now|TO yrs| DD^2 | score") )
-   print("-----------------------------+-------+--------------+-------+-------------+------+------+------")
-
+   print(paste0("strategy                  |  TR   ", futureYears, 
+                " yrs: med, 5%| vol. alloc: avg, now|TO yrs | DD^2 | score") )
+   print("--------------------------+-------+--------------+-------+-------------+-------+------+------")
 
    # actually calculating
    calcOptimalDetrended(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOver, 
@@ -221,7 +220,7 @@ searchForOptimalDetrended <- function(inputDF=def$detrendedInputDF, inputName=de
                         col, plotType, xMinVol, xMaxVol, xMinDD2, xMaxDD2,
                         CPUnumber, nameLength, plotEvery, force)
 
-   print("")
+   print("--------------------------+-------+--------------+-------+-------------+-------+------+------")
    showSummaryForStrategy(def$typicalDetrended1, costs=costs, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, nameLength=nameLength)
    showSummaryForStrategy(def$typicalDetrended2, costs=costs, 
@@ -230,19 +229,17 @@ searchForOptimalDetrended <- function(inputDF=def$detrendedInputDF, inputName=de
 }
 
 
-## There are two optima fairly far apart in parameter space, with little of interest in between
+## These are two optimal (and fairly far apart in parameter space), with little of interest in between
 # searchForTwoOptimalDetrended <-function(plotType="symbols", force=F) {   
-#    searchForOptimalDetrended(minAvgOver=39L, maxAvgOver=41L, byAvgOver=1L, 
-#                              minBear=29.0,   maxBear=29.8,   byBear=0.2, 
-#                              minDelta=0,     maxDelta=0.4,   byDelta=0.2, 
-#                              minScore=14.55,
-#                              plotType=plotType, force=force)
+#    searchForOptimalDetrended(minAvgOver=39L, maxAvgOver=41L,  byAvgOver=1L, 
+#                              minBear=  29.0, maxBear=   29.8, byBear=   0.2, 
+#                              minDelta=  0,   maxDelta=   0.4, byDelta=  0.2, 
+#                              minScore=  8.85,    plotType=plotType, force=force)
 #    print("")
 #    searchForOptimalDetrended(minAvgOver=22L, maxAvgOver=24L, byAvgOver=1L, 
-#                              minBear=22.,    maxBear=23.,    byBear=0.2, 
-#                              minDelta=0,     maxDelta=0.6,   byDelta=0.2, 
-#                              minScore=14.52,
-#                              plotType=plotType, force=force)   
+#                              minBear=   22., maxBear=   23., byBear=   0.2, 
+#                              minDelta=   0,  maxDelta=  0.6, byDelta=  0.2, 
+#                              minScore=8.75,      plotType=plotType, force=force)   
 # }
 
 

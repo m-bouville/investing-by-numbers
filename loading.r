@@ -21,12 +21,15 @@ setDefaultValues <- function(dataSplit, futureYears=10L, tradingCost=0.5/100, fo
    def$tradingCost   <<- tradingCost    # default value for the trading costs
    message("default tradingCost: ", def$tradingCost*100, "% / per year of turnover")
    if(dataSplit=="search") {
-      def$riskAsCost   <<- 0.5/100 # default value for the trading costs
-      message("default riskAsCost:  ", def$riskAsCost*100, "% / per year of turnover")
-   } else {
+      def$riskAsCost <<- 0.5/100 # default value for the trading costs
+      message("default riskAsCost:  ", def$riskAsCost*100, "% / per year of turnover for \'SEARCH\' phase")
+   } else if(dataSplit=="testing") {
       def$riskAsCost <<- 0
-      message("default riskAsCost set to 0 for \'testing\' phase.")      
-   }      
+      message("default riskAsCost set to 0 for \'TESTING\' phase")      
+   }  else if(dataSplit=="none") {
+      def$riskAsCost <<- 0
+      message("default riskAsCost set to 0 for \'NONE\' phase")      
+   } else stop("dataSplit can only be one of 'none', 'search' or 'testing', not ", dataSplit)
    
    def$dataStartYear <<- 1871
    def$startIndex    <<- round(10.5*12+1)
@@ -48,8 +51,8 @@ setDefaultValues <- function(dataSplit, futureYears=10L, tradingCost=0.5/100, fo
    ## provided that the return increases by at least 0.1%
    def$coeffDD2      <<- 1/8
    
-   def$signalMin     <<- -0.2
-   def$signalMax     <<-  1.2
+   def$signalMin     <<- -0.2 # lowest possible value (asymptote) for signal
+   def$signalMax     <<- 1 - def$signalMin
    
    setPlottingDefaultValues()
    setCAPEdefaultValues()
@@ -339,7 +342,7 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
                            signalMin=def$signalMin, signalMax=def$signalMax,
                            futureYears=def$futureYears, costs=def$tradingCost, 
                            coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
-   
+    
    combineStrategies(def$technicalStrategies, def$technicalFractions, 
                      type="combined", subtype="technical", combineMode="weighted", costs=def$tradingCost, 
                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
@@ -352,4 +355,12 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
                      type="combined", subtype="balanced", combineMode=def$balancedCombineMode,
                      costs=def$tradingCost, 
                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
+#    combineStrategies(def$balancedStrategies1, def$balancedFractions1,
+#                      type="combined", subtype="balanced", combineMode=def$balancedCombineMode1,
+#                      costs=def$tradingCost, 
+#                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
+#    combineStrategies(def$balancedStrategies2, def$balancedFractions2,
+#                      type="combined", subtype="balanced", combineMode=def$balancedCombineMode2,
+#                      costs=def$tradingCost, 
+#                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
 }

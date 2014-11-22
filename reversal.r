@@ -19,8 +19,8 @@ setReversalDefaultValues <- function() {
    def$reversalInputDF       <<- "dat"
    def$reversalInputName     <<- "TR"
    
-   def$reversalAvgOver      <<- 9L
-   def$reversalReturnToMean <<- 14L
+   def$reversalAvgOver      <<-   9L
+   def$reversalReturnToMean <<-  14L
    def$reversalBearish      <<- -50L
    def$reversalBullish      <<- -50L
    def$typicalReversal      <<- paste0("reversal_", def$reversalInputName, "_", 
@@ -135,8 +135,8 @@ createReversalStrategy <- function(inputDF=def$reversalInputDF, inputName=def$re
       parameters$inputDF[index]     <<- inputDF
       parameters$inputName[index]   <<- inputName
       parameters$startIndex[index]  <<- startIndex
-      parameters$bearish[index]    <<- bearish
-      parameters$bullish[index]    <<- bullish  
+      parameters$bearish[index]     <<- bearish
+      parameters$bullish[index]     <<- bullish  
       parameters$avgOver[index]     <<- avgOver
       parameters$name1[index]       <<- "returnToMean"
       parameters$value1[index]      <<- returnToMean      
@@ -158,8 +158,8 @@ searchForOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$
                                     col=F, plotType="symbols", nameLength=25, plotEvery=def$plotEvery, force=F) {
    lastTimePlotted <- proc.time()  
    print(paste0("strategy                  |  TR   ", futureYears, 
-                " yrs: med, 5%| vol. alloc: avg, now|TO yrs| DD^2 | score") )
-   print("--------------------------+-------+--------------+-------+-------------+------+------+------")
+                " yrs: med, 5%| vol. alloc: avg, now|TO yrs | DD^2 | score") )
+   print("--------------------------+-------+--------------+-------+-------------+-------+------+------")
    
    for ( avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver) ) 
       for ( RTM in seq(minRTM, maxRTM, by=byRTM) ) 
@@ -181,7 +181,7 @@ searchForOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$
             lastTimePlotted <- proc.time()
          }
       }
-   print("")
+   print("--------------------------+-------+--------------+-------+-------------+-------+------+------")
    showSummaryForStrategy(def$typicalReversal, nameLength=nameLength, costs=costs)
    plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
 }

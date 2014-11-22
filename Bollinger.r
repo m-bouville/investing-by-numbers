@@ -22,13 +22,13 @@ setBollDefaultValues <- function() {
    def$BollAvgOver1    <<-  14L
    def$BollBearish1    <<- -31
    def$BollBullish1    <<- -31
-   def$typicalBoll1    <<- paste0("Boll_", def$BollInputName, "_", def$BollAvgOver1, "__", 
+   def$typicalBoll1    <<- paste0("Boll_", def$BollAvgOver1, "_", 
                                  def$BollBearish1, "_", def$BollBullish1)
    
    def$BollAvgOver2    <<- 10L
    def$BollBearish2    <<- 49
    def$BollBullish2    <<- 49
-   def$typicalBoll2    <<- paste0("Boll_", def$BollInputName, "_", def$BollAvgOver2, "__", 
+   def$typicalBoll2    <<- paste0("Boll_", def$BollAvgOver2, "_", 
                                   def$BollBearish2, "_", def$BollBullish2)
 }
 
@@ -76,7 +76,7 @@ createBollStrategy <- function(inputDF=def$BollInputDF, inputName=def$BollInputN
                                strategyName="", type="", futureYears=def$futureYears, costs=def$tradingCost, 
                                coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
    if(strategyName=="")  
-      strategyName <- paste0("Boll_", inputName, "_", avgOver, "__", bearish, "_", bullish)
+      strategyName <- paste0("Boll_", avgOver, "_", bearish, "_", bullish)
    if (bullish == bearish) bullish <- bearish + 1e-3 # bearish==bullish creates problems
    bearish <- bearish/100
    bullish <- bullish/100
@@ -122,34 +122,37 @@ createBollStrategy <- function(inputDF=def$BollInputDF, inputName=def$BollInputN
 }
 
 
-searchForOptimalBoll <- function(inputDF="dat", inputName="TR", 
-                                 minAvgOver= 13L, maxAvgOver =15L, byAvgOver=1L, 
-                                 minBear   =-34,  maxBear   =-30,  byBear  = 0.5, 
-                                 minDelta  =  0,  maxDelta  =  2,  byDelta = 0.5,  
-                                 futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, type="search", 
-                                 minTR=0, maxVol=20, maxDD2=4, minTO=0.7, minScore=14.78,
-                                 xMinVol=def$xMinVol, xMaxVol=17, xMinDD2=0.5, xMaxDD2=1.3,
-                                 col=F, plotType="symbols", nameLength=21, plotEvery=def$plotEvery, force=F) {
+calcOptimalBoll <- function(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOver, 
+                            minBear, maxBear, byBear, minDelta, maxDelta, byDelta,  
+                            futureYears, costs, type, 
+                            minTR, maxVol, maxDD2, minTO, minScore, coeffTR, coeffVol, coeffDD2,
+                            xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly,
+                            col, plotType, nameLength, plotEvery, force) {
    
+   counterTot <- 0; counterNew <- 0
    lastTimePlotted <- proc.time()
-   print(paste0("strategy              |  TR   ", futureYears, 
-                " yrs: med, 5%| vol. alloc: avg, now|TO yrs| DD^2 | score") )
-   print("----------------------+-------+--------------+-------+-------------+------+------+------")
-      
+   
    for ( avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver) ) {
       for ( bear in seq(minBear, maxBear, by=byBear) ) {      
          for ( delta in seq(minDelta, maxDelta, by=byDelta) ) {
             bull = bear + delta               
-            strategyName <- paste0("Boll_", inputName, "_", avgOver, "_", bear, "_", bull)
-               
-            createBollStrategy(inputDF, inputName, avgOver=avgOver, type=type,
+            strategyName <- paste0("Boll_", avgOver, "_", bear, "_", bull)
+            
+            counterTot <- counterTot + 1 
+            if(countOnly) {
+               if ( !(strategyName %in% colnames(TR)) | !(strategyName %in% colnames(alloc)) )
+                  counterNew <- counterNew + 1                  
+            } else {
+               createBollStrategy(inputDF, inputName, avgOver=avgOver, type=type,
                                bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
                                strategyName=strategyName, futureYears=futureYears, force=force)
-               
-            showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
+            
+               showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
                                    minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
-                                   nameLength=nameLength, force=F)            
-            if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { # we replot only if it's been a while
+                                   nameLength=nameLength, force=F) 
+            }
+            if ( !countOnly && (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { 
+               # we replot only if it's been a while
                plotAllReturnsVsTwo(col=col, searchPlotType=plotType, 
                                    xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2)
                lastTimePlotted <- proc.time()
@@ -157,8 +160,45 @@ searchForOptimalBoll <- function(inputDF="dat", inputName="TR",
          }
       }
    }
-   print("----------------------+-------+--------------+-------+-------------+------+------+------")
-   showSummaryForStrategy(def$typicalBoll, nameLength=nameLength, costs=costs)
+   if(countOnly)
+      print (paste0("Running ", counterTot, " parameter sets (", counterNew, " new)"))
+}
+
+searchForOptimalBoll <- function(inputDF="dat", inputName="TR", 
+                                 minAvgOver= 13L, maxAvgOver =15L, byAvgOver=1L, 
+                                 minBear   =-34,  maxBear   =-30,  byBear  = 0.5, 
+                                 minDelta  =  0,  maxDelta  =  2,  byDelta = 0.5,  
+                                 futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, type="search", 
+                                 minTR=0, maxVol=20, maxDD2=4, minTO=0.6, minScore=14.78,
+                                 coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
+                                 xMinVol=def$minVol, xMaxVol=17, xMinDD2=0.5, xMaxDD2=1.3,
+                                 col=F, plotType="symbols", nameLength=18, plotEvery=def$plotEvery, force=F) {
+   
+   # calculate how many parameters sets will be run
+   calcOptimalBoll(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOver, 
+                   minBear, maxBear, byBear, minDelta, maxDelta, byDelta,  
+                   futureYears, costs, type, 
+                   minTR, maxVol, maxDD2, minTO, minScore, coeffTR, coeffVol, coeffDD2,
+                   xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly=T,
+                   col, plotType, nameLength, plotEvery, force)
+   
+   print(paste0("strategy           |  TR   ", futureYears, 
+                " yrs: med, 5%| vol. alloc: avg, now|TO yrs | DD^2 | score") )
+   print("-------------------+-------+--------------+-------+-------------+-------+------+------")
+       
+   # actually calculating
+   calcOptimalBoll(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOver, 
+                   minBear, maxBear, byBear, minDelta, maxDelta, byDelta,  
+                   futureYears, costs, type, 
+                   minTR, maxVol, maxDD2, minTO, minScore, coeffTR, coeffVol, coeffDD2,
+                   xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly=F,
+                   col, plotType, nameLength, plotEvery, force)
+      
+   print("-------------------+-------+--------------+-------+-------------+-------+------+------")
+   showSummaryForStrategy(def$typicalBoll1, nameLength=nameLength, costs=costs, 
+                          coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
+   showSummaryForStrategy(def$typicalBoll2, nameLength=nameLength, costs=costs, 
+                          coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
    plotAllReturnsVsTwo(col=col, searchPlotType=plotType,
                        xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2)
 }

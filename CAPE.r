@@ -263,20 +263,20 @@ searchForOptimalCAPEwithoutHysteresis <-function
        minBear=20, maxBear=22,  byBear=0.2, 
        minDelta=0, maxDelta=0.4, byDelta=0.2, 
        futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
-       minTR=0, maxVol=20, maxDD2=5, minTO=5, minScore=12.1,
+       minTR=0, maxVol=20, maxDD2=5, minTO=5, minScore=8,
        coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
        xMinVol=15, xMaxVol=22, xMinDD2=1, xMaxDD2=2,
        CPUnumber=def$CPUnumber, col=F, plotType="symbols", nameLength=21, plotEvery=def$plotEvery, force=F) {
    
    # calculate how many parameters sets will be run
    calcOptimalCAPEwithoutHysteresis(minYears, maxYears, byYears, cheat, 
-                                          minAvgOver, maxAvgOver, byAvgOver, minBear, maxBear, byBear, minDelta, maxDelta, byDelta, 
+                                    minAvgOver, maxAvgOver, byAvgOver, minBear, maxBear, byBear, minDelta, maxDelta, byDelta, 
                                           futureYears, costs, minTR, maxVol, maxDD2, minTO, minScore,
                                           coeffTR, coeffVol, coeffDD2, xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly=T,
                                           CPUnumber, col, plotType, nameLength, plotEvery, force)
    print(paste0("strategy              |  TR   ", futureYears, 
-                " yrs: med, 5%| vol. alloc: avg, now|TO yrs| DD^2 | score") )
-   print("----------------------+-------+--------------+-------+-------------+------+------+------")
+                " yrs: med, 5%| vol. alloc: avg, now|TO yrs | DD^2 | score") )
+   print("----------------------+-------+--------------+-------+-------------+-------+------+------")
    
    # actually calculating
    calcOptimalCAPEwithoutHysteresis(minYears, maxYears, byYears, cheat, 
@@ -285,7 +285,7 @@ searchForOptimalCAPEwithoutHysteresis <-function
        coeffTR, coeffVol, coeffDD2, xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly=F,
        CPUnumber, col, plotType, nameLength, plotEvery, force)
    
-   print("")
+   print("----------------------+-------+--------------+-------+-------------+-------+------+------")
    showSummaryForStrategy(def$typicalCAPE1, costs=costs, nameLength=nameLength, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
    plotAllReturnsVsTwo(col=col, costs=costs, searchPlotType=plotType,
@@ -348,11 +348,11 @@ calcOptimalCAPEwithHysteresis <- function(minYears, maxYears, byYears, cheat,
 
 searchForOptimalCAPEwithHysteresis <-function(minYears=10L, maxYears=10L, byYears=1L, cheat=2, 
        minAvgOver=33L,maxAvgOver=35L, byAvgOver=1L, 
-       minMid =19.0,  maxMid =19.4,  byMid = .2, 
+       minMid =19.0,  maxMid =19.6,  byMid = .2, 
        minWidth=5.8,  maxWidth=7.2,  byWidth=.2,
        minSlope=2.0,  maxSlope=2.6,  bySlope=.2, 
        futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
-       minTR=0, maxVol=20, maxDD2=5, minTO=5, minScore=13.02,
+       minTR=0, maxVol=20, maxDD2=5, minTO=5, minScore=8.3,
        coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
        xMinVol=15, xMaxVol=22, xMinDD2=1, xMaxDD2=2,
        CPUnumber=def$CPUnumber, col=F, plotType="symbols", 
@@ -367,8 +367,8 @@ searchForOptimalCAPEwithHysteresis <-function(minYears=10L, maxYears=10L, byYear
       CPUnumber, col, plotType, nameLength, plotEvery, force)
    
    print(paste0("strategy                       |  TR   ", futureYears, 
-                " yrs: med, 5%| vol. alloc: avg, now|TO yrs| DD^2 | score") )
-   print("-------------------------------+-------+--------------+-------+-------------+------+------+------")
+                " yrs: med, 5%| vol. alloc: avg, now|TO yrs | DD^2 | score") )
+   print("-------------------------------+-------+--------------+-------+-------------+-------+------+------")
    
    # actually calculating
    calcOptimalCAPEwithHysteresis(minYears, maxYears, byYears, cheat, 
@@ -378,7 +378,7 @@ searchForOptimalCAPEwithHysteresis <-function(minYears=10L, maxYears=10L, byYear
        coeffTR, coeffVol, coeffDD2, xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly=F,
        CPUnumber, col, plotType, nameLength, plotEvery, force)   
 
-   print("")
+   print("-------------------------------+-------+--------------+-------+-------------+-------+------+------")
    showSummaryForStrategy(def$typicalCAPE2, costs=costs, nameLength=nameLength, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
    plotAllReturnsVsTwo(col=col, searchPlotType=plotType, costs=costs,
