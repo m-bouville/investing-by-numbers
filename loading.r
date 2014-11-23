@@ -13,23 +13,38 @@
 
 
 
-setDefaultValues <- function(dataSplit, futureYears=10L, tradingCost=0.5/100, force=F) {
+setDefaultValues <- function(dataSplit, futureYears=10L, tradingCost=0.5/100, riskAsCost=0.5/100, force=F) {
    if (!exists("def") | force) def <<- list()
    
    def$futureYears   <<- futureYears    # default value for the number of years over which future returns are calculated
    message("default futureYears: ", def$futureYears, " years")
+   
+   if ( round((tradingCost+riskAsCost)*100,2) %in% c(0.5, 1, 2) ) {
    def$tradingCost   <<- tradingCost    # default value for the trading costs
    message("default tradingCost: ", def$tradingCost*100, "% / per year of turnover")
-   if(dataSplit=="search") {
-      def$riskAsCost <<- 0.5/100 # default value for the trading costs
-      message("default riskAsCost:  ", def$riskAsCost*100, "% / per year of turnover for \'SEARCH\' phase")
-   } else if(dataSplit=="testing") {
-      def$riskAsCost <<- 0
-      message("default riskAsCost set to 0 for \'TESTING\' phase")      
-   }  else if(dataSplit=="none") {
-      def$riskAsCost <<- 0
-      message("default riskAsCost set to 0 for \'NONE\' phase")      
-   } else stop("dataSplit can only be one of 'none', 'search' or 'testing', not ", dataSplit)
+   def$riskAsCost    <<- riskAsCost # default value for the trading costs
+   message("default riskAsCost:  ", def$riskAsCost*100, "% / per year of turnover")
+   } else stop("The sum of tradingCost and riskAsCost can only be one of 0.5%, 1% or 2%, not ", 
+               (tradingCost+riskAsCost)*100, "%." )
+
+   if(dataSplit=="search") 
+      message("Time range: \'SEARCH\' phase")
+   else if(dataSplit=="testing") 
+      message("Time range: \'TESTING\' phase")      
+   else if(dataSplit=="none") 
+      message("Time range:  \'NONE\' phase")      
+   else stop("dataSplit can only be one of 'none', 'search' or 'testing', not ", dataSplit)
+   
+   #    if(dataSplit=="search") {
+   #       def$riskAsCost <<- 3.5/100 # default value for the trading costs
+   #       message("default riskAsCost:  ", def$riskAsCost*100, "% / per year of turnover for \'SEARCH\' phase")
+   #    } else if(dataSplit=="testing") {
+   #       def$riskAsCost <<- 0
+   #       message("default riskAsCost set to 0 for \'TESTING\' phase")      
+   #    }  else if(dataSplit=="none") {
+   #       def$riskAsCost <<- 0
+   #       message("default riskAsCost set to 0 for \'NONE\' phase")      
+   #    } else stop("dataSplit can only be one of 'none', 'search' or 'testing', not ", dataSplit)
    
    def$dataStartYear <<- 1871
    def$startIndex    <<- round(10.5*12+1)

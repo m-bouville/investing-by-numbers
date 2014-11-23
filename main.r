@@ -69,6 +69,7 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
                                               #    to check whether they are up to date
                   futureYears=10L,            # to calculate the return over the next so many years
                   tradingCost=0.5/100,        # cost of turning the portfolio entirely 
+                  riskAsCost=0.5/100,
                   otherAssetClasses=F,        # loads gold and UK house prices
                   newcomer=F,                 # displays some information on the code
                   force=F) {
@@ -92,7 +93,8 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
    
    totTime <- proc.time()
    
-   setDefaultValues(dataSplit=dataSplit, futureYears=futureYears, tradingCost=tradingCost, force=force)
+   setDefaultValues(dataSplit=dataSplit, futureYears=futureYears, 
+                    tradingCost=tradingCost, riskAsCost=riskAsCost, force=force)
    if(!file.exists("./data")) dir.create("./data")
       
    ## if data frame does not exist, or is incomplete (had been used for search or testing), 
@@ -172,9 +174,9 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
                   " s to load files and for XLConnect." ) )
 }
 
-# start(dataSplit="search", futureYears=10L, downloadAndCheckAllFiles=F, force=T)
-# start(dataSplit="none", futureYears=15L, downloadAndCheckAllFiles=F, force=T)
-# start(dataSplit="testing", futureYears=10L, downloadAndCheckAllFiles=F, force=T)
+# start(dataSplit="search", futureYears=10L, riskAsCost=1.5/100, force=T)
+# start(dataSplit="none",   futureYears=15L, riskAsCost=0, force=T)
+# start(dataSplit="testing",futureYears=10L, riskAsCost=0, force=T)
 # plotAllReturnsVsFour()
 
 
