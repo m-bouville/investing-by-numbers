@@ -436,9 +436,8 @@ searchForOptimalTechnical <- function(inputStrategyName = c(def$typicalSMA,
                             nameLength=nameLength, plotEvery=plotEvery, countOnly=T,
                             xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2, force=force) 
 
-   print(paste0("strategy                |  TR   ", futureYears, " yrs: med, 5%| vol. alloc: avg, now|TO yrs | DD^2 | score") )
-   print("------------------------+-------+--------------+-------+-------------+-------+------+------")
-
+   dashes <- displaySummaryHeader(futureYears=futureYears, nameLength=nameLength)
+   
    # actually calculating
    searchForOptimalCombined(inputStrategyName=inputStrategyName, minF=minF, maxF=maxF, byF=byF, 
                             futureYears=futureYears, costs=costs, type=type, subtype=subtype,  coeffEntropy=coeffEntropy,
@@ -446,7 +445,7 @@ searchForOptimalTechnical <- function(inputStrategyName = c(def$typicalSMA,
                             col=col, CPUnumber=CPUnumber, plotType=plotType, combineMode=combineMode, 
                             nameLength=nameLength, plotEvery=plotEvery, countOnly=F,
                             xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2, force=force) 
-   print("------------------------+-------+--------------+-------+-------------+-------+------+------")
+   print(dashes)
    showSummaryForStrategy(def$typicalTechnical, coeffEntropy=coeffEntropy, nameLength=nameLength, costs=costs)
 }
 
@@ -470,9 +469,8 @@ searchForOptimalValue <- function
                                   nameLength=nameLength, plotEvery=plotEvery, countOnly=T,
                                   xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2, force=force) 
          
-   print(paste0("strategy          |  TR   ", futureYears, " yrs: med, 5%| vol. alloc: avg, now|TO yrs | DD^2 | score") )
-   print("------------------+-------+--------------+-------+-------------+-------+------+------")
-         
+   dashes <- displaySummaryHeader(futureYears=futureYears, nameLength=nameLength)
+   
    # actually calculating
    searchForOptimalCombined(inputStrategyName=inputStrategyName, minF=minF, maxF=maxF, byF=byF, 
                             futureYears=futureYears, costs=costs, type=type, subtype=subtype, coeffEntropy=coeffEntropy, 
@@ -481,7 +479,7 @@ searchForOptimalValue <- function
                             nameLength=nameLength, plotEvery=plotEvery, countOnly=F,
                             xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2, force=force) 
 
-   print("------------------+-------+--------------+-------+-------------+-------+------+------")
+   print(dashes)
    showSummaryForStrategy(def$typicalValue, coeffEntropy=coeffEntropy, nameLength=nameLength, costs=costs)
 }
 
@@ -504,8 +502,7 @@ searchForOptimalBalanced <- function(
                             nameLength=nameLength, plotEvery=plotEvery, countOnly=T,
                             xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2, force=force) 
    
-   print(paste0("strategy        |  TR   ", futureYears, " yrs: med, 5%| vol. alloc: avg, now|TO yrs | DD^2 | score") )
-   print("----------------+-------+--------------+-------+-------------+-------+------+------")
+   dashes <- displaySummaryHeader(futureYears=futureYears, nameLength=nameLength)
    
    # actually calculating
    searchForOptimalCombined(inputStrategyName=inputStrategyName, minF=minF, maxF=maxF, byF=byF, 
@@ -516,7 +513,7 @@ searchForOptimalBalanced <- function(
                             nameLength=nameLength, plotEvery=plotEvery, countOnly=F,
                             xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2, force=force) 
 
-   print("----------------+-------+--------------+-------+-------------+-------+------+------")
+   print(dashes)
    showSummaryForStrategy(def$typicalBalanced, costs=costs, coeffEntropy=coeffEntropy, nameLength=nameLength)
 }
 
@@ -542,10 +539,7 @@ searchForOptimalBalanced2 <- function
                             nameLength=nameLength, plotEvery=plotEvery, countOnly=T,
                             xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2, force=force) 
    
-   print(paste0("strategy                                  |  TR   ", futureYears, 
-                " yrs: med, 5%| vol. alloc: avg, now|TO yrs | DD^2 | score ") )
-   dashes <- "------------------------------------------+-------+--------------+-------+-------------+-------+------+-------"
-   print(dashes)
+   dashes <- displaySummaryHeader(futureYears=futureYears, nameLength=nameLength)
    
    # actually calculating
    searchForOptimalCombined(inputStrategyName=inputStrategyName, minF=minF, maxF=maxF, byF=byF, 

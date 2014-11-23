@@ -366,9 +366,7 @@ searchForOptimalCAPEwithHysteresis <-function(minYears=10L, maxYears=10L, byYear
       coeffTR, coeffVol, coeffDD2, xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly=T,
       CPUnumber, col, plotType, nameLength, plotEvery, force)
    
-   print(paste0("strategy                       |  TR   ", futureYears, 
-                " yrs: med, 5%| vol. alloc: avg, now|TO yrs | DD^2 | score") )
-   print("-------------------------------+-------+--------------+-------+-------------+-------+------+------")
+   dashes <- displaySummaryHeader(futureYears=futureYears, nameLength=nameLength)
    
    # actually calculating
    calcOptimalCAPEwithHysteresis(minYears, maxYears, byYears, cheat, 
@@ -378,7 +376,7 @@ searchForOptimalCAPEwithHysteresis <-function(minYears=10L, maxYears=10L, byYear
        coeffTR, coeffVol, coeffDD2, xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly=F,
        CPUnumber, col, plotType, nameLength, plotEvery, force)   
 
-   print("-------------------------------+-------+--------------+-------+-------------+-------+------+------")
+   print(dashes)
    showSummaryForStrategy(def$typicalCAPE2, costs=costs, nameLength=nameLength, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
    plotAllReturnsVsTwo(col=col, searchPlotType=plotType, costs=costs,

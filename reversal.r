@@ -157,9 +157,7 @@ searchForOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$
                                     minTR=0, maxVol=20, maxDD2=5, minTO=0.7, minScore=14.8,
                                     col=F, plotType="symbols", nameLength=25, plotEvery=def$plotEvery, force=F) {
    lastTimePlotted <- proc.time()  
-   print(paste0("strategy                  |  TR   ", futureYears, 
-                " yrs: med, 5%| vol. alloc: avg, now|TO yrs | DD^2 | score") )
-   print("--------------------------+-------+--------------+-------+-------------+-------+------+------")
+   dashes <- displaySummaryHeader(futureYears=futureYears, nameLength=nameLength)
    
    for ( avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver) ) 
       for ( RTM in seq(minRTM, maxRTM, by=byRTM) ) 
@@ -181,7 +179,7 @@ searchForOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$
             lastTimePlotted <- proc.time()
          }
       }
-   print("--------------------------+-------+--------------+-------+-------------+-------+------+------")
+   print(dashes)
    showSummaryForStrategy(def$typicalReversal, nameLength=nameLength, costs=costs)
    plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
 }

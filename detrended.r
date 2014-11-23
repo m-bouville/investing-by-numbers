@@ -208,10 +208,8 @@ searchForOptimalDetrended <- function(inputDF=def$detrendedInputDF, inputName=de
                         col, plotType, xMinVol, xMaxVol, xMinDD2, xMaxDD2,
                         CPUnumber, nameLength, plotEvery, force)   
    
-   print(paste0("strategy                  |  TR   ", futureYears, 
-                " yrs: med, 5%| vol. alloc: avg, now|TO yrs | DD^2 | score") )
-   print("--------------------------+-------+--------------+-------+-------------+-------+------+------")
-
+   dashes <- displaySummaryHeader(futureYears=futureYears, nameLength=nameLength)
+   
    # actually calculating
    calcOptimalDetrended(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOver, 
                         minBear, maxBear, byBear, minDelta, maxDelta, byDelta, 
@@ -220,7 +218,7 @@ searchForOptimalDetrended <- function(inputDF=def$detrendedInputDF, inputName=de
                         col, plotType, xMinVol, xMaxVol, xMinDD2, xMaxDD2,
                         CPUnumber, nameLength, plotEvery, force)
 
-   print("--------------------------+-------+--------------+-------+-------------+-------+------+------")
+   print(dashes)
    showSummaryForStrategy(def$typicalDetrended1, costs=costs, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, nameLength=nameLength)
    showSummaryForStrategy(def$typicalDetrended2, costs=costs, 

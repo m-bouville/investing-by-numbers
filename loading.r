@@ -52,6 +52,7 @@ setDefaultValues <- function(dataSplit, futureYears=10L, tradingCost=0.5/100, ri
    
    def$CPUnumber     <<-  1 # Parallelization does not work
    def$plotEvery     <<- 10 # replot every n seconds when searchnig for parameters
+   def$nameLength    <<- 18 # width of strategy name in summaries
    
    ## coefficients to calculate the score
    def$coeffTR       <<- 0.6

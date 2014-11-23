@@ -164,6 +164,10 @@ calcOptimalBoll <- function(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOve
       print (paste0("Running ", counterTot, " parameter sets (", counterNew, " new)"))
 }
 
+
+
+
+
 searchForOptimalBoll <- function(inputDF="dat", inputName="TR", 
                                  minAvgOver= 13L, maxAvgOver =15L, byAvgOver=1L, 
                                  minBear   =-34,  maxBear   =-30,  byBear  = 0.5, 
@@ -172,7 +176,7 @@ searchForOptimalBoll <- function(inputDF="dat", inputName="TR",
                                  minTR=0, maxVol=20, maxDD2=4, minTO=0.6, minScore=14.78,
                                  coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
                                  xMinVol=def$minVol, xMaxVol=17, xMinDD2=0.5, xMaxDD2=1.3,
-                                 col=F, plotType="symbols", nameLength=18, plotEvery=def$plotEvery, force=F) {
+                                 col=F, plotType="symbols", nameLength=def$nameLength, plotEvery=def$plotEvery, force=F) {
    
    # calculate how many parameters sets will be run
    calcOptimalBoll(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOver, 
@@ -182,9 +186,10 @@ searchForOptimalBoll <- function(inputDF="dat", inputName="TR",
                    xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly=T,
                    col, plotType, nameLength, plotEvery, force)
    
-   print(paste0("strategy           |  TR   ", futureYears, 
-                " yrs: med, 5%| vol. alloc: avg, now|TO yrs | DD^2 | score") )
-   print("-------------------+-------+--------------+-------+-------------+-------+------+------")
+   dashes <- displaySummaryHeader(futureYears=futureYears, nameLength=nameLength)
+#    print(paste0("strategy           |  TR   ", futureYears, 
+#                 " yrs: med, 5%| vol. alloc: avg, now|TO yrs | DD^2 | score") )
+#    print("-------------------+-------+--------------+-------+-------------+-------+------+------")
        
    # actually calculating
    calcOptimalBoll(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOver, 
@@ -194,7 +199,7 @@ searchForOptimalBoll <- function(inputDF="dat", inputName="TR",
                    xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly=F,
                    col, plotType, nameLength, plotEvery, force)
       
-   print("-------------------+-------+--------------+-------+-------------+-------+------+------")
+   print(dashes)
    showSummaryForStrategy(def$typicalBoll1, nameLength=nameLength, costs=costs, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
    showSummaryForStrategy(def$typicalBoll2, nameLength=nameLength, costs=costs, 
@@ -203,3 +208,15 @@ searchForOptimalBoll <- function(inputDF="dat", inputName="TR",
                        xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2)
 }
 
+
+searchForTwoOptimalBoll <- function(plotType="symbols", force=F) {
+   print("Bollinger 1...")
+   searchForOptimalBoll(minAvgOver= 13L, maxAvgOver =15L, byAvgOver=1L, 
+                        minBear   =-37,  maxBear   =-25,  byBear  = 2, 
+                        minDelta  =  0,  maxDelta  =  3,  byDelta = 1, minScore=8.75)
+   print("")
+   print("Bollinger 2...")
+   searchForOptimalBoll(minAvgOver=  9L, maxAvgOver= 11L, byAvgOver=1L, 
+                        minBear   = 43,  maxBear   = 55,  byBear  = 2, 
+                        minDelta  =  0,  maxDelta  =  3,  byDelta = 1, minScore=8.5)
+}

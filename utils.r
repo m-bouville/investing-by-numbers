@@ -470,10 +470,19 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
    ## 2. I subtract off constants to reduce the variation of the score when coefficients change
 }
 
+displaySummaryHeader <- function(futureYears=def$futureYears, nameLength=def$nameLength) {
+   print(paste0(str_pad("strategy", nameLength, side="right"), "|  TR   ", futureYears, 
+                " yrs: med, 5%| vol. alloc: avg, now|TO yrs | DD^2 | score") )
+   dashes <- paste0(str_pad("", nameLength, pad="-"), 
+                    "+-------+--------------+-------+-------------+-------+------+------")
+   print(dashes)
+   return(dashes)
+}
+
 showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def$futureYears, costs, 
                                    minTR=0, maxVol=Inf, maxDD2=Inf, minTO=0, minScore=-Inf, 
                                    coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
-                                   coeffEntropy=0, nameLength=16, force=F) {
+                                   coeffEntropy=0, nameLength=def$nameLength, force=F) {
    
    library(stringr)
    
@@ -549,7 +558,7 @@ showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def
    else scorePad2 = ""
    
    if(ret>minTR & vol<maxVol & DD2<maxDD2 & TO>minTO & score>minScore) 
-      print(paste0(str_pad(displayName, nameLength, side = "right"), " | ", 
+      print(paste0(str_pad(displayName, nameLength, side = "right"), "| ", 
                    round(ret,2), retPad, "% |  ", 
                    round(med,1), medPad, "%, ", fivePad1, five, fivePad2, "% | ",
                    round(vol,1), volPad, "% |  ",
@@ -563,10 +572,11 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost+def
                           coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, detailed=T, force=F) {
    # force pertains only to showSummaryForStrategy, not to calc...StrategyReturn (these are all set to F)
 
-   print(paste0("* Statistics of the strategies (costs = ", round(100*costs,2), "% per year of turnover):"))
-   print(paste0("strategy         |  TR   ", futureYears, " yrs: med, 5%| vol. alloc: avg, now|TO yrs | DD^2 | score") )
-   dashes <- "-----------------+-------+--------------+-------+-------------+-------+------+------"
-   print(dashes)
+   dashes <- displaySummaryHeader(futureYears=futureYears, nameLength=def$nameLength)
+#    print(paste0("* Statistics of the strategies (costs = ", round(100*costs,2), "% per year of turnover):"))
+#    print(paste0("strategy         |  TR   ", futureYears, " yrs: med, 5%| vol. alloc: avg, now|TO yrs | DD^2 | score") )
+#    dashes <- "-----------------+-------+--------------+-------+-------------+-------+------+------"
+#    print(dashes)
    
    showSummaryForStrategy("stocks", displayName="stocks", futureYears=futureYears, costs=0, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)

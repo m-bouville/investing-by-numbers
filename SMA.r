@@ -133,9 +133,7 @@ searchForOptimalSMA <- function(inputDF="dat", inputName="TR",
                                 nameLength=23, plotEvery=def$plotEvery, force=F) {
    
    lastTimePlotted <- proc.time()
-   print(paste0("strategy                |  TR   ", futureYears, 
-                " yrs: med, 5%| vol. alloc: avg, now|TO yrs | DD^2 | score") )
-   print("------------------------+-------+--------------+-------+-------------+-------+------+------")
+   dashes <- displaySummaryHeader(futureYears=futureYears, nameLength=nameLength)
    
    for ( SMA1 in seq(minSMA1, maxSMA1, by=bySMA1) ) 
       for ( SMA2 in seq(minSMA2, maxSMA2, by=bySMA2) )       
@@ -158,7 +156,7 @@ searchForOptimalSMA <- function(inputDF="dat", inputName="TR",
                lastTimePlotted <- proc.time()
             }
          }
-   print("------------------------+-------+--------------+-------+-------------+-------+------+------")
+   print(dashes)
    showSummaryForStrategy(def$typicalSMA, nameLength=nameLength, costs=costs)
    plotAllReturnsVsTwo(col=col, costs=costs, searchPlotType=plotType)
 }
