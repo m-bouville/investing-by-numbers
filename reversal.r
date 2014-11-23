@@ -23,16 +23,14 @@ setReversalDefaultValues <- function() {
    def$reversalReturnToMean <<-  14L
    def$reversalBearish      <<- -50L
    def$reversalBullish      <<- -50L
-   def$typicalReversal      <<- paste0("reversal_", def$reversalInputName, "_", 
-                                        def$reversalAvgOver, "__", def$reversalReturnToMean, "_", 
+   def$typicalReversal      <<- paste0("reversal_", def$reversalAvgOver, "_", def$reversalReturnToMean, "_", 
                                         def$reversalBearish, "_", def$reversalBullish)
    
 #    def$reversalAvgOver2      <<- 6L
 #    def$reversalReturnToMean2 <<- 5
 #    def$reversalBearish2      <<- 5.5
 #    def$reversalBullish2      <<- 5.5   
-#    def$typicalReversal2      <<- paste0("reversal_", def$reversalInputName, "_", 
-#                                         def$reversalAvgOver2, "__", def$reversalReturnToMean2, "_", 
+#    def$typicalReversal2      <<- paste0("reversal_", def$reversalAvgOver2, "_", def$reversalReturnToMean2, "_", 
 #                                         def$reversalBearish2, "_", def$reversalBullish2)
 }
 
@@ -82,7 +80,7 @@ createReversalStrategy <- function(inputDF=def$reversalInputDF, inputName=def$re
 
    reversalName <- paste0("reversal_", inputName, "_", avgOver)
    if (strategyName=="") 
-      strategyName <- paste0(reversalName, "__", returnToMean, "_", bearish, "_", bullish)
+      strategyName <- paste0("reversal_", avgOver, "_", returnToMean, "_", bearish, "_", bullish)
    if (bearish==bullish) bullish = bearish + 1e-3 # bear==bull creates problems
    
    if (!(strategyName %in% colnames(TR)) | force) { # if data do not exist yet or we force recalculation:   

@@ -20,16 +20,14 @@ setBollDefaultValues <- function() {
    def$BollInputName  <<- "TR"
    
    def$BollAvgOver1    <<-  14L
-   def$BollBearish1    <<- -31
-   def$BollBullish1    <<- -31
-   def$typicalBoll1    <<- paste0("Boll_", def$BollAvgOver1, "_", 
-                                 def$BollBearish1, "_", def$BollBullish1)
+   def$BollBearish1    <<- -31.5
+   def$BollBullish1    <<- -30.5
+   def$typicalBoll1    <<- paste0("Boll_", def$BollAvgOver1, "_", def$BollBearish1, "_", def$BollBullish1)
    
    def$BollAvgOver2    <<- 10L
-   def$BollBearish2    <<- 49
-   def$BollBullish2    <<- 49
-   def$typicalBoll2    <<- paste0("Boll_", def$BollAvgOver2, "_", 
-                                  def$BollBearish2, "_", def$BollBullish2)
+   def$BollBearish2    <<- 46.5
+   def$BollBullish2    <<- 46.5
+   def$typicalBoll2    <<- paste0("Boll_", def$BollAvgOver2, "_", def$BollBearish2, "_", def$BollBullish2)
 }
 
 calcBollSignal <- function(inputDF=def$BollInputDF, inputName=def$BollInputName, avgOver=def$BollAvgOver, 
@@ -165,18 +163,16 @@ calcOptimalBoll <- function(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOve
 }
 
 
-
-
-
 searchForOptimalBoll <- function(inputDF="dat", inputName="TR", 
                                  minAvgOver= 13L, maxAvgOver =15L, byAvgOver=1L, 
                                  minBear   =-34,  maxBear   =-30,  byBear  = 0.5, 
                                  minDelta  =  0,  maxDelta  =  2,  byDelta = 0.5,  
-                                 futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, type="search", 
+                                 futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
                                  minTR=0, maxVol=20, maxDD2=4, minTO=0.6, minScore=14.78,
                                  coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
-                                 xMinVol=def$minVol, xMaxVol=17, xMinDD2=0.5, xMaxDD2=1.3,
-                                 col=F, plotType="symbols", nameLength=def$nameLength, plotEvery=def$plotEvery, force=F) {
+                                 xMinVol=0.5, xMaxVol=17, xMinDD2=0.5, xMaxDD2=1.3,
+                                 type="search", col=F, plotType="symbols", 
+                                 nameLength=def$nameLength, plotEvery=def$plotEvery, force=F) {
    
    # calculate how many parameters sets will be run
    calcOptimalBoll(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOver, 
@@ -187,10 +183,7 @@ searchForOptimalBoll <- function(inputDF="dat", inputName="TR",
                    col, plotType, nameLength, plotEvery, force)
    
    dashes <- displaySummaryHeader(futureYears=futureYears, nameLength=nameLength)
-#    print(paste0("strategy           |  TR   ", futureYears, 
-#                 " yrs: med, 5%| vol. alloc: avg, now|TO yrs | DD^2 | score") )
-#    print("-------------------+-------+--------------+-------+-------------+-------+------+------")
-       
+   
    # actually calculating
    calcOptimalBoll(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOver, 
                    minBear, maxBear, byBear, minDelta, maxDelta, byDelta,  
@@ -212,11 +205,11 @@ searchForOptimalBoll <- function(inputDF="dat", inputName="TR",
 searchForTwoOptimalBoll <- function(plotType="symbols", force=F) {
    print("Bollinger 1...")
    searchForOptimalBoll(minAvgOver= 13L, maxAvgOver =15L, byAvgOver=1L, 
-                        minBear   =-37,  maxBear   =-25,  byBear  = 2, 
-                        minDelta  =  0,  maxDelta  =  3,  byDelta = 1, minScore=8.75)
+                        minBear   =-37,  maxBear   =-25,  byBear  = .5, 
+                        minDelta  =  0,  maxDelta  =  3,  byDelta = .5, minScore=7.87)
    print("")
    print("Bollinger 2...")
    searchForOptimalBoll(minAvgOver=  9L, maxAvgOver= 11L, byAvgOver=1L, 
-                        minBear   = 43,  maxBear   = 55,  byBear  = 2, 
-                        minDelta  =  0,  maxDelta  =  3,  byDelta = 1, minScore=8.5)
+                        minBear   = 43,  maxBear   = 55,  byBear  = .5, 
+                        minDelta  =  0,  maxDelta  =  3,  byDelta = .5, minScore=6.95)
 }

@@ -23,7 +23,10 @@ setCombinedDefaultValues <- function() {
    def$coeffEntropyBalanced  <<- 1
    
    def$technicalStrategies  <<- c(def$typicalSMA, def$typicalBoll1, def$typicalBoll2, def$typicalReversal)
-   def$technicalFractions   <<- c(20, 24, 25, 31)
+   def$technicalFractions   <<- c(24, 25, 17.5, 33.5) # riskAsCost=2.5/100
+   #def$technicalFractions   <<- c(20, 24, 25, 31) # riskAsCost=1.5/100
+   #def$technicalFractions   <<- c(24, 26, 17, 33) # riskAsCost=2.5/100
+   #def$technicalFractions   <<- c(23, 25, 15, 37) # riskAsCost=3.5/100
    def$typicalTechnical     <<- "technical"
    for (i in 1:length(def$technicalFractions) )
       def$typicalTechnical  <<- paste0(def$typicalTechnical, "_", def$technicalFractions[i])
@@ -418,12 +421,12 @@ searchForOptimalCombined <- function
 
 searchForOptimalTechnical <- function(inputStrategyName = c(def$typicalSMA, 
                                        def$typicalBoll1, def$typicalBoll2, def$typicalReversal), 
-   minF = c(16, 14, 20, 24), 
-   maxF = c(24, 28, 28, 36), 
+   minF = c(20, 20, 14, 30), 
+   maxF = c(28, 30, 22, 38), 
    byF  = c( 2,  2,  2,100L), 
-   futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
+   futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
    type="search", subtype="technical", coeffEntropy=def$coeffEntropyTechnical, 
-   minTR=0, maxVol=16, minTO=0.6, maxDD2=1.2, minScore=16,
+   minTR=0, maxVol=16, minTO=0.6, maxDD2=2, minScore=9.1,
    col=F, CPUnumber=def$CPUnumber, plotType="dots", 
    combineMode="all", nameLength=23, plotEvery=def$plotEvery, 
    xMinVol=13, xMaxVol=17, xMinDD2=0.5, xMaxDD2=1.3, force=F) {
@@ -490,7 +493,7 @@ searchForOptimalBalanced <- function(
        type="search", subtype="balanced", speed=0, coeffEntropy=def$coeffEntropyBalanced, 
        minTR=5, maxVol=20, minTO=1.2, maxDD2=2.5, minScore=8.5,
        col=F, CPUnumber=def$CPUnumber, plotType="line", 
-       combineMode="weighted", nameLength=15, plotEvery=def$plotEvery, 
+       combineMode="weighted", nameLength=def$nameLength, plotEvery=def$plotEvery, 
        xMinVol=12, xMaxVol=19, xMinDD2=0.5, xMaxDD2=1.4, force=F) {
 
    # calculate how many parameters sets will be run

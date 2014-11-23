@@ -885,11 +885,9 @@ plotAllReturnsVsSomeParameter <- function(type1=def$type1, col1=def$col1, pch1=d
       
    if (costs==0.5/100)
       def$yStatsName <<- "netTR0.5"
-   else if (costs==1/100)
-      def$yStatsName <<- "netTR1"
-   else if (costs==2/100)
-      def$yStatsName <<- "netTR2"
-   else stop("No data frame \'netTR", round(costs*100), "\' exists.")
+   else if (round(100*costs,2) %in% c(1, 2, 3, 4) )
+      def$yStatsName <<- paste0("netTR", round(100*costs,2) )
+   else stop("No \'netTR", round(costs*100), "\' entry exists in 'stats'.")
    
    xRange <- c(xMin, xMax)
    yRange <- c(yMin - 100*costs/2, yMax - 100*costs/4)

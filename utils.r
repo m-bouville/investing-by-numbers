@@ -460,6 +460,8 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
       stats$netTR0.5[index] <<- stats$TR[index] - 0.5/100/stats$turnover[index]
       stats$netTR1[index]   <<- stats$TR[index] - 1  /100/stats$turnover[index]
       stats$netTR2[index]   <<- stats$TR[index] - 2  /100/stats$turnover[index]
+      stats$netTR3[index]   <<- stats$TR[index] - 3  /100/stats$turnover[index]
+      stats$netTR4[index]   <<- stats$TR[index] - 4  /100/stats$turnover[index]
    }
    stats$score[index] <<- 75 * (   coeffTR  * (stats$TR[index] - 0.07)
                                  - coeffVol * (stats$volatility[index] - 0.14)

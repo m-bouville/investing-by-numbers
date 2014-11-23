@@ -13,20 +13,10 @@
 
 
 
-setDefaultValues <- function(dataSplit, futureYears=10L, tradingCost=0.5/100, riskAsCost=0.5/100, force=F) {
+setDefaultValues <- function(dataSplit, futureYears=10L, 
+                             tradingCost=0.5/100, riskAsCost=0.5/100, riskAsCostTechnical=2.5/100, force=F) {
    if (!exists("def") | force) def <<- list()
    
-   def$futureYears   <<- futureYears    # default value for the number of years over which future returns are calculated
-   message("default futureYears: ", def$futureYears, " years")
-   
-   if ( round((tradingCost+riskAsCost)*100,2) %in% c(0.5, 1, 2) ) {
-   def$tradingCost   <<- tradingCost    # default value for the trading costs
-   message("default tradingCost: ", def$tradingCost*100, "% / per year of turnover")
-   def$riskAsCost    <<- riskAsCost # default value for the trading costs
-   message("default riskAsCost:  ", def$riskAsCost*100, "% / per year of turnover")
-   } else stop("The sum of tradingCost and riskAsCost can only be one of 0.5%, 1% or 2%, not ", 
-               (tradingCost+riskAsCost)*100, "%." )
-
    if(dataSplit=="search") 
       message("Time range: \'SEARCH\' phase")
    else if(dataSplit=="testing") 
@@ -35,16 +25,26 @@ setDefaultValues <- function(dataSplit, futureYears=10L, tradingCost=0.5/100, ri
       message("Time range:  \'NONE\' phase")      
    else stop("dataSplit can only be one of 'none', 'search' or 'testing', not ", dataSplit)
    
-   #    if(dataSplit=="search") {
-   #       def$riskAsCost <<- 3.5/100 # default value for the trading costs
-   #       message("default riskAsCost:  ", def$riskAsCost*100, "% / per year of turnover for \'SEARCH\' phase")
-   #    } else if(dataSplit=="testing") {
-   #       def$riskAsCost <<- 0
-   #       message("default riskAsCost set to 0 for \'TESTING\' phase")      
-   #    }  else if(dataSplit=="none") {
-   #       def$riskAsCost <<- 0
-   #       message("default riskAsCost set to 0 for \'NONE\' phase")      
-   #    } else stop("dataSplit can only be one of 'none', 'search' or 'testing', not ", dataSplit)
+   def$futureYears   <<- futureYears    # default value for the number of years over which future returns are calculated
+   message("default futureYears: ", def$futureYears, " years")
+   
+   def$tradingCost   <<- tradingCost    # default value for the trading costs
+   message("default tradingCost:         ", def$tradingCost*100, "% / per year of turnover")
+
+   # default value for the trading costs
+   if ( round((tradingCost+riskAsCost)*100,2) %in% c(0.5, 1, 2, 3, 4) ) {
+   def$riskAsCost    <<- riskAsCost 
+   message("default riskAsCost:          ", def$riskAsCost*100, "% / per year of turnover")
+   } else stop("The sum of tradingCost and riskAsCost can only be one of 0.5%, 1%, 2%, 3% or 4%, not ", 
+               (tradingCost+riskAsCost)*100, "%." )
+
+   # default value for the trading costs for technical strategies
+   #    with a high value it is less common to sell to buy back the next month
+   if ( round((tradingCost+riskAsCostTechnical)*100,2) %in% c(0.5, 1, 2, 3, 4) ) {
+      def$riskAsCostTechnical     <<- riskAsCostTechnical 
+      message("default riskAsCostTechnical: ", def$riskAsCostTechnical*100, "% / per year of turnover")
+   } else stop("The sum of tradingCost and riskAsCostTechnical can only be one of 0.5%, 1%, 2%, 3% or 4%, not ", 
+               (tradingCost+riskAsCostTechnical)*100, "%." )
    
    def$dataStartYear <<- 1871
    def$startIndex    <<- round(10.5*12+1)
@@ -89,6 +89,8 @@ createStatsDF <- function(futureYears=def$futureYears) {
                         netTR0.5 = numeric(),  # average real total return net of 0.5% of trading costs
                         netTR1 = numeric(),  # average real total return net of 1% of costs (trading + risk)
                         netTR2 = numeric(),  # average real total return net of 2% of costs (trading + risk)
+                        netTR3 = numeric(),  # average real total return net of 3% of costs (trading + risk)
+                        netTR4 = numeric(),  # average real total return net of 4% of costs (trading + risk)
                         #                         eval(parse(text=paste0("median", futureYears))), 
                         #                         parse(text=paste0("five", futureYears)),
                         volatility = numeric(), 
