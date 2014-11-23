@@ -486,8 +486,6 @@ showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def
                                    coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
                                    coeffEntropy=0, nameLength=def$nameLength, force=F) {
    
-   library(stringr)
-   
    if ( !(strategyName %in% stats$strategy) )
       calcStatisticsForStrategy(strategyName, futureYears=futureYears, costs=costs,
                                 coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=T) 
@@ -575,10 +573,6 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost+def
    # force pertains only to showSummaryForStrategy, not to calc...StrategyReturn (these are all set to F)
 
    dashes <- displaySummaryHeader(futureYears=futureYears, nameLength=def$nameLength)
-#    print(paste0("* Statistics of the strategies (costs = ", round(100*costs,2), "% per year of turnover):"))
-#    print(paste0("strategy         |  TR   ", futureYears, " yrs: med, 5%| vol. alloc: avg, now|TO yrs | DD^2 | score") )
-#    dashes <- "-----------------+-------+--------------+-------+-------------+-------+------+------"
-#    print(dashes)
    
    showSummaryForStrategy("stocks", displayName="stocks", futureYears=futureYears, costs=0, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
@@ -609,12 +603,7 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost+def
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    showSummaryForStrategy(def$typicalBalanced,     displayName="balanced", futureYears=futureYears, costs=costs, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-#    showSummaryForStrategy(def$typicalBalanced1,    displayName="balanced", futureYears=futureYears, costs=costs, 
-#                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-#    showSummaryForStrategy(def$typicalBalanced2,    displayName="balanced 2", futureYears=futureYears, costs=costs, 
-#                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    print(dashes)
-   print("")
 }
 
 

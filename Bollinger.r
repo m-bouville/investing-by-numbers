@@ -20,12 +20,12 @@ setBollDefaultValues <- function() {
    def$BollInputName  <<- "TR"
    
    def$BollAvgOver1    <<-  14L
-   def$BollBearish1    <<- -31.5
-   def$BollBullish1    <<- -30.5
+   def$BollBearish1    <<- -31
+   def$BollBullish1    <<- -31
    def$typicalBoll1    <<- paste0("Boll_", def$BollAvgOver1, "_", def$BollBearish1, "_", def$BollBullish1)
    
    def$BollAvgOver2    <<- 10L
-   def$BollBearish2    <<- 46.5
+   def$BollBearish2    <<- 46
    def$BollBullish2    <<- 46.5
    def$typicalBoll2    <<- paste0("Boll_", def$BollAvgOver2, "_", def$BollBearish2, "_", def$BollBullish2)
 }
@@ -46,7 +46,8 @@ calcBollSignal <- function(inputDF=def$BollInputDF, inputName=def$BollInputName,
    else if (inputDF=="next30yrs")  input <- next30yrs[, inputName]
    else stop("data frame ", inputDF, " not recognized")
    
-   if ( !(avgName %in% colnames(dat)) | !(SDname %in% colnames(dat)) | force) {# if data do not exist yet or we force recalculation:
+   if ( !(avgName %in% colnames(dat)) | !(SDname %in% colnames(dat)) | force) {
+      # if data do not exist yet or we force recalculation:
       addNumColToDat(avgName)
       addNumColToDat(SDname)
       dat[1:(avgOver-1), avgName] <<- NA # not enough data to calculate average or SD
@@ -57,7 +58,8 @@ calcBollSignal <- function(inputDF=def$BollInputDF, inputName=def$BollInputName,
       }
    }      
 
-   if ( !(strategyName %in% colnames(signal)) | force) {# if data do not exist yet or we force recalculation:
+   if ( !(strategyName %in% colnames(signal)) | force) {
+      # if data do not exist yet or we force recalculation:
       rawSignal <- numeric(numData)
       rawSignal <- (input - dat[, avgName]) / dat[, SDname]
 
@@ -168,11 +170,11 @@ searchForOptimalBoll <- function(inputDF="dat", inputName="TR",
                                  minBear   =-34,  maxBear   =-30,  byBear  = 0.5, 
                                  minDelta  =  0,  maxDelta  =  2,  byDelta = 0.5,  
                                  futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
-                                 minTR=0, maxVol=20, maxDD2=4, minTO=0.6, minScore=14.78,
+                                 minTR=0, maxVol=20, maxDD2=4, minTO=0.6, minScore=7.3,
                                  coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
-                                 xMinVol=0.5, xMaxVol=17, xMinDD2=0.5, xMaxDD2=1.3,
+                                 xMinVol=12.5, xMaxVol=16.5, xMinDD2=0.45, xMaxDD2=1.2,
                                  type="search", col=F, plotType="symbols", 
-                                 nameLength=def$nameLength, plotEvery=def$plotEvery, force=F) {
+                                 nameLength=20, plotEvery=def$plotEvery, force=F) {
    
    # calculate how many parameters sets will be run
    calcOptimalBoll(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOver, 
@@ -206,10 +208,10 @@ searchForTwoOptimalBoll <- function(plotType="symbols", force=F) {
    print("Bollinger 1...")
    searchForOptimalBoll(minAvgOver= 13L, maxAvgOver =15L, byAvgOver=1L, 
                         minBear   =-37,  maxBear   =-25,  byBear  = .5, 
-                        minDelta  =  0,  maxDelta  =  3,  byDelta = .5, minScore=7.87)
+                        minDelta  =  0,  maxDelta  =  3,  byDelta = .5, minScore=7.437)
    print("")
    print("Bollinger 2...")
-   searchForOptimalBoll(minAvgOver=  9L, maxAvgOver= 11L, byAvgOver=1L, 
-                        minBear   = 43,  maxBear   = 55,  byBear  = .5, 
-                        minDelta  =  0,  maxDelta  =  3,  byDelta = .5, minScore=6.95)
+   searchForOptimalBoll(minAvgOver=  9L, maxAvgOver= 12L, byAvgOver=1L, 
+                        minBear   = 42,  maxBear   = 52,  byBear  = .5, 
+                        minDelta  =  0,  maxDelta  =  2,  byDelta = .5, minScore=6.15)
 }

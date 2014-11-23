@@ -455,13 +455,13 @@ parametrizeFutureReturnPlot <- function(costs, yLabel="", futureYears, minTR, ma
       if (maxTR=="") maxTR <-  32
    } else if (futureYears==10) {
       if (minTR=="") minTR <-  -6
-      if (maxTR=="") maxTR <-  24
+      if (maxTR=="") maxTR <-  25
    } else if (futureYears==15) {
       if (minTR=="") minTR <-  -3
       if (maxTR=="") maxTR <-  20
    } else if (futureYears==20) {
       if (minTR=="") minTR <-  -1
-      if (maxTR=="") maxTR <-  15
+      if (maxTR=="") maxTR <-  16
    } else if (futureYears==30) {
       if (minTR=="") minTR <-   2
       if (maxTR=="") maxTR <-  12
@@ -471,7 +471,7 @@ parametrizeFutureReturnPlot <- function(costs, yLabel="", futureYears, minTR, ma
 
 
 ## future returns
-plotFutureReturn <- function(stratName1=def$typicalBalanced, stratName2="constantAlloc80_20", 
+plotFutureReturn <- function(stratName1=def$typicalBalanced, stratName2="stocks", 
                              stratName3=def$typicalTechnical, stratName4=def$typicalValue, 
                              futureYears=def$futureYears, xVect=TR$numericDate, 
                              col1=def$colBalanced, col2=def$colConstantAlloc, 
@@ -547,7 +547,7 @@ plotFutureReturn <- function(stratName1=def$typicalBalanced, stratName2="constan
 
 
 plotRelativeFutureReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTechnical, 
-                             stratName3=def$typicalValue, refStratName="constantAlloc80_20", 
+                             stratName3=def$typicalValue, refStratName="stocks", 
                              futureYears=def$futureYears, xVect=TR$numericDate, 
                              col1=def$colBalanced, col2=def$colTechnical, 
                              col3=def$colValue, col4=def$colConstantAlloc, 

@@ -13,8 +13,8 @@
 
 
 
-setDefaultValues <- function(dataSplit, futureYears=10L, 
-                             tradingCost=0.5/100, riskAsCost=0.5/100, riskAsCostTechnical=2.5/100, force=F) {
+setDefaultValues <- function(dataSplit, futureYears, 
+                             tradingCost, riskAsCost, riskAsCostTechnical, force=F) {
    if (!exists("def") | force) def <<- list()
    
    if(dataSplit=="search") 
@@ -201,14 +201,15 @@ addFutureReturnsToDat <- function(force=F) {
 
 addConstAllocToDat <- function(smoothConstantAlloc, force=F) {
    time0 <- proc.time()
-   message("Creating constant-allocation stock-bond strategies.") 
+   #message("Creating constant-allocation stock-bond strategies.") 
    if(smoothConstantAlloc)
       constAllocList <- seq(100, 0, by=-5)
    else 
       constAllocList <- c(100, 80, 60, 45, 30, 0)
    invisible ( lapply( constAllocList, function(alloc) createConstAllocStrategy(
       alloc, futureYears=def$futureYears, force=force) ) )
-   print( c( "constant allocation time:", round(summary(proc.time())[[1]] - time0[[1]] , 1) ) )
+   #    message( "Time spent creating constant-allocation stock-bond strategies: ", 
+   #              round(summary(proc.time())[[1]] - time0[[1]] , 1), " s." )
 }
 
 
@@ -220,7 +221,7 @@ loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=T) {
    else if(downloadAndCheckAllFiles) # We force checking whether the local file is up to date
       checkXlsFileIsUpToDate()
    
-   library(XLConnect) # to handle xls file
+   suppressMessages( library(XLConnect) ) # to handle xls file
    wk <- loadWorkbook("./data/ie_data.xls") 
    rawDat <- readWorksheet(wk, sheet="Data", startRow=8)
    
@@ -268,14 +269,13 @@ loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=T) {
       dat$TR[i] <<- dat$TR[i-1] * dat$price[i]/dat$price[i-1] * (1 + dat$dividend[i]/dat$price[i]/12)
    
    dat$bonds <<- read.csv("./data/bonds.csv", header=T)[1:numData, 1]
-   message("Real bond prices were imported from an Excel calculation.")
+   # message("Real bond prices were imported from an Excel calculation.")
    while(is.na(dat$bonds[numData])) {
       warning(paste0("removing last row of data (for ", dat$date[numData], ") because bond data are missing."))
       dat <<- dat[-numData, ]
       numData <<- numData - 1
    }
-   
-   message("Shiller's xls file has *nominal* values, the \'dat\' data frame has *real* values.")
+   # message("Shiller's xls file has *nominal* values, the \'dat\' data frame has *real* values.")
 }
 
 checkXlsFileIsUpToDate <- function(fileName="./data/ie_data.xls") {
@@ -316,7 +316,7 @@ makeStringsFactors <- function() {
 
 # Generating typical strategies
 createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
-   message("Creating entries for the typical strategies")
+   #message("Creating entries for the typical strategies")
    
    createSMAstrategy(inputDF=def$SMAinputDF, inputName=def$SMAinputName, SMA1=def$SMA1, SMA2=def$SMA2, 
                      bearish=def$SMAbearish, bullish=def$SMAbullish, 

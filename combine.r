@@ -23,7 +23,7 @@ setCombinedDefaultValues <- function() {
    def$coeffEntropyBalanced  <<- 1
    
    def$technicalStrategies  <<- c(def$typicalSMA, def$typicalBoll1, def$typicalBoll2, def$typicalReversal)
-   def$technicalFractions   <<- c(24, 25, 17.5, 33.5) # riskAsCost=2.5/100
+   def$technicalFractions   <<- c(23.5, 25, 14.5, 37) # riskAsCost=3.5/100
    #def$technicalFractions   <<- c(20, 24, 25, 31) # riskAsCost=1.5/100
    #def$technicalFractions   <<- c(24, 26, 17, 33) # riskAsCost=2.5/100
    #def$technicalFractions   <<- c(23, 25, 15, 37) # riskAsCost=3.5/100
@@ -428,7 +428,7 @@ searchForOptimalTechnical <- function(inputStrategyName = c(def$typicalSMA,
    type="search", subtype="technical", coeffEntropy=def$coeffEntropyTechnical, 
    minTR=0, maxVol=16, minTO=0.6, maxDD2=2, minScore=9.1,
    col=F, CPUnumber=def$CPUnumber, plotType="dots", 
-   combineMode="all", nameLength=23, plotEvery=def$plotEvery, 
+   combineMode="all", nameLength=26, plotEvery=def$plotEvery, 
    xMinVol=13, xMaxVol=17, xMinDD2=0.5, xMaxDD2=1.3, force=F) {
    
    # calculate how many parameters sets will be run

@@ -70,7 +70,7 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
                   futureYears=10L,            # to calculate the return over the next so many years
                   tradingCost=0.5/100,        # cost of turning the portfolio entirely 
                   riskAsCost=0.5/100,
-                  riskAsCostTechnical=2.5/100,
+                  riskAsCostTechnical=3.5/100,
                   otherAssetClasses=F,        # loads gold and UK house prices
                   newcomer=F,                 # displays some information on the code
                   force=F) {
@@ -92,6 +92,8 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
    source("reversal.r")
    source("combine.r")
    
+   library(stringr)
+   
    totTime <- proc.time()
    
    setDefaultValues(dataSplit=dataSplit, futureYears=futureYears, 
@@ -101,10 +103,10 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
    ## if data frame does not exist, or is incomplete (had been used for search or testing), 
    ## or if we want to force the loading: we load the xls file
    if (!exists("dat") || numData<1500 || downloadAndCheckAllFiles) { 
-      message("Starting to load the data from the xls file.")
-      if (otherAssetClasses)
-         message("Then we will also load a list of drawdowns, of gold prices and of UK house prices.")
-      else message("Then we will also load a list of drawdowns.")
+   #       message("Starting to load the data from the xls file.")
+   #       if (otherAssetClasses)
+   #          message("Then we will also load a list of drawdowns, of gold prices and of UK house prices.")
+   #       else message("Then we will also load a list of drawdowns.")
       loadData(downloadAndCheckAllFiles=downloadAndCheckAllFiles)
    }
    if (!exists("DD") | force) loadDDlist(otherAssetClasses=otherAssetClasses, force=force) # loading the dates of major drawdowns
@@ -167,15 +169,16 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
    
    makeStringsFactors()
    
-   #    print(proc.time() - totTime)
-   print( paste0( "This took: ", 
-                  round(summary(proc.time())[[3]] - totTime[[3]] , 0), " s, with about " , 
-                  round(summary(proc.time())[[1]] - totTime[[1]] , 0), " s for calculations and " ,
-                  round(summary(proc.time())[[3]]-summary(proc.time())[[1]] + totTime[[1]]-totTime[[3]] , 0), 
-                  " s to load files and for XLConnect." ) )
+#    if ( (summary(proc.time())[[3]]-summary(proc.time())[[1]] + totTime[[1]]-totTime[[3]] ) > 2 )
+#       message( "This took ", 
+#                round(summary(proc.time())[[3]] - totTime[[3]] , 0), " s (with about " , 
+#                round(summary(proc.time())[[1]] - totTime[[1]] , 0), " s for calculations and " ,
+#                round(summary(proc.time())[[3]]-summary(proc.time())[[1]] + totTime[[1]]-totTime[[3]] , 0), 
+#                " s to load files and for XLConnect)." )
+#    else message( "This took ", round(summary(proc.time())[[3]] - totTime[[3]] , 0), " s.")
 }
 
-# start(dataSplit="search", futureYears=10L, riskAsCost=0.5/100, riskAsCostTechnical=2.5/100, force=T)
+# start(dataSplit="search", futureYears=10L,   riskAsCostTechnical=3.5/100, force=T)
 # start(dataSplit="none",   futureYears=15L, riskAsCost=0, riskAsCostTechnical=0, force=T)
 # start(dataSplit="testing",futureYears=10L, riskAsCost=0, riskAsCostTechnical=0, force=T)
 # plotAllReturnsVsFour()
