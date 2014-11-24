@@ -20,7 +20,7 @@ setSMAdefaultValues <- function() {
 
    # lower volatility and lower DD (but lower retrurn too)
    def$SMA1        <<- 14L
-   def$SMA2        <<- 1L
+   def$SMA2        <<-  1L
    def$SMAbearish  <<- 12L
    def$SMAbullish  <<- 12L
    def$typicalSMA  <<- paste0("SMA_", def$SMA1, "_", def$SMA2, "__", def$SMAbearish, "_", def$SMAbullish)
@@ -123,14 +123,14 @@ createSMAstrategy <- function(inputDF="dat", inputName="TR", SMA1=def$SMA1, SMA2
 
 
 searchForOptimalSMA <- function(inputDF="dat", inputName="TR", 
-                                minSMA1=9L, maxSMA1=11L, bySMA1=1L,
-                                minSMA2=4L, maxSMA2=6L, bySMA2=1L, 
-                                minBear=18, maxBear=20, byBear=0.5, 
-                                minDelta=0, maxDelta=2, byDelta=0.5,  
+                                minSMA1= 13L, maxSMA1= 15L, bySMA1= 1L,
+                                minSMA2=  1L, maxSMA2=  2L, bySMA2= 1L, 
+                                minBear= 11,  maxBear= 14,  byBear= 0.5, 
+                                minDelta= 0,  maxDelta= 3,  byDelta=0.5, 
                                 futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
                                 minTR=0, maxVol=20, maxDD2=2, minTO=0.7, minScore=8.45, 
                                 type="search", col=F, plotType="symbols", 
-                                nameLength=23, plotEvery=def$plotEvery, force=F) {
+                                nameLength=22, plotEvery=def$plotEvery, force=F) {
    
    lastTimePlotted <- proc.time()
    dashes <- displaySummaryHeader(futureYears=futureYears, nameLength=nameLength)
@@ -162,21 +162,21 @@ searchForOptimalSMA <- function(inputDF="dat", inputName="TR",
 }
 
 
-# 
-# searchForTwoOptimalSMA <-function(plotType="symbols", force=F) {
-#    print("SMA1")
-#    searchForOptimalSMA(minSMA1=9L, maxSMA1=11L, bySMA1=1L,
-#                        minSMA2=4L, maxSMA2=6L, bySMA2=1L, 
-#                        minBear=18, maxBear=20, byBear=0.5, 
-#                        minDelta=0, maxDelta=2, byDelta=0.5, minScore=14.85)
-#    print("")
-#    
-#    print("SMA2")
-#    searchForOptimalSMA(minSMA1=13L, maxSMA1=15L, bySMA1= 1L,
-#                        minSMA2= 1L, maxSMA2= 2L, bySMA2= 1L, 
-#                        minBear= 11, maxBear= 13, byBear= 0.5, 
-#                        minDelta= 0, maxDelta= 2, byDelta=0.5, minScore=14.25)
-# }
+
+searchForTwoOptimalSMA <-function(plotType="symbols", force=F) {
+   print("SMA1")
+   searchForOptimalSMA(minSMA1= 9L, maxSMA1=11L, bySMA1= 1L,
+                       minSMA2= 4L, maxSMA2= 6L, bySMA2= 1L, 
+                       minBear=18,  maxBear=20,  byBear= 0.5, 
+                       minDelta=0,  maxDelta=2,  byDelta=0.5, minScore=8.737)
+   print("")
+   
+   print("SMA2")
+   searchForOptimalSMA(minSMA1= 13L, maxSMA1= 15L, bySMA1= 1L,
+                       minSMA2=  1L, maxSMA2=  2L, bySMA2= 1L, 
+                       minBear= 11,  maxBear= 14,  byBear= 0.5, 
+                       minDelta= 0,  maxDelta= 3,  byDelta=0.5, minScore=8.44)
+}
 
 ## OBSOLETE
 plotSMA <- function(SMA1=def$SMA1, SMA2=def$SMA2, futureYears=def$FutureYears, startYear=1885) {

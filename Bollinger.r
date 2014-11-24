@@ -195,10 +195,8 @@ searchForOptimalBoll <- function(inputDF="dat", inputName="TR",
                    col, plotType, nameLength, plotEvery, force)
       
    print(dashes)
-   showSummaryForStrategy(def$typicalBoll1, nameLength=nameLength, costs=costs, 
-                          coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
-   showSummaryForStrategy(def$typicalBoll2, nameLength=nameLength, costs=costs, 
-                          coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
+   showSummaryForStrategy(def$typicalBoll1, nameLength=nameLength, costs=costs)
+   showSummaryForStrategy(def$typicalBoll2, nameLength=nameLength, costs=costs)
    plotAllReturnsVsTwo(col=col, searchPlotType=plotType,
                        xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2)
 }
@@ -208,10 +206,10 @@ searchForTwoOptimalBoll <- function(plotType="symbols", force=F) {
    print("Bollinger 1...")
    searchForOptimalBoll(minAvgOver= 13L, maxAvgOver =15L, byAvgOver=1L, 
                         minBear   =-37,  maxBear   =-25,  byBear  = .5, 
-                        minDelta  =  0,  maxDelta  =  3,  byDelta = .5, minScore=7.437)
+                        minDelta  =  0,  maxDelta  =  3,  byDelta = .5, minScore=7.25)
    print("")
    print("Bollinger 2...")
    searchForOptimalBoll(minAvgOver=  9L, maxAvgOver= 12L, byAvgOver=1L, 
                         minBear   = 42,  maxBear   = 52,  byBear  = .5, 
-                        minDelta  =  0,  maxDelta  =  2,  byDelta = .5, minScore=6.15)
+                        minDelta  =  0,  maxDelta  =  2,  byDelta = .5, minScore=5.95)
 }

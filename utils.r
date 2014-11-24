@@ -463,13 +463,13 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
       stats$netTR3[index]   <<- stats$TR[index] - 3  /100/stats$turnover[index]
       stats$netTR4[index]   <<- stats$TR[index] - 4  /100/stats$turnover[index]
    }
-   stats$score[index] <<- 75 * (   coeffTR  * (stats$TR[index] - 0.07)
-                                 - coeffVol * (stats$volatility[index] - 0.14)
+   stats$score[index] <<- 75 * (   coeffTR  * (stats$TR[index] - 0.08)
+                                 - coeffVol * (stats$volatility[index] - 0.15)
                                  - coeffDD2 * (stats$DD2[index] - 1.5) / 100
                                  + (1-coeffTR)/2 * ( stats[index, medianName] + stats[index, fiveName] - 0.05)
                                  - costs * (1/stats$turnover[index]-1/3) ) + 7
    ## 1. The coefficients coeffVol and coeffDD2 make it possible to 'convert' vol and DD2 into return equivalents.
-   ## 2. I subtract off constants to reduce the variation of the score when coefficients change
+   ## 2. I subtract off constants to reduce the variation of the score when coefficients are changed
 }
 
 displaySummaryHeader <- function(futureYears=def$futureYears, nameLength=def$nameLength) {

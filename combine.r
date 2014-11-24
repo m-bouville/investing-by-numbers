@@ -14,31 +14,28 @@
 
 #default values of parameters:
 setCombinedDefaultValues <- function() {
-   ## When optimizing combined strategies, we value diversity through coeffEntropy.
+   ## When optimizing combined strategies, we value diversity through coeffEntropy coefficients.
    ##   This is to avoid idiosyncrasies: if what was the best strategy when fitting 
    ##   is bad when testing, then other strategies can counterbalance it to an extent.
    ##   Ceteris paribus, the combination of 4 strategies with similar weights is safer than a single strategy.
-   def$coeffEntropyTechnical <<- 3
-   def$coeffEntropyValue     <<- 3
-   def$coeffEntropyBalanced  <<- 1
+   def$coeffEntropyTechnical<<- 3
+   def$coeffEntropyValue    <<- 3
+   def$coeffEntropyBalanced <<- 1
    
    def$technicalStrategies  <<- c(def$typicalSMA, def$typicalBoll1, def$typicalBoll2, def$typicalReversal)
-   def$technicalFractions   <<- c(23.5, 25, 14.5, 37) # riskAsCost=3.5/100
-   #def$technicalFractions   <<- c(20, 24, 25, 31) # riskAsCost=1.5/100
-   #def$technicalFractions   <<- c(24, 26, 17, 33) # riskAsCost=2.5/100
-   #def$technicalFractions   <<- c(23, 25, 15, 37) # riskAsCost=3.5/100
+   def$technicalFractions   <<- c(26, 28, 12, 34) # c(23.5, 25, 14.5, 37)
    def$typicalTechnical     <<- "technical"
    for (i in 1:length(def$technicalFractions) )
       def$typicalTechnical  <<- paste0(def$typicalTechnical, "_", def$technicalFractions[i])
    
    def$valueStrategies      <<- c(def$typicalCAPE1, def$typicalCAPE2, def$typicalDetrended)
-   def$valueFractions       <<- c(23, 41, 36)
+   def$valueFractions       <<- c(30, 34, 36)    # c(23, 41, 36)
    def$typicalValue         <<- "value"
    for (i in 1:length(def$valueFractions) )
       def$typicalValue      <<- paste0(def$typicalValue, "_", def$valueFractions[i])
    
    def$balancedStrategies   <<- c(def$typicalTechnical, def$typicalValue)
-   def$balancedFractions    <<- c(60, 40)
+   def$balancedFractions    <<- c(65, 35)        # c(60, 40)
    def$balancedCombineMode  <<- "weighted"
    if (def$balancedCombineMode == "weighted") {
       def$typicalBalanced   <<- "balanced"
@@ -389,7 +386,7 @@ searchForOptimalCombined <- function
                               
                               counterTot <- counterTot + 1 
                               if(countOnly) {
-                                 if ( !(strategyName %in% colnames(TR)) | !(strategyName %in% colnames(alloc)) )
+                                 if ( !(strategyName %in% colnames(TR)) | !(strategyName %in% colnames(alloc)) | force )
                                     counterNew <- counterNew + 1                  
                               } else {
                                  combineStrategies(inputStrategyName, f, strategyName=strategyName, costs=costs,
@@ -421,12 +418,12 @@ searchForOptimalCombined <- function
 
 searchForOptimalTechnical <- function(inputStrategyName = c(def$typicalSMA, 
                                        def$typicalBoll1, def$typicalBoll2, def$typicalReversal), 
-   minF = c(20, 20, 14, 30), 
-   maxF = c(28, 30, 22, 38), 
-   byF  = c( 2,  2,  2,100L), 
+   minF = c(24, 26, 10, 32), 
+   maxF = c(28, 30, 14, 36), 
+   byF  = c( rep(1,  3), 100L), 
    futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
    type="search", subtype="technical", coeffEntropy=def$coeffEntropyTechnical, 
-   minTR=0, maxVol=16, minTO=0.6, maxDD2=2, minScore=9.1,
+   minTR=0, maxVol=16, minTO=0.6, maxDD2=2, minScore=8.6,
    col=F, CPUnumber=def$CPUnumber, plotType="dots", 
    combineMode="all", nameLength=26, plotEvery=def$plotEvery, 
    xMinVol=13, xMaxVol=17, xMinDD2=0.5, xMaxDD2=1.3, force=F) {
@@ -454,12 +451,12 @@ searchForOptimalTechnical <- function(inputStrategyName = c(def$typicalSMA,
 
 searchForOptimalValue <- function
       (inputStrategyName = c(def$typicalCAPE1, def$typicalCAPE2, def$typicalDetrended), 
-       minF = c(25, 30, 37), 
-       maxF = c(31, 35, 42), 
+       minF = c(25, 30, 34), 
+       maxF = c(32, 38, 40), 
        byF =  c( 1,  1,100L), 
        futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
        type="search", subtype="value", coeffEntropy=def$coeffEntropyValue, 
-       minTR=0, maxVol=20, minTO=4, maxDD2=2, minScore=8.6,
+       minTR=0, maxVol=20, minTO=4, maxDD2=2, minScore=7.95,
        col=F, CPUnumber=def$CPUnumber, plotType="dots", combineMode="all", 
        nameLength=17, plotEvery=def$plotEvery, 
        xMinVol=def$minVol, xMaxVol=def$maxVol, xMinDD2=def$minDD2, xMaxDD2=def$maxDD2, force=F) {
@@ -488,10 +485,10 @@ searchForOptimalValue <- function
 
 searchForOptimalBalanced <- function(
       inputStrategyName = c(def$typicalTechnical, def$typicalValue), 
-       minF = c(40, 25), maxF = c(100, 100), byF = c(1, 1),
+       minF = c(35, 20), maxF = c(100, 100), byF = c(1, 1),
        futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
        type="search", subtype="balanced", speed=0, coeffEntropy=def$coeffEntropyBalanced, 
-       minTR=5, maxVol=20, minTO=1.2, maxDD2=2.5, minScore=8.5,
+       minTR=5, maxVol=20, minTO=1.2, maxDD2=2.5, minScore=8.25,
        col=F, CPUnumber=def$CPUnumber, plotType="line", 
        combineMode="weighted", nameLength=def$nameLength, plotEvery=def$plotEvery, 
        xMinVol=12, xMaxVol=19, xMinDD2=0.5, xMaxDD2=1.4, force=F) {
@@ -557,4 +554,29 @@ searchForOptimalBalanced2 <- function
    #the balanced strategy from T and V has a different entropy and cannot be directly compared.
    showSummaryForStrategy(def$typicalBalanced1, costs=costs, coeffEntropy=coeffEntropy, nameLength=nameLength)
    showSummaryForStrategy(def$typicalBalanced2, costs=costs, coeffEntropy=coeffEntropy, nameLength=nameLength)
+}
+
+
+
+
+searchForThreeOptimalValue <-function(plotType="symbols", force=F) {
+   print("searching for optimal CAPE strategy without hysteresis...")
+   searchForOptimalCAPEwithoutHysteresis(minYears=   9L, maxYears=  11L, byYears=  1L, cheat=2, 
+                                         minAvgOver=32L, maxAvgOver=36L, byAvgOver=1L, 
+                                         minBear=   20,  maxBear=   22,  byBear=   0.5, 
+                                         minDelta=   0,  maxDelta=   1,  byDelta=  0.5, minScore=7.586 )
+
+   print("")
+   print("searching for optimal CAPE strategy with hysteresis...")
+   searchForOptimalCAPEwithHysteresis(minYears=   9L,  maxYears=  11L,  byYears=  2L, cheat=2, 
+                                      minAvgOver=31L,  maxAvgOver=33L,  byAvgOver=1L, 
+                                      minMid=    18.0, maxMid =   20.0, byMid =   0.5, 
+                                      minWidth=   5,   maxWidth=   9,   byWidth=  0.5,
+                                      minSlope=   1.5, maxSlope=   2.5, bySlope=  0.5, minScore=7.7 )
+   
+   print("")
+   print("searching for optimal detrended strategy...")
+   searchForOptimalDetrended(minAvgOver=20L, maxAvgOver=23L, byAvgOver=1L, 
+                             minBear=   23,  maxBear=   25,  byBear=   0.2, 
+                             minDelta=   0,  maxDelta=   1,  byDelta=  0.2, minScore=8.78)
 }

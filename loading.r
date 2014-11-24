@@ -55,7 +55,7 @@ setDefaultValues <- function(dataSplit, futureYears,
    def$nameLength    <<- 18 # width of strategy name in summaries
    
    ## coefficients to calculate the score
-   def$coeffTR       <<- 0.6
+   def$coeffTR       <<- 0.4
 
    ## how many extra percentage points of return justify one extra percentage point of volatility.
    ## 0.05 means that we are indifferent if the volatility increases by 1%, 
@@ -373,12 +373,4 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
                      type="combined", subtype="balanced", combineMode=def$balancedCombineMode,
                      costs=def$tradingCost, 
                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
-#    combineStrategies(def$balancedStrategies1, def$balancedFractions1,
-#                      type="combined", subtype="balanced", combineMode=def$balancedCombineMode1,
-#                      costs=def$tradingCost, 
-#                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
-#    combineStrategies(def$balancedStrategies2, def$balancedFractions2,
-#                      type="combined", subtype="balanced", combineMode=def$balancedCombineMode2,
-#                      costs=def$tradingCost, 
-#                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
 }

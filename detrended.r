@@ -27,9 +27,9 @@ setDetrendedDefaultValues <- function() {
    #                                        def$detrendedBearish1, "_", def$detrendedBullish1)
    
    ## detrended strategy with lower stock allocation (and vol and DD)
-   def$detrendedAvgOver    <<- 23L
-   def$detrendedBearish    <<- 22.4
-   def$detrendedBullish    <<- 22.2
+   def$detrendedAvgOver    <<- 22L    # 23
+   def$detrendedBearish    <<- 24     #22.4
+   def$detrendedBullish    <<- 24     #22.4
    def$typicalDetrended    <<- paste0("detrended_", def$detrendedAvgOver, "_", 
                                        def$detrendedBearish, "_", def$detrendedBullish)
 }
@@ -194,7 +194,7 @@ searchForOptimalDetrended <- function(inputDF=def$detrendedInputDF, inputName=de
                                       minBear=22, maxBear=32, byBear=1, 
                                       minDelta=0, maxDelta=1.5, byDelta=0.5, 
                                       futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
-                                      minTR=0, maxVol=20, maxDD2=5, minTO=4, minScore=14.2, 
+                                      minTR=0, maxVol=20, maxDD2=5, minTO=4, minScore=8.6, 
                                       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, col=F, 
                                       plotType="symbols", CPUnumber=def$CPUnumber, 
                                       xMinVol=13, xMaxVol=22, xMinDD2=1, xMaxDD2=1.8,
@@ -219,9 +219,7 @@ searchForOptimalDetrended <- function(inputDF=def$detrendedInputDF, inputName=de
                         CPUnumber, nameLength, plotEvery, force)
 
    print(dashes)
-   showSummaryForStrategy(def$typicalDetrended1, costs=costs, 
-                          coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, nameLength=nameLength)
-   showSummaryForStrategy(def$typicalDetrended2, costs=costs, 
+   showSummaryForStrategy(def$typicalDetrended, costs=costs, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, nameLength=nameLength)
    plotAllReturnsVsTwo(col=col, costs=costs, searchPlotType=plotType)
 }

@@ -21,8 +21,8 @@ setReversalDefaultValues <- function() {
    
    def$reversalAvgOver      <<-   9L
    def$reversalReturnToMean <<-  14L
-   def$reversalBearish      <<- -50L
-   def$reversalBullish      <<- -50L
+   def$reversalBearish      <<- -50
+   def$reversalBullish      <<- -50
    def$typicalReversal      <<- paste0("reversal_", def$reversalAvgOver, "_", def$reversalReturnToMean, "_", 
                                         def$reversalBearish, "_", def$reversalBullish)
    
@@ -146,38 +146,77 @@ createReversalStrategy <- function(inputDF=def$reversalInputDF, inputName=def$re
 }
 
 
-searchForOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
-                                    minAvgOver=8L, maxAvgOver=10L, byAvgOver=1L, 
-                                    minRTM = 10, maxRTM = 16, byRTM=1,
-                                    minBear=-54, maxBear=-42, byBear=2, 
-                                    minDelta=0,  maxDelta=2, byDelta=0.5, 
-                                    futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
-                                    minTR=0, maxVol=20, maxDD2=5, minTO=0.7, minScore=14.8,
-                                    col=F, plotType="symbols", nameLength=25, plotEvery=def$plotEvery, force=F) {
+calcOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
+                                     minAvgOver=8L, maxAvgOver=10L, byAvgOver=1L, 
+                                     minRTM = 10, maxRTM = 16, byRTM=1,
+                                     minBear=-54, maxBear=-42, byBear=2, 
+                                     minDelta=0,  maxDelta=2, byDelta=0.5, 
+                                     futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
+                                     minTR=0, maxVol=20, maxDD2=5, minTO=0.7, minScore=14.8, countOnly,
+                                xMinVol, xMaxVol, xMinDD2, xMaxDD2,
+                                col=F, plotType="symbols", nameLength=25, plotEvery=def$plotEvery, force=F) {
+   counterTot <- 0; counterNew <- 0
    lastTimePlotted <- proc.time()  
-   dashes <- displaySummaryHeader(futureYears=futureYears, nameLength=nameLength)
    
    for ( avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver) ) 
       for ( RTM in seq(minRTM, maxRTM, by=byRTM) ) 
          for ( bear in seq(minBear, maxBear, by=byBear) ) {     
             for ( delta in seq(minDelta, maxDelta, by=byDelta) ) {
                bull = bear + delta
-               strategyName <- paste0("reversal_", inputName, "_", avgOver, "__", 
+               strategyName <- paste0("reversal_", avgOver, "_", 
                                       RTM, "_", bear, "_", bull)
                
-               createReversalStrategy(inputDF=inputDF, inputName=inputName, avgOver=avgOver, returnToMean=RTM, 
+               counterTot <- counterTot + 1 
+               if(countOnly) {
+                  if ( !(strategyName %in% colnames(TR)) | !(strategyName %in% colnames(alloc)) )
+                     counterNew <- counterNew + 1                  
+               } else {
+                  createReversalStrategy(inputDF=inputDF, inputName=inputName, avgOver=avgOver, returnToMean=RTM, 
                                       bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
                                       strategyName=strategyName, force=force)                  
-               showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
+                  showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
                                       minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
                                       nameLength=nameLength, force=F)
+               }
             }
-         if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { # we replot only if it's been a while
-            plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
-            lastTimePlotted <- proc.time()
+            if ( !countOnly && (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { 
+               # we replot only if it's been a while
+               plotAllReturnsVsTwo(col=col, searchPlotType=plotType, 
+                                   xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2)
+               lastTimePlotted <- proc.time()
+            }
          }
-      }
+   if(countOnly)
+      print (paste0("Running ", counterTot, " parameter sets (", counterNew, " new)"))
+}
+
+
+searchForOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
+                                    minAvgOver=8L, maxAvgOver=10L, byAvgOver=1L,
+                                    minRTM=   12,  maxRTM=    16,  byRTM=    1,
+                                    minBear= -54,  maxBear=  -48,  byBear=   1, 
+                                    minDelta=  0,  maxDelta= 1.5,  byDelta=  0.5, 
+                                    futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
+                                    minTR=0, maxVol=20, maxDD2=5, minTO=0.7, minScore=8.6,
+                                    xMinVol=14, xMaxVol=17.5, xMinDD2=0.7, xMaxDD2=1.35,
+                                    col=F, plotType="symbols", nameLength=27, plotEvery=def$plotEvery, force=F) {
+
+   # calculate how many parameters sets will be run
+   calcOptimalReversal(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOver, 
+                       minRTM, maxRTM, byRTM, minBear, maxBear, byBear, minDelta, maxDelta, byDelta, 
+                       futureYears, costs, minTR, maxVol, maxDD2, minTO, minScore, countOnly=T,
+                       xMinVol, xMaxVol, xMinDD2, xMaxDD2, col, plotType, nameLength, plotEvery, force)
+   
+   dashes <- displaySummaryHeader(futureYears=futureYears, nameLength=nameLength)
+   
+   # actually calculating
+   calcOptimalReversal(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOver, 
+                       minRTM, maxRTM, byRTM, minBear, maxBear, byBear, minDelta, maxDelta, byDelta, 
+                       futureYears, costs, minTR, maxVol, maxDD2, minTO, minScore, countOnly=F,
+                       xMinVol, xMaxVol, xMinDD2, xMaxDD2, col, plotType, nameLength, plotEvery, force)
+   
    print(dashes)
    showSummaryForStrategy(def$typicalReversal, nameLength=nameLength, costs=costs)
-   plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
+   plotAllReturnsVsTwo(col=col, searchPlotType=plotType,
+                       xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2)
 }

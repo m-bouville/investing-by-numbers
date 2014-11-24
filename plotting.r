@@ -464,7 +464,7 @@ parametrizeFutureReturnPlot <- function(costs, yLabel="", futureYears, minTR, ma
       if (maxTR=="") maxTR <-  16
    } else if (futureYears==30) {
       if (minTR=="") minTR <-   2
-      if (maxTR=="") maxTR <-  12
+      if (maxTR=="") maxTR <-  13
    }
    return(c(yLabel=yLabel, minTR=minTR, maxTR=maxTR))
 }
