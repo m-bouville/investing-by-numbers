@@ -423,7 +423,7 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
       
       if (!(strategyName %in% colnames(DD)) | force) 
          CalcAllDrawdowns(strategyName, force=force)
-      stats$DD2[index]        <<- sum(DD[, strategyName]^2)
+      stats$DD2[index]        <<- mean( abs(DD[, strategyName])^def$DDpower )
       
       indexPara <- which(parameters$strategy == strategyName)     
       if ( length(indexPara) > 0 ) { # otherwise we are probably dealing with a constant allocation
@@ -469,7 +469,7 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
    else oneOverTO <- (1/stats$turnover[index]-1/3)
    stats$score[index] <<- 85 * (   coeffTR  * (stats$TR[index] - 0.08)
                                  - coeffVol * (stats$volatility[index] - 0.15)
-                                 - coeffDD2 * (stats$DD2[index] - 1.5) / 100
+                                 - coeffDD2 * (stats$DD2[index] - 0.05357) / 100
                                  + (1-coeffTR)/2 * ( stats[index, medianName] + stats[index, fiveName] - 0.05)
                                  - costs * oneOverTO ) + 7
    ## 1. The coefficients coeffVol and coeffDD2 make it possible to 'convert' vol and DD2 into return equivalents.
@@ -477,10 +477,21 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
 }
 
 displaySummaryHeader <- function(futureYears=def$futureYears, nameLength=def$nameLength) {
+   if (def$DDpower==2)
+      DD2label <- " DD^2  "
+   else if (def$DDpower==1.5)
+      DD2label <- "DD^1.5 "
+   else if ( abs(def$DDpower-4/3) < 0.01 )
+      DD2label <- "DD^4/3 "
+   else if ( abs(def$DDpower-5/3) < 0.01 )
+      DD2label <- "DD^5/3 "
+   else
+      DD2label <- str_pad(paste("DD^",def$DDpower), 7)
+   
    print(paste0(str_pad("strategy", nameLength, side="right"), "|  TR   ", futureYears, 
-                " yrs: med, 5%| vol. alloc: avg, now|TO yrs | DD^2 | score") )
+                " yrs: med, 5%| vol. alloc: avg, now|TO yrs |", DD2label, "| score") )
    dashes <- paste0(str_pad("", nameLength, pad="-"), 
-                    "+-------+--------------+-------+-------------+-------+------+------")
+                    "+-------+--------------+-------+-------------+-------+-------+------")
    print(dashes)
    return(dashes)
 }
@@ -502,29 +513,35 @@ showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def
    fiveName <- paste0("five", futureYears)
    if(displayName=="") displayName <- strategyName
    
-   TO <- stats$turnover[index]
-   TOcost <- costs / TO
+   TO         <- stats$turnover[index]
+   TOcost     <- costs/TO
+   TO         <- round(TO, 2) # rounded for display, but not to calculate TOcost
    
-   avgAlloc <- 100*stats$avgStockAlloc[index]
-   latestAlloc <- 100*stats$latestStockAlloc[index]    
+   avgAlloc   <- round( 100*stats$avgStockAlloc[index], 0 )
+   latestAlloc<- round( 100*stats$latestStockAlloc[index], 0 )  
 
-   ret  <- 100*(stats$TR[index] - TOcost) 
-   vol  <- 100*stats$volatility[index]
-   med  <- 100*(stats[index, medianName] - TOcost) 
-   five <- round(100*(stats[index, fiveName] - TOcost), 1)
-   DD2  <- stats$DD2[index]
-   score<- stats$score[index] 
+   ret        <- round( 100*(stats$TR[index] - TOcost), 2 )
+   vol        <- round( 100*stats$volatility[index], 1 )
+   med        <- round( 100*(stats[index, medianName] - TOcost), 1 )
+   five       <- round( 100*(stats[index, fiveName] - TOcost), 1 )
+   DD2        <- round( 100*stats$DD2[index], 1 )
+
+   score      <- stats$score[index] 
    if(coeffEntropy > 0)
-      score <- score + coeffEntropy * (stats$entropy[index] - 1) 
+      score   <- score + coeffEntropy * (stats$entropy[index] - 1) 
+   score      <- round(score, 2)
 
    if (round(ret,2)%%1 == 0) retPad = ".  "    # no decimals
    else if (round(10*ret,1)%%1 == 0) retPad = "0"  # single decimal
       else retPad = ""
    
-   if (round(vol,1)%%1 == 0) volPad = ". "
+   if (vol%%1 == 0) volPad = ". "
       else volPad = ""
-   if (round(med,1)%%1 == 0) medPad = ". "
-      else medPad = ""
+
+   if (med>=10) medPad1 = ""
+      else medPad1 = " "
+   if (med%%1 == 0) medPad2 = ". "
+      else medPad2 = ""
    
    if ( five < 0 ) fivePad1 = ""   # allow room for the minus sign
       else fivePad1 = " " 
@@ -546,30 +563,31 @@ showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def
    else {
       if (TO>=10) TOpad1 = ""
          else TOpad1 = " "
-      if (round(TO, 2)%%1 == 0) TOpad2 = ".  " # no decimals
-      else if (round(10*TO, 1)%%1 == 0) TOpad2 = "0" # single decimal
+      if (TO%%1 == 0) TOpad2 = ".  " # no decimals
+      else if (round(10*TO,1)%%1 == 0) TOpad2 = "0" # single decimal
       else TOpad2 = ""
    }
    
-   if (round(DD2,2)%%1 == 0) DD2Pad = ".  " # no decimals
-   else if ((10*round(DD2,2))%%1 == 0) DD2Pad = "0" # single decimal
-      else DD2Pad = ""
+   if(DD2>=10) DD2Pad1=""
+      else DD2Pad1 = " "
+   if (DD2%%1 == 0) DD2Pad2 = ". " # no decimals
+      else DD2Pad2 = ""
    
-   if (score>=10) scorePad1 = ""
-      else scorePad1 = ""
+#    if (score>=10) scorePad1 = ""
+#       else scorePad1 = " "
    if (round(score,2)%%1 == 0) scorePad2 = ".  " # no decimals
-   else if ((10*round(score,2))%%1 == 0) scorePad2 = "0" # single decimal
+   else if ( round(10*score,1)%%1 == 0 ) scorePad2 = "0" # single decimal
    else scorePad2 = ""
    
    if(ret>minTR & vol<maxVol & DD2<maxDD2 & TO>minTO & score>minScore) 
       print(paste0(str_pad(displayName, nameLength, side = "right"), "| ", 
-                   round(ret,2), retPad, "% |  ", 
-                   round(med,1), medPad, "%, ", fivePad1, five, fivePad2, "% | ",
-                   round(vol,1), volPad, "% |  ",
+                   ret, retPad, "% | ", 
+                   medPad1, med, medPad2, "%, ", fivePad1, five, fivePad2, "% | ",
+                   vol, volPad, "% |  ",
                    avgAllocPad, round(avgAlloc), "%, ", latestAllocPad, round(latestAlloc), "% | ",
-                   TOpad1, round(TO, 2), TOpad2, " | ",
-                   round(DD2,2), DD2Pad, " | ", 
-                   scorePad1, round(score,2), scorePad2, "%" ) )
+                   TOpad1, TO, TOpad2, " | ",
+                   DD2Pad1, DD2, DD2Pad2, "% | ", 
+                   score, scorePad2, "%" ) )
 }
 
 showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 

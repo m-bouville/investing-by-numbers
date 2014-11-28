@@ -54,7 +54,16 @@ setDefaultValues <- function(dataSplit, futureYears,
    def$plotEvery     <<- 10 # replot every n seconds when searchnig for parameters
    def$nameLength    <<- 18 # width of strategy name in summaries
    
-   ## coefficients to calculate the score
+   ## So-called DD2 is the sum over drawdowns DD_i of (DD_i)^DDpower 
+   ## (historically called DD2 because DDpower was set to 2)
+   def$DDpower       <<- 1.5
+   
+   def$signalMin     <<- -0.2 # lowest possible value (asymptote) for signal
+   def$signalMax     <<- 1 - def$signalMin
+   
+   #### coeffTR, coeffVol and coeffDD2 are coefficients to calculate the score
+   ## coefficients of total return 
+   ##    coefficients for median and 5% returns over next n years are both equal to (1-coeffTR)/2.
    def$coeffTR       <<- 0.4
 
    ## how many extra percentage points of return justify one extra percentage point of volatility.
@@ -65,10 +74,7 @@ setDefaultValues <- function(dataSplit, futureYears,
    ## how many extra percentage points of return justify one extra unit of DD2.
    ## 1/8 means that we are indifferent if DD2 increases by 0.8, 
    ## provided that the return increases by at least 0.1%
-   def$coeffDD2      <<- 1/8
-   
-   def$signalMin     <<- -0.2 # lowest possible value (asymptote) for signal
-   def$signalMax     <<- 1 - def$signalMin
+   def$coeffDD2      <<- 3.5
    
    setPlottingDefaultValues()
    setCAPEdefaultValues()
@@ -145,13 +151,14 @@ splitData <- function(dataSplit, force) {
       dat <<- dat[1:numData, ] # we keep only the first half
       def$plotEndYear <<- round( (numData-1)/12 + def$dataStartYear )
       
-      def$maxTR  <<- 400
-      def$yTRmin <<- 7.5
-      def$yTRmax <<- 10.2
-      def$maxVol <<- 20
-      def$minDD2 <<- 0.6
-      def$maxDD2 <<- 1.8
-      def$coeffDD2 <<- def$coeffDD2 * 2 # DD2 is half as big with half as many years, hence the rescaling
+      def$maxTR  <<-400
+      def$yTRmin <<-  7.8
+      def$yTRmax <<-  9.8
+      def$minVol <<- 12.5
+      def$maxVol <<- 20.5
+      def$minDD2 <<-  3
+      def$maxDD2 <<- 11.5
+      #def$coeffDD2 <<- def$coeffDD2 * 2 # DD2 is half as big with half as many years, hence the rescaling
  
       DD <<- DD[1:28, ]
       numDD <<- dim(DD)[[1]]
@@ -167,14 +174,14 @@ splitData <- function(dataSplit, force) {
       def$dataStartYear  <<- (startIndex-1)/12 + def$dataStartYear 
       def$plotStartYear  <<- def$dataStartYear + def$startIndex %/% 12 + 1 
       
-      def$maxTR  <<- 400
-      def$yTRmin <<- 5.
-      def$yTRmax <<- 9
+      def$maxTR  <<-400
+      def$yTRmin <<-  5.2
+      def$yTRmax <<-  9
       def$minVol <<- 11
-      def$maxVol <<- 17.5
-      def$minDD2 <<- 0
-      def$maxDD2 <<- 1.2
-      def$coeffDD2 <<- def$coeffDD2 * 2 # DD2 is half as big with half as many years, hence the rescaling
+      def$maxVol <<- 16
+      def$minDD2 <<-  2.5
+      def$maxDD2 <<-  8.5
+      #def$coeffDD2 <<- def$coeffDD2 * 2 # DD2 is half as big with half as many years, hence the rescaling
 
       DD <<- DD[28:numDD, ]
       numDD <<- dim(DD)[[1]]

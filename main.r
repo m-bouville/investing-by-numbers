@@ -182,6 +182,8 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
 # start(dataSplit="none",   futureYears=15L, riskAsCost=0, riskAsCostTechnical=0, force=T)
 # start(dataSplit="testing",futureYears=10L, riskAsCost=0, riskAsCostTechnical=0, force=T)
 # plotAllReturnsVsFour()
+# checkXlsFileIsUpToDate()
+
 
 
 ## Plotting to png files:

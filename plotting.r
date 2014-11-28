@@ -15,22 +15,22 @@
 
 #default values of plotting parameters
 setPlottingDefaultValues <- function() {
-   def$yTRmin    <<- 6.
+   def$yTRmin    <<- 6.8
    def$yTRmax    <<- 9.5
    
    def$pngWidth  <<- 1024
    def$pngHeight <<- 768
    
-   def$minVol    <<-  11.
-   def$maxVol    <<-  18.
-   def$minDD2    <<-   0.5
-   def$maxDD2    <<-   3.
+   def$minVol    <<-  11.5
+   def$maxVol    <<-  18
+   def$minDD2    <<-   3
+   def$maxDD2    <<-  10.5
    def$maxTO     <<- 160
    
    def$plotEndYear <<- 2015.
    def$maxTR     <<- 100000
    
-   #Colors consistently used for the various tsrategies
+   # Colors consistently used for the various strategies
    def$colCAPE      <<- "cyan"
    def$colDetrended <<- "skyblue"
    def$colSMA       <<- "pink"
@@ -978,7 +978,7 @@ plotAllReturnsVsDrawdown <- function(type1=def$type1, col1=def$col1, pch1=def$pc
                                      Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
                                      Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
                                      lineCol=def$lineCol, searchPlotType="dots",
-                                     xFactor=1, xLabel="drawdowns",
+                                     xFactor=100, xLabel="drawdowns (%)",
                                      yStatsName=def$yStatsName, yFactor=100,
                                      xMin=def$minDD2, xMax=def$maxDD2, yMin=def$yTRmin, yMax=def$yTRmax, 
                                      costs=def$tradingCost,
