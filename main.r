@@ -67,6 +67,7 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
                   smoothConstantAlloc=F,      # calculates more constant-allocation portfolios, for smoother curves in plots
                   downloadAndCheckAllFiles=F, # downloads data files even if they exist locally,
                                               #    to check whether they are up to date
+                  lastMonthSP500="",          # to enter by hand the value of the S&P 500 at the end of last month
                   futureYears=10L,            # to calculate the return over the next so many years
                   tradingCost=0.5/100,        # cost of turning the portfolio entirely 
                   riskAsCost=0.5/100,
@@ -99,6 +100,10 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
    setDefaultValues(dataSplit=dataSplit, futureYears=futureYears, 
                     tradingCost=tradingCost, riskAsCost=riskAsCost, riskAsCostTechnical=riskAsCostTechnical, force=force)
    if(!file.exists("./data")) dir.create("./data")
+   if (dataSplit=="search" && lastMonthSP500!="") { # lastMonthSP500 makes no sense looking at 1871-1942
+      lastMonthSP500=""
+      message("lastMonthSP500 value will not be used for 'search'.")
+   }
       
    ## if data frame does not exist, or is incomplete (had been used for search or testing), 
    ## or if we want to force the loading: we load the xls file
@@ -107,7 +112,7 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
    #       if (otherAssetClasses)
    #          message("Then we will also load a list of drawdowns, of gold prices and of UK house prices.")
    #       else message("Then we will also load a list of drawdowns.")
-      loadData(downloadAndCheckAllFiles=downloadAndCheckAllFiles)
+      loadData(downloadAndCheckAllFiles=downloadAndCheckAllFiles, lastMonthSP500=lastMonthSP500)
    }
    if (!exists("DD") | force) loadDDlist(otherAssetClasses=otherAssetClasses, force=force) # loading the dates of major drawdowns
    

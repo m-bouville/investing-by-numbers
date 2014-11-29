@@ -51,7 +51,7 @@ setDefaultValues <- function(dataSplit, futureYears,
    def$plotStartYear <<- (def$startIndex-1)/12+def$dataStartYear
    
    def$CPUnumber     <<-  1 # Parallelization does not work
-   def$plotEvery     <<- 10 # replot every n seconds when searchnig for parameters
+   def$plotEvery     <<- 20 # replot every n seconds when searchnig for parameters
    def$nameLength    <<- 18 # width of strategy name in summaries
    
    ## So-called DD2 is the sum over drawdowns DD_i of (DD_i)^DDpower 
@@ -222,7 +222,7 @@ addConstAllocToDat <- function(smoothConstantAlloc, force=F) {
 
 ## Loading data from xls file
 ## the xls file has *nominal* values, the "dat" data frame has *real* values
-loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=T) {  
+loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=T, lastMonthSP500="") {  
    if(!file.exists("./data/ie_data.xls")) # download file if not already locally available
       download.file("http://www.econ.yale.edu/~shiller/./data/ie_data.xls", "./data/ie_data.xls", mode = "wb")
    else if(downloadAndCheckAllFiles) # We force checking whether the local file is up to date
@@ -232,12 +232,21 @@ loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=T) {
    wk <- loadWorkbook("./data/ie_data.xls") 
    rawDat <- readWorksheet(wk, sheet="Data", startRow=8)
    
-   numData <<- dim(rawDat)[1]-2 # number of rows
-   message(paste0("According to the xls file, \'", rawDat$P[numData+2], "\'")) # displaying information given in xls file
-   message(paste0("According to the xls file, \'", rawDat$CPI[numData+2], "\'"))
-   rawDat <- rawDat[-(numData+2), ] # removing the row containing the information just displayed
-   rawDat <- rawDat[-(numData+1), ] # removing the current month, since it is not data for the end of month
-   
+   numData <<- dim(rawDat)[1]-1 # number of rows (exclude row of comments)
+   message(paste0("According to the xls file, \'", rawDat$P[numData+1], "\'")) # displaying information given in xls file
+   message(paste0("According to the xls file, \'", rawDat$CPI[numData+1], "\'"))
+   rawDat <- rawDat[-(numData+1), ] # removing the row containing the information just displayed
+   if (lastMonthSP500=="") {
+      # removing the current month, since it is not data for the end of month
+      rawDat <- rawDat[-numData, ] 
+      numData <<- numData-1
+   }
+   else {
+      rawDat$P[numData] <- lastMonthSP500
+      if (rawDat$P[numData-1] == lastMonthSP500)
+         warning( "The value of lastMonthSP500 (", lastMonthSP500, ") is equal to the S&P 500 value for ", rawDat$Date[numData-1], immediate.=T )
+   }
+      
    # if the latest dividends are missing (if it is too early for the data to be available), 
    # ... either we extrapolate them or we remove the rows
    if ( is.na(rawDat$D[numData]) ) 
@@ -277,6 +286,11 @@ loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=T) {
    
    dat$bonds <<- read.csv("./data/bonds.csv", header=T)[1:numData, 1]
    # message("Real bond prices were imported from an Excel calculation.")
+   if (lastMonthSP500!="") {
+      dat$bonds[numData] <<- dat$bonds[numData-1]
+      message( "dat$bonds[", numData, "] set to the value of dat$bonds[", numData-1, "], i.e. ", dat$bonds[numData-1] )
+   }
+      
    while(is.na(dat$bonds[numData])) {
       warning(paste0("removing last row of data (for ", dat$date[numData], ") because bond data are missing."))
       dat <<- dat[-numData, ]
@@ -325,11 +339,16 @@ makeStringsFactors <- function() {
 createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
    #message("Creating entries for the typical strategies")
    
-   createSMAstrategy(inputDF=def$SMAinputDF, inputName=def$SMAinputName, SMA1=def$SMA1, SMA2=def$SMA2, 
-                     bearish=def$SMAbearish, bullish=def$SMAbullish, 
+   createSMAstrategy(inputDF=def$SMAinputDF, inputName=def$SMAinputName, SMA1=def$SMA1_1, SMA2=def$SMA2_1, 
+                     bearish=def$SMAbearish1, bullish=def$SMAbullish1, 
                      signalMin=def$signalMin, signalMax=def$signalMax,
                      futureYears=def$futureYears, costs=def$tradingCost, 
                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
+   #    createSMAstrategy(inputDF=def$SMAinputDF, inputName=def$SMAinputName, SMA1=def$SMA1_2, SMA2=def$SMA2_2, 
+   #                      bearish=def$SMAbearish2, bullish=def$SMAbullish2, 
+   #                      signalMin=def$signalMin, signalMax=def$signalMax,
+   #                      futureYears=def$futureYears, costs=def$tradingCost, 
+   #                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
    
    createBollStrategy(inputDF=def$BollInputDF, inputName=def$BollInputName, avgOver=def$BollAvgOver1, 
                       bearish=def$BollBearish1, bullish=def$BollBullish1, 
@@ -343,31 +362,49 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
                       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)   
    
    createReversalStrategy(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
-                          avgOver=def$reversalAvgOver, returnToMean=def$reversalReturnToMean, 
-                          bearish=def$reversalBearish, bullish=def$reversalBullish, 
+                          avgOver=def$reversalAvgOver1, returnToMean=def$reversalReturnToMean1, 
+                          bearish=def$reversalBearish1, bullish=def$reversalBullish1, 
                           signalMin=def$signalMin, signalMax=def$signalMax,
                           futureYears=def$futureYears, costs=def$tradingCost, 
                           coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force) 
+   #    createReversalStrategy(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
+   #                           avgOver=def$reversalAvgOver2, returnToMean=def$reversalReturnToMean2, 
+   #                           bearish=def$reversalBearish2, bullish=def$reversalBullish2, 
+   #                           signalMin=def$signalMin, signalMax=def$signalMax,
+   #                           futureYears=def$futureYears, costs=def$tradingCost, 
+   #                           coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force) 
    
-   createCAPEstrategy(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver=def$CAPEavgOver1, 
-                      hysteresis=F, bearish=def$CAPEbearish1, bullish=def$CAPEbullish1, 
+   createCAPEstrategy(years=def$CAPEyears_hy1, cheat=def$CAPEcheat, avgOver=def$CAPEavgOver_hy1, 
+                      hysteresis=T, hystLoopWidthMidpoint=def$hystLoopWidthMidpoint1,
+                      hystLoopWidth=def$hystLoopWidth1, slope=def$slope1,
                       signalMin=def$signalMin, signalMax=def$signalMax,
                       futureYears=def$futureYears, costs=def$tradingCost, 
-                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)  
-   createCAPEstrategy(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver=def$CAPEavgOver2, 
+                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
+   createCAPEstrategy(years=def$CAPEyears_hy2, cheat=def$CAPEcheat, avgOver=def$CAPEavgOver_hy2, 
                       hysteresis=T, hystLoopWidthMidpoint=def$hystLoopWidthMidpoint2,
                       hystLoopWidth=def$hystLoopWidth2, slope=def$slope2,
                       signalMin=def$signalMin, signalMax=def$signalMax,
                       futureYears=def$futureYears, costs=def$tradingCost, 
                       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
+   createCAPEstrategy(years=def$CAPEyears_NH, cheat=def$CAPEcheat, avgOver=def$CAPEavgOver_NH, 
+                      hysteresis=F, bearish=def$CAPEbearish, bullish=def$CAPEbullish, 
+                      signalMin=def$signalMin, signalMax=def$signalMax,
+                      futureYears=def$futureYears, costs=def$tradingCost, 
+                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)  
    
    createDetrendedStrategy(inputDF=def$detrendedInputDF, inputName=def$detrendedInputName, 
-                           avgOver=def$detrendedAvgOver, 
-                           bearish=def$detrendedBearish, bullish=def$detrendedBullish, 
+                           avgOver=def$detrendedAvgOver1, 
+                           bearish=def$detrendedBearish1, bullish=def$detrendedBullish1, 
                            signalMin=def$signalMin, signalMax=def$signalMax,
                            futureYears=def$futureYears, costs=def$tradingCost, 
                            coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
-    
+#    createDetrendedStrategy(inputDF=def$detrendedInputDF, inputName=def$detrendedInputName, 
+#                            avgOver=def$detrendedAvgOver2, 
+#                            bearish=def$detrendedBearish2, bullish=def$detrendedBullish2, 
+#                            signalMin=def$signalMin, signalMax=def$signalMax,
+#                            futureYears=def$futureYears, costs=def$tradingCost, 
+#                            coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
+   
    combineStrategies(def$technicalStrategies, def$technicalFractions, 
                      type="combined", subtype="technical", combineMode="weighted", costs=def$tradingCost, 
                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
