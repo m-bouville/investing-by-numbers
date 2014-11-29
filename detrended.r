@@ -18,21 +18,21 @@
 setDetrendedDefaultValues <- function() {
    def$detrendedInputDF     <<- "dat"
    def$detrendedInputName   <<- "TR"
+      
+   ## detrended strategy with lower stock allocation (and vol and DD)
+   def$detrendedAvgOver1    <<- 23L    # DD^2: 22
+   def$detrendedBearish1    <<- 22.6   # DD^2: 24
+   def$detrendedBullish1    <<- 22.4   # DD^2: 24
+   def$typicalDetrended1    <<- paste0("detrended_", def$detrendedAvgOver1, "_", 
+                                       def$detrendedBearish1, "_", def$detrendedBullish1)
    
    ## detrended strategy in stocks 90% of the time, just dodging the worst bubbles
-   #    def$detrendedAvgOver1    <<- 40L
-   #    def$detrendedBearish1    <<- 29.4
-   #    def$detrendedBullish1    <<- 29.4
-   #    def$typicalDetrended1    <<- paste0("detrended_", def$detrendedAvgOver1, "_", 
-   #                                        def$detrendedBearish1, "_", def$detrendedBullish1)
-   
-   ## detrended strategy with lower stock allocation (and vol and DD)
-   def$detrendedAvgOver    <<- 22L    # 23
-   def$detrendedBearish    <<- 24     #22.4
-   def$detrendedBullish    <<- 24     #22.4
-   def$typicalDetrended    <<- paste0("detrended_", def$detrendedAvgOver, "_", 
-                                       def$detrendedBearish, "_", def$detrendedBullish)
-}
+   def$detrendedAvgOver2    <<- 40L
+   def$detrendedBearish2    <<- 29.4
+   def$detrendedBullish2    <<- 29.4
+   def$typicalDetrended2    <<- paste0("detrended_", def$detrendedAvgOver2, "_", 
+                                       def$detrendedBearish2, "_", def$detrendedBullish2)
+   }
 
 calcDetrended <- function(inputDF, inputName, detrendedName="") {
    if (inputDF=="dat")             logInput <- log( dat[, inputName] )
@@ -194,11 +194,11 @@ searchForOptimalDetrended <- function(inputDF=def$detrendedInputDF, inputName=de
                                       minBear=22, maxBear=32, byBear=1, 
                                       minDelta=0, maxDelta=1.5, byDelta=0.5, 
                                       futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
-                                      minTR=0, maxVol=20, maxDD2=5, minTO=4, minScore=8.6, 
+                                      minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=4, minScore=8.6, 
                                       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, col=F, 
                                       plotType="symbols", CPUnumber=def$CPUnumber, 
-                                      xMinVol=13, xMaxVol=22, xMinDD2=1, xMaxDD2=1.8,
-                                      nameLength=25, plotEvery=def$plotEvery, force=F) {
+                                      xMinVol=15.5, xMaxVol=19.5, xMinDD2=7.7, xMaxDD2=9.2,
+                                      nameLength=23, plotEvery=def$plotEvery, force=F) {
    
    # calculate how many parameters sets will be run   
    calcOptimalDetrended(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOver, 
@@ -219,24 +219,28 @@ searchForOptimalDetrended <- function(inputDF=def$detrendedInputDF, inputName=de
                         CPUnumber, nameLength, plotEvery, force)
 
    print(dashes)
-   showSummaryForStrategy(def$typicalDetrended, costs=costs, 
+   showSummaryForStrategy(def$typicalDetrended1, costs=costs, 
+                          coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, nameLength=nameLength)
+   showSummaryForStrategy(def$typicalDetrended2, costs=costs, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, nameLength=nameLength)
    plotAllReturnsVsTwo(col=col, costs=costs, searchPlotType=plotType)
 }
 
 
 ## These are two optimal (and fairly far apart in parameter space), with little of interest in between
-# searchForTwoOptimalDetrended <-function(plotType="symbols", force=F) {   
-#    searchForOptimalDetrended(minAvgOver=39L, maxAvgOver=41L,  byAvgOver=1L, 
-#                              minBear=  29.0, maxBear=   29.8, byBear=   0.2, 
-#                              minDelta=  0,   maxDelta=   0.4, byDelta=  0.2, 
-#                              minScore=  8.85,    plotType=plotType, force=force)
-#    print("")
-#    searchForOptimalDetrended(minAvgOver=22L, maxAvgOver=24L, byAvgOver=1L, 
-#                              minBear=   22., maxBear=   23., byBear=   0.2, 
-#                              minDelta=   0,  maxDelta=  0.6, byDelta=  0.2, 
-#                              minScore=8.75,      plotType=plotType, force=force)   
-# }
+searchForTwoOptimalDetrended <-function(plotType="symbols", force=F) {   
+   print("Detrended 1")
+   searchForOptimalDetrended(minAvgOver=22L,  maxAvgOver=24L,  byAvgOver=1L, 
+                             minBear=   22.,  maxBear=   23.,  byBear=   0.2, 
+                             minDelta=   0,   maxDelta=  0.8,  byDelta=  0.2, 
+                             minScore=   8.51,      plotType=plotType, force=force)   
+   print("")
+   print("Detrended 2")
+   searchForOptimalDetrended(minAvgOver=39L,  maxAvgOver=41L,  byAvgOver=1L, 
+                             minBear=   29.0, maxBear=   29.8, byBear=   0.2, 
+                             minDelta=   0,   maxDelta=   0.6, byDelta=  0.2, 
+                             minScore=   8.3,   plotType=plotType, force=force)
+}
 
 
 plotFutureReturnVsDetrended <- function(futureYears=def$futureYears) {

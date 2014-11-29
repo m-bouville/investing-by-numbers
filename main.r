@@ -91,6 +91,7 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
    source("Bollinger.r")
    source("SMA.r")
    source("reversal.r")
+   source("hybrid.r")
    source("combine.r")
    
    library(stringr)

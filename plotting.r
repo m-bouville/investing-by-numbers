@@ -15,10 +15,10 @@
 
 #default values of plotting parameters
 setPlottingDefaultValues <- function() {
-   def$yTRmin    <<- 6.8
-   def$yTRmax    <<- 9.5
+   def$yTRmin    <<-   6.8
+   def$yTRmax    <<-  10
    
-   def$pngWidth  <<- 1024
+   def$pngWidth  <<-1024
    def$pngHeight <<- 768
    
    def$minVol    <<-  11.5
@@ -28,18 +28,22 @@ setPlottingDefaultValues <- function() {
    def$maxTO     <<- 160
    
    def$plotEndYear <<- 2015.
-   def$maxTR     <<- 100000
+   def$maxTR     <<- 200000
    
    # Colors consistently used for the various strategies
-   def$colCAPE      <<- "cyan"
+   def$colCAPE_NH   <<- "cyan4"
+   def$colCAPE_hy   <<- "cyan"
    def$colDetrended <<- "skyblue"
    def$colSMA       <<- "pink"
    def$colBollinger <<- "magenta"   
    def$colReversal  <<- "orange"
    def$colInflation <<- "purple"
+   def$colBoll_CAPE <<- "sienna"   
+   def$colBoll_detrended <<- "peru"   
    
    def$colValue     <<- "blue"
    def$colTechnical <<- "red"
+   def$colHybrid    <<- "chocolate4"
    def$colBalanced  <<- "black"
    
    def$pch          <<- 16L
@@ -50,7 +54,7 @@ setPlottingDefaultValues <- function() {
    
    # plotAllReturnsVsX()
    def$type1 <<- "CAPE"
-   def$col1  <<- def$colCAPE
+   def$col1  <<- def$colCAPE_hy
    def$pch1  <<- def$pch
    
    def$type2 <<- "detrended"
@@ -73,6 +77,14 @@ setPlottingDefaultValues <- function() {
    def$col6  <<- def$colReversal
    def$pch6  <<- def$pch
    
+   def$type7 <<- "Boll_CAPE"
+   def$col7  <<- def$colBoll_CAPE
+   def$pch7  <<- def$pch
+   
+   def$type8 <<- "Boll_detrended"
+   def$col8  <<- def$colBoll_detrended
+   def$pch8  <<- def$pch
+   
    # plotAllReturnsVsX(): combined strategies
    def$Msubtype1 <<- "value"
    def$Mcol1     <<- def$colValue
@@ -82,9 +94,13 @@ setPlottingDefaultValues <- function() {
    def$Mcol2     <<- def$colTechnical
    def$Mpch2     <<- def$Mpch
    
-   def$Msubtype3 <<- "balanced"
-   def$Mcol3     <<- def$colBalanced
+   def$Msubtype3 <<- "hybrid"
+   def$Mcol3     <<- def$colHybrid
    def$Mpch3     <<- def$Mpch
+   
+   def$Msubtype4 <<- "balanced"
+   def$Mcol4     <<- def$colBalanced
+   def$Mpch4     <<- def$Mpch
    
    # plotAllReturnsVsX(): searches
    def$Stype    <<- "search"
@@ -257,14 +273,15 @@ plotAlloc <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTech
    }
 }
 
-plotReturnAndAllocTechnical <- function(stratName1=def$typicalSMA,      col1=def$colSMA,      lwd1=2,
-                                        stratName2=def$typicalBoll1,    col2=def$colBoll,     lwd2=2,
-                                        stratName3=def$typicalBoll2,    col3=def$colBoll,     lwd3=1.5,
-                                        stratName4=def$typicalReversal, col4=def$colReversal, lwd4=1.5, 
-                                        startYear=def$plotStartYear, endYear=def$plotEndYear, 
-                                        yLabel="", net=T, minTR=0.8, maxTR=def$maxTR, costs=def$tradingCost,
-                                        pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
-                                        pngName="figures/return_and_allocation-technical.png") {
+plotReturnAndAllocTechnical <- function(
+      stratName1=def$typicalSMA1, stratName2=def$typicalBoll1,
+      stratName3=def$typicalReversal1, stratName4=def$typicalTechnical,
+      col1=def$colSMA, col2=def$colBollinger, col3=def$colReversal, col4=def$colTechnical,
+      lwd1=1.5, lwd2=1.5, lwd3=1.5, lwd4=2,
+      startYear=def$plotStartYear, endYear=def$plotEndYear, 
+      yLabel="", net=T, minTR=0.8, maxTR=def$maxTR, costs=def$tradingCost,
+      pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
+      pngName="figures/return_and_allocation-technical.png") {
    
    plotReturnAndAlloc(stratName1=stratName1, col1=col1, lwd1=lwd1, stratName2=stratName2, col2=col2, lwd2=lwd2,
               stratName3=stratName3, col3=col3, lwd3=lwd3, stratName4=stratName4, col4=col4, lwd4=lwd4, 
@@ -273,14 +290,16 @@ plotReturnAndAllocTechnical <- function(stratName1=def$typicalSMA,      col1=def
               pngOutput=pngOutput, pngWidth=pngWidth, pngHeight=pngHeight, pngName=pngName) 
 }
 
-plotReturnAndAllocValue <- function(stratName1=def$typicalCAPE1,     col1=def$colCAPE,      lwd1=1.5,
-                                    stratName2=def$typicalCAPE2,     col2=def$colCAPE,      lwd2=2,
-                                    stratName3=def$typicalDetrended, col3=def$colDetrended, lwd3=1.5,
-                                    stratName4=def$typicalValue,     col4=def$colValue,     lwd4=2,
-                                    startYear=def$plotStartYear, endYear=def$plotEndYear, 
-                                    yLabel="", net=T, minTR=0.8, maxTR=def$maxTR, costs=def$tradingCost,
-                                    pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
-                                    pngName="figures/return_and_allocation-value.png") {
+plotReturnAndAllocValue <- function(
+      stratName1=def$typicalCAPE_hy1, stratName2=def$typicalCAPE_hy2, 
+      stratName3=def$typicalCAPE_NH, stratName4=def$typicalDetrended1,
+      col1=def$colCAPE_hy, col2=def$colCAPE_hy, col3=def$colCAPE_NH, col4=def$colDetrended, 
+      lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=2,
+      #stratName4=def$typicalValue,     col4=def$colValue,     lwd4=2,
+      startYear=def$plotStartYear, endYear=def$plotEndYear, 
+      yLabel="", net=T, minTR=0.8, maxTR=def$maxTR, costs=def$tradingCost,
+      pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
+      pngName="figures/return_and_allocation-value.png") {
    
    plotReturnAndAlloc(stratName1=stratName1, col1=col1, lwd1=lwd1, stratName2=stratName2, col2=col2, lwd2=lwd2,
                       stratName3=stratName3, col3=col3, lwd3=lwd3, stratName4=stratName4, col4=col4, lwd4=lwd4, 
@@ -289,16 +308,34 @@ plotReturnAndAllocValue <- function(stratName1=def$typicalCAPE1,     col1=def$co
                       pngOutput=pngOutput, pngWidth=pngWidth, pngHeight=pngHeight, pngName=pngName) 
 }
 
-plotReturnAndAlloc <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTechnical, 
-                               stratName3=def$typicalValue, stratName4="stocks", 
-                               col1=def$colBalanced, col2=def$colTechnical, 
-                               col3=def$colValue, col4=def$colConstantAlloc, 
-                               lwd1=3, lwd2=1.5, lwd3=1.5, lwd4=3,
-                               startYear=def$plotStartYear, endYear=def$plotEndYear, costs=def$tradingCost, 
-                               minTR=.9, maxTR=def$maxTR, yLabelReturn="", 
-                               legendPlacement="topleft", net=T, normalize=T,
-                               pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
-                               pngName="figures/return_and_allocation.png") {
+plotReturnAndAllocHybrid <- function(
+      stratName1=def$typicalBoll_CAPE1, stratName2=def$typicalBoll_detrended, 
+      stratName3=def$typicalHybrid, stratName4=def$typicalBalanced,
+      col1=def$colBoll_CAPE, col2=def$colBoll_detrended, col3=def$colHybrid, col4=def$colBalanced,
+      lwd1=1.5, lwd2=1.5, lwd3=2, lwd4=2,
+      startYear=def$plotStartYear, endYear=def$plotEndYear, 
+      yLabel="", net=T, minTR=0.8, maxTR=def$maxTR, costs=def$tradingCost,
+      pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
+      pngName="figures/return_and_allocation-hybrid.png") {
+   
+   plotReturnAndAlloc(stratName1=stratName1, col1=col1, lwd1=lwd1, stratName2=stratName2, col2=col2, lwd2=lwd2,
+                      stratName3=stratName3, col3=col3, lwd3=lwd3, stratName4=stratName4, col4=col4, lwd4=lwd4, 
+                      startYear=startYear, endYear=endYear, costs=costs, 
+                      yLabel=yLabel, net=net, minTR=minTR, maxTR=maxTR,
+                      pngOutput=pngOutput, pngWidth=pngWidth, pngHeight=pngHeight, pngName=pngName) 
+}
+
+plotReturnAndAlloc <- function(
+      stratName1=def$typicalBalanced, stratName2=def$typicalTechnical, 
+      stratName3=def$typicalValue, stratName4=def$typicalHybrid, 
+      col1=def$colBalanced, col2=def$colTechnical, 
+      col3=def$colValue, col4=def$colHybrid, 
+      lwd1=3, lwd2=1.5, lwd3=1.5, lwd4=3,
+      startYear=def$plotStartYear, endYear=def$plotEndYear, costs=def$tradingCost, 
+      minTR=.9, maxTR=def$maxTR, yLabelReturn="", 
+      legendPlacement="topleft", net=T, normalize=T,
+      pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
+      pngName="figures/return_and_allocation.png") {
    if(pngOutput)
       png(file=pngName, width=pngWidth, height=pngHeight)
 
@@ -321,15 +358,15 @@ plotReturnAndAlloc <- function(stratName1=def$typicalBalanced, stratName2=def$ty
 
 
 ## same but with stocks, bonds and 80/20 alloc, and without value and technical
-plotReturnAndAllocBalanced <- function(stratName1=def$typicalBalanced, stratName2="constantAlloc80_20", 
-             stratName3="stocks", stratName4="bonds", 
-             col1=def$colBalanced, col2=def$colConstantAlloc, col3=def$colValue, col4="gray", 
-             lwd1=3, lwd2=3, lwd3=1.5, lwd4=1.5,
-             startYear=def$plotStartYear, endYear=def$plotEndYear, costs=def$tradingCost, 
-             minTR=.9, maxTR=def$maxTR, yLabelReturn="", 
-             legendPlacement="topleft", net=T, normalize=T,
-             pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
-             pngName="figures/return_and_allocation_balanced.png") {
+plotReturnAndAllocBalanced <- function(
+      stratName1=def$typicalBalanced, stratName2="stocks", stratName3="constantAlloc80_20", stratName4="bonds", 
+      col1=def$colBalanced, col2=def$colConstantAlloc, col3=def$colConstantAlloc, col4="gray", 
+      lwd1=3, lwd2=3, lwd3=1.5, lwd4=1.5,
+      startYear=def$plotStartYear, endYear=def$plotEndYear, costs=def$tradingCost, 
+      minTR=.9, maxTR=def$maxTR, yLabelReturn="", 
+      legendPlacement="topleft", net=T, normalize=T,
+      pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
+      pngName="figures/return_and_allocation_balanced.png") {
 
    plotReturnAndAlloc(stratName1=stratName1, col1=col1, lwd1=lwd1, stratName2=stratName2, col2=col2, lwd2=lwd2,
               stratName3=stratName3, col3=col3, lwd3=lwd3, stratName4=stratName4, col4=col4, lwd4=lwd4, 
@@ -398,19 +435,19 @@ plotReturnSideways <- function(stratName1=def$typicalBalanced, stratName2="stock
    stratName4 <- inflationName
    
    par(mfrow = c(2, 2))   
-   plotReturn(startYear=1908, endYear=1921.5, minTR=minTR, maxTR=maxTR, 
+   plotReturn(startYear=1909, endYear=1921.5, minTR=minTR, maxTR=maxTR, 
               stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4, 
               col1=col1, col2=col2, col3=col3, col4=col4, lwd1=lwd1, lwd2=lwd2, lwd3=lwd3, lwd4=lwd4,
-              legendPlacement="none")
+              legendPlacement="topleft")
    par(new=T)
-   plot(dat$numericDate, dat[[inflationName]], xlim=c(1908, 1921.5), type="l", lty=2, lwd=lwd4,
+   plot(dat$numericDate, dat[[inflationName]], xlim=c(1909, 1921.5), type="l", lty=2, lwd=lwd4,
         col=inflationCol, ylim=c(inflationMin/100, inflationMax/100), ylab= "", yaxt='n' )
    par(new=F)
    
    plotReturn(startYear=1936.5, endYear=1949.5, minTR=minTR, maxTR=maxTR, 
               stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4,
               col1=col1, col2=col2, col3=col3, col4=col4, lwd1=lwd1, lwd2=lwd2, lwd3=lwd3, lwd4=lwd4,
-              legendPlacement="topleft")
+              legendPlacement="none")
    par(new=T)
    plot(dat$numericDate, dat[[inflationName]], xlim=c(1936.5, 1949.5), type="l", lty=2, lwd=lwd4, 
         col=inflationCol, ylim=c(inflationMin/100, inflationMax/100), ylab= "", yaxt='n' )
@@ -794,16 +831,19 @@ plotRelativeFutureReturnVsStocks <- function
 }
 
 showPlotLegend <- function() {
-   print(paste("CAPE:     ", def$colCAPE) )
-   print(paste("detrended:", def$colDetrended) )
-   print(paste("SMA:      ", def$colSMA) )
-   print(paste("Bollinger:", def$colBollinger) )
-   print(paste("reversal: ", def$colReversal) )
-   print(paste("inflation:", def$colInflation) )
+   print(paste("SMA:        ", def$colSMA) )
+   print(paste("Bollinger:  ", def$colBollinger) )
+   print(paste("reversal:   ", def$colReversal) )
+   print(paste("CAPE:       ", def$colCAPE) )
+   print(paste("detrended:  ", def$colDetrended) )
+   print(paste("Boll(CAPE): ", def$colBoll_CAPE) )
+   print(paste("Boll(detr.):", def$colBoll_detrended) )
+   print(paste("inflation:  ", def$colInflation) )
    print("")   
-   print(paste("value:    ", def$colValue) )
-   print(paste("technical:", def$colTechnical) )
-   print(paste("balanced: ", def$colBalanced) )
+   print(paste("value:      ", def$colValue) )
+   print(paste("technical:  ", def$colTechnical) )
+   print(paste("hybrid:     ", def$colHybrid) )
+   print(paste("balanced:   ", def$colBalanced) )
    
 #   print(paste("ConstantAlloc:", def$colConstantAlloc) )
 print("")
@@ -818,9 +858,12 @@ plotAllReturnsVsSomeParameter <- function(type1=def$type1, col1=def$col1, pch1=d
                                           type4=def$type4, col4=def$col4, pch4=def$pch4,
                                           type5=def$type5, col5=def$col5, pch5=def$pch5, 
                                           type6=def$type6, col6=def$col6, pch6=def$pch6, 
+                                          type7=def$type7, col7=def$col7, pch7=def$pch7, 
+                                          type8=def$type8, col8=def$col8, pch8=def$pch8, 
                                           Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
                                           Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
                                           Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
+                                          Msubtype4=def$Msubtype4, Mcol4=def$Mcol4, Mpch4=def$Mpch4, 
                                           lineCol=def$lineCol, searchPlotType="dots",
                                           xStatsName, xFactor=100, xLabel="volatility (%)",
                                           yStatsName="", yFactor=100,
@@ -860,6 +903,8 @@ plotAllReturnsVsSomeParameter <- function(type1=def$type1, col1=def$col1, pch1=d
          if (stats$subtype[i] == def$type4) Scol <- def$col4
          if (stats$subtype[i] == def$type5) Scol <- def$col5
          if (stats$subtype[i] == def$type6) Scol <- def$col6
+         if (stats$subtype[i] == def$type7) Scol <- def$col7
+         if (stats$subtype[i] == def$type8) Scol <- def$col8
          
          if (stats$subtype[i] == def$Msubtype1) {
             Scol <- def$Mcol1
@@ -870,6 +915,9 @@ plotAllReturnsVsSomeParameter <- function(type1=def$type1, col1=def$col1, pch1=d
          if (stats$subtype[i] == def$Msubtype3) {
             Scol <- def$Mcol3
             Spch <- def$SpchM}
+         if (stats$subtype[i] == def$Msubtype4) {
+            Scol <- def$Mcol4
+            Spch <- def$SpchM}      
       }
    }
    
@@ -912,6 +960,12 @@ plotAllReturnsVsSomeParameter <- function(type1=def$type1, col1=def$col1, pch1=d
    points(xFactor*subset(stats[, xStatsName], stats$type==type6), 
         yFactor*subset(stats[, yStatsName], stats$type==type6), 
         pch=pch6, col=col6, xlab="", ylab="", xlim=xRange, ylim=yRange)
+   points(xFactor*subset(stats[, xStatsName], stats$type==type7), 
+          yFactor*subset(stats[, yStatsName], stats$type==type7), 
+          pch=pch7, col=col7, xlab="", ylab="", xlim=xRange, ylim=yRange)
+   points(xFactor*subset(stats[, xStatsName], stats$type==type8), 
+          yFactor*subset(stats[, yStatsName], stats$type==type8), 
+          pch=pch8, col=col8, xlab="", ylab="", xlim=xRange, ylim=yRange)
    ## Multistrategies:
    points(xFactor*subset(stats[, xStatsName], (stats$type=="combined" & stats$subtype==Msubtype1) ), 
         yFactor*subset(stats[, yStatsName], (stats$type=="combined" & stats$subtype==Msubtype1) ), 
@@ -922,6 +976,9 @@ plotAllReturnsVsSomeParameter <- function(type1=def$type1, col1=def$col1, pch1=d
    points(xFactor*subset(stats[, xStatsName], (stats$type=="combined" & stats$subtype==Msubtype3) ), 
         yFactor*subset(stats[, yStatsName], (stats$type=="combined" & stats$subtype==Msubtype3) ), 
         pch=Mpch3, col=Mcol3, xlab="", ylab="", xlim=xRange, ylim=yRange)
+   points(xFactor*subset(stats[, xStatsName], (stats$type=="combined" & stats$subtype==Msubtype4) ), 
+          yFactor*subset(stats[, yStatsName], (stats$type=="combined" & stats$subtype==Msubtype4) ), 
+          pch=Mpch4, col=Mcol4, xlab="", ylab="", xlim=xRange, ylim=yRange)
    ## Constant allocations:
    points(xFactor*subset(stats[, xStatsName], stats$type=="constantAlloc"), 
         yFactor*subset(stats[, yStatsName], stats$type=="constantAlloc"), 
@@ -944,9 +1001,12 @@ plotAllReturnsVsVolatility <- function(type1=def$type1, col1=def$col1, pch1=def$
                                        type4=def$type4, col4=def$col4, pch4=def$pch4,
                                        type5=def$type5, col5=def$col5, pch5=def$pch5, 
                                        type6=def$type6, col6=def$col6, pch6=def$pch6, 
+                                       type7=def$type7, col7=def$col7, pch7=def$pch7, 
+                                       type8=def$type8, col8=def$col8, pch8=def$pch8, 
                                        Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
                                        Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
                                        Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
+                                       Msubtype4=def$Msubtype4, Mcol4=def$Mcol4, Mpch4=def$Mpch4, 
                                        lineCol=def$lineCol, searchPlotType="dots",
                                        xFactor=100, xLabel="volatility (%)",
                                        yStatsName=def$yStatsName, yFactor=100,
@@ -958,9 +1018,11 @@ plotAllReturnsVsVolatility <- function(type1=def$type1, col1=def$col1, pch1=def$
    plotAllReturnsVsSomeParameter(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
                                  type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
                                  type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6, 
+                                 type7=type7, col7=col7, pch7=pch7, type8=type8, col8=col8, pch8=pch8, 
                                  Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
                                  Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
                                  Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
+                                 Msubtype4=Msubtype4, Mcol4=Mcol4, Mpch4=Mpch4, 
                                  lineCol=lineCol, searchPlotType=searchPlotType,
                                  xStatsName="volatility", xFactor=xFactor, xLabel=xLabel,
                                  yStatsName=yStatsName, yFactor=yFactor,
@@ -974,9 +1036,12 @@ plotAllReturnsVsDrawdown <- function(type1=def$type1, col1=def$col1, pch1=def$pc
                                      type4=def$type4, col4=def$col4, pch4=def$pch4,
                                      type5=def$type5, col5=def$col5, pch5=def$pch5, 
                                      type6=def$type6, col6=def$col6, pch6=def$pch6, 
+                                     type7=def$type7, col7=def$col7, pch7=def$pch7, 
+                                     type8=def$type8, col8=def$col8, pch8=def$pch8, 
                                      Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
                                      Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
                                      Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
+                                     Msubtype4=def$Msubtype4, Mcol4=def$Mcol4, Mpch4=def$Mpch4, 
                                      lineCol=def$lineCol, searchPlotType="dots",
                                      xFactor=100, xLabel="drawdowns (%)",
                                      yStatsName=def$yStatsName, yFactor=100,
@@ -988,9 +1053,11 @@ plotAllReturnsVsDrawdown <- function(type1=def$type1, col1=def$col1, pch1=def$pc
    plotAllReturnsVsSomeParameter(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
                                  type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
                                  type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6, 
+                                 type7=type7, col7=col7, pch7=pch7, type8=type8, col8=col8, pch8=pch8, 
                                  Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
                                  Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
                                  Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
+                                 Msubtype4=Msubtype4, Mcol4=Mcol4, Mpch4=Mpch4, 
                                  lineCol=lineCol, searchPlotType=searchPlotType,
                                  xStatsName="DD2", xFactor=xFactor, xLabel=xLabel,
                                  yStatsName=yStatsName, yFactor=yFactor,
@@ -1004,9 +1071,12 @@ plotAllReturnsVsAverageAlloc <- function(type1=def$type1, col1=def$col1, pch1=de
                                          type4=def$type4, col4=def$col4, pch4=def$pch4,
                                          type5=def$type5, col5=def$col5, pch5=def$pch5, 
                                          type6=def$type6, col6=def$col6, pch6=def$pch6, 
+                                         type7=def$type7, col7=def$col7, pch7=def$pch7, 
+                                         type8=def$type8, col8=def$col8, pch8=def$pch8, 
                                          Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
                                          Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
                                          Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
+                                         Msubtype4=def$Msubtype4, Mcol4=def$Mcol4, Mpch4=def$Mpch4, 
                                          lineCol=def$lineCol, searchPlotType="dots",
                                          xFactor=100, xLabel="average stock allocation (%)",
                                          yStatsName=def$yStatsName, yFactor=100,
@@ -1018,9 +1088,11 @@ plotAllReturnsVsAverageAlloc <- function(type1=def$type1, col1=def$col1, pch1=de
    plotAllReturnsVsSomeParameter(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
                                  type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
                                  type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6, 
+                                 type7=type7, col7=col7, pch7=pch7, type8=type8, col8=col8, pch8=pch8, 
                                  Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
                                  Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
                                  Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
+                                 Msubtype4=Msubtype4, Mcol4=Mcol4, Mpch4=Mpch4, 
                                  lineCol=lineCol, searchPlotType=searchPlotType,
                                  xStatsName="avgStockAlloc", xFactor=xFactor, xLabel=xLabel,
                                  yStatsName=yStatsName, yFactor=yFactor,
@@ -1034,9 +1106,12 @@ plotAllReturnsVsInverseTurnover <- function(type1=def$type1, col1=def$col1, pch1
                                             type4=def$type4, col4=def$col4, pch4=def$pch4,
                                             type5=def$type5, col5=def$col5, pch5=def$pch5, 
                                             type6=def$type6, col6=def$col6, pch6=def$pch6, 
+                                            type7=def$type7, col7=def$col7, pch7=def$pch7, 
+                                            type8=def$type8, col8=def$col8, pch8=def$pch8, 
                                             Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
                                             Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
                                             Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
+                                            Msubtype4=def$Msubtype4, Mcol4=def$Mcol4, Mpch4=def$Mpch4, 
                                             lineCol=def$lineCol,  searchPlotType="dots",
                                             xFactor=100, xLabel="100 / turnover (years)",
                                             yStatsName=def$yStatsName, yFactor=100,
@@ -1051,9 +1126,11 @@ plotAllReturnsVsInverseTurnover <- function(type1=def$type1, col1=def$col1, pch1
    plotAllReturnsVsSomeParameter(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
                                  type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
                                  type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6, 
+                                 type7=type7, col7=col7, pch7=pch7, type8=type8, col8=col8, pch8=pch8, 
                                  Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
                                  Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
                                  Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
+                                 Msubtype4=Msubtype4, Mcol4=Mcol4, Mpch4=Mpch4, 
                                  lineCol=lineCol, searchPlotType=searchPlotType,
                                  xStatsName="invTurnover", xFactor=xFactor, xLabel=xLabel,
                                  yStatsName=yStatsName, yFactor=yFactor,
@@ -1069,9 +1146,12 @@ plotAllReturnsVsFour <- function(type1=def$type1, col1=def$col1, pch1=def$pch1,
                                  type4=def$type4, col4=def$col4, pch4=def$pch4,
                                  type5=def$type5, col5=def$col5, pch5=def$pch5, 
                                  type6=def$type6, col6=def$col6, pch6=def$pch6, 
+                                 type7=def$type7, col7=def$col7, pch7=def$pch7, 
+                                 type8=def$type8, col8=def$col8, pch8=def$pch8, 
                                  Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
                                  Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
                                  Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
+                                 Msubtype4=def$Msubtype4, Mcol4=def$Mcol4, Mpch4=def$Mpch4, 
                                  lineCol=def$lineCol, searchPlotType="dots",
                                  xMinVol=def$minVol, xMaxVol=def$maxVol, xMinDD2=def$minDD2, xMaxDD2=def$maxDD2, 
                                  xMinAlloc=40, xMaxAlloc=98, xMinTO=2, xMaxTO=def$maxTO, 
@@ -1091,9 +1171,11 @@ plotAllReturnsVsFour <- function(type1=def$type1, col1=def$col1, pch1=def$pch1,
    plotAllReturnsVsVolatility(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
                               type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
                               type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6,  
+                              type7=type7, col7=col7, pch7=pch7, type8=type8, col8=col8, pch8=pch8, 
                               Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
                               Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
                               Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
+                              Msubtype4=Msubtype4, Mcol4=Mcol4, Mpch4=Mpch4, 
                               lineCol=lineCol, searchPlotType=searchPlotType,
                               yStatsName=yStatsName, yFactor=yFactor,
                               xMin=xMinVol, xMax=xMaxVol, yMin=yMin, yMax=yMax, costs=costs) 
@@ -1101,9 +1183,11 @@ plotAllReturnsVsFour <- function(type1=def$type1, col1=def$col1, pch1=def$pch1,
    plotAllReturnsVsDrawdown(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
                             type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
                             type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6, 
+                            type7=type7, col7=col7, pch7=pch7, type8=type8, col8=col8, pch8=pch8, 
                             Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
                             Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
                             Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
+                            Msubtype4=Msubtype4, Mcol4=Mcol4, Mpch4=Mpch4, 
                             lineCol=lineCol, searchPlotType=searchPlotType,
                             yStatsName=yStatsName, yFactor=yFactor,
                             xMin=xMinDD2, xMax=xMaxDD2, yMin=yMin, yMax=yMax, costs=costs) 
@@ -1111,9 +1195,11 @@ plotAllReturnsVsFour <- function(type1=def$type1, col1=def$col1, pch1=def$pch1,
    plotAllReturnsVsAverageAlloc(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
                                 type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
                                 type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6, 
+                                type7=type7, col7=col7, pch7=pch7, type8=type8, col8=col8, pch8=pch8, 
                                 Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
                                 Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
                                 Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
+                                Msubtype4=Msubtype4, Mcol4=Mcol4, Mpch4=Mpch4, 
                                 lineCol=lineCol, searchPlotType=searchPlotType,
                                 yStatsName=yStatsName, yFactor=yFactor,
                                 xMin=xMinAlloc, xMax=xMaxAlloc, yMin=yMin, yMax=yMax, costs=costs) 
@@ -1121,9 +1207,11 @@ plotAllReturnsVsFour <- function(type1=def$type1, col1=def$col1, pch1=def$pch1,
    plotAllReturnsVsInverseTurnover(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
                                    type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
                                    type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6, 
+                                   type7=type7, col7=col7, pch7=pch7, type8=type8, col8=col8, pch8=pch8, 
                                    Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
                                    Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
                                    Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
+                                   Msubtype4=Msubtype4, Mcol4=Mcol4, Mpch4=Mpch4, 
                                    lineCol=lineCol, searchPlotType=searchPlotType,
                                    yStatsName=yStatsName, yFactor=yFactor,
                                    xMin=xMinTO, xMax=xMaxTO, yMin=yMin, yMax=yMax, costs=costs) 
@@ -1144,9 +1232,12 @@ plotAllReturnsVsTwo <- function(type1=def$type1, col1=def$col1, pch1=def$pch1,
                                 type4=def$type4, col4=def$col4, pch4=def$pch4,
                                 type5=def$type5, col5=def$col5, pch5=def$pch5, 
                                 type6=def$type6, col6=def$col6, pch6=def$pch6, 
+                                type7=def$type7, col7=def$col7, pch7=def$pch7, 
+                                type8=def$type8, col8=def$col8, pch8=def$pch8, 
                                 Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
                                 Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
                                 Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
+                                Msubtype4=def$Msubtype4, Mcol4=def$Mcol4, Mpch4=def$Mpch4, 
                                 lineCol=def$lineCol, searchPlotType="dots",
                                 xMinVol=def$minVol, xMaxVol=def$maxVol, xMinDD2=def$minDD2, xMaxDD2=def$maxDD2, 
                                 yStatsName=def$yStatsName, yFactor=100, col=F,
@@ -1166,9 +1257,11 @@ plotAllReturnsVsTwo <- function(type1=def$type1, col1=def$col1, pch1=def$pch1,
    plotAllReturnsVsVolatility(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
                               type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
                               type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6,  
+                              type7=type7, col7=col7, pch7=pch7, type8=type8, col8=col8, pch8=pch8, 
                               Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
                               Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
                               Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
+                              Msubtype4=Msubtype4, Mcol4=Mcol4, Mpch4=Mpch4, 
                               lineCol=lineCol, searchPlotType=searchPlotType,
                               yStatsName=yStatsName, yFactor=yFactor,
                               xMin=xMinVol, xMax=xMaxVol, yMin=yMin, yMax=yMax, costs=costs) 
@@ -1176,9 +1269,11 @@ plotAllReturnsVsTwo <- function(type1=def$type1, col1=def$col1, pch1=def$pch1,
    plotAllReturnsVsDrawdown(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
                             type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
                             type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6, 
+                            type7=type7, col7=col7, pch7=pch7, type8=type8, col8=col8, pch8=pch8, 
                             Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
                             Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
                             Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
+                            Msubtype4=Msubtype4, Mcol4=Mcol4, Mpch4=Mpch4, 
                             lineCol=lineCol, searchPlotType=searchPlotType,
                             yStatsName=yStatsName, yFactor=yFactor,
                             xMin=xMinDD2, xMax=xMaxDD2, yMin=yMin, yMax=yMax, costs=costs) 

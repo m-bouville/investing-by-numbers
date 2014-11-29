@@ -20,12 +20,12 @@ setBollDefaultValues <- function() {
    def$BollInputName  <<- "TR"
    
    def$BollAvgOver1    <<-  14L
-   def$BollBearish1    <<- -31
-   def$BollBullish1    <<- -31
+   def$BollBearish1    <<- -31.5      # DD^2: -31
+   def$BollBullish1    <<- -31.5      # DD^2: -31
    def$typicalBoll1    <<- paste0("Boll_", def$BollAvgOver1, "_", def$BollBearish1, "_", def$BollBullish1)
    
    def$BollAvgOver2    <<- 10L
-   def$BollBearish2    <<- 46
+   def$BollBearish2    <<- 46.5       # DD^2: 46
    def$BollBullish2    <<- 46.5
    def$typicalBoll2    <<- paste0("Boll_", def$BollAvgOver2, "_", def$BollBearish2, "_", def$BollBullish2)
 }
@@ -75,8 +75,13 @@ createBollStrategy <- function(inputDF=def$BollInputDF, inputName=def$BollInputN
                                signalMin=def$signalMin, signalMax=def$signalMax,
                                strategyName="", type="", futureYears=def$futureYears, costs=def$tradingCost, 
                                coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
-   if(strategyName=="")  
-      strategyName <- paste0("Boll_", avgOver, "_", bearish, "_", bullish)
+   if(strategyName=="") {
+      if (inputName=="TR")
+         strategyName <- paste0("Boll_", avgOver, "_", bearish, "_", bullish)
+      else
+         strategyName <- paste0("Boll_", inputName, "_", avgOver, "_", bearish, "_", bullish)
+   }
+  
    if (bullish == bearish) bullish <- bearish + 1e-3 # bearish==bullish creates problems
    bearish <- bearish/100
    bullish <- bullish/100
@@ -101,19 +106,35 @@ createBollStrategy <- function(inputDF=def$BollInputDF, inputName=def$BollInputN
       }
       index <- which(parameters$strategy == strategyName)
       
-      if (type=="search") {
-         parameters$type[index]        <<- "search"
-         parameters$subtype[index]     <<- "Bollinger"        
-      } else {
-         parameters$type[index]        <<- "Bollinger"
-         parameters$subtype[index]     <<- inputName
-      }
+      if(inputName=="TR")
+         if (type=="search") {
+            parameters$type[index]    <<- "search"
+            parameters$subtype[index] <<- "Bollinger"        
+         } else {
+            parameters$type[index]    <<- "Bollinger"
+            parameters$subtype[index] <<- inputName
+         }
+      else if(substr(inputName, 1, 4)=="CAPE")
+         if (type=="search") {
+            parameters$type[index]    <<- "search"
+            parameters$subtype[index] <<- paste0("Boll_CAPE")
+         } else {
+            parameters$type[index]    <<- paste0("Boll_CAPE")
+            parameters$subtype[index] <<- inputName
+         }      else if(substr(inputName, 1, 9)=="detrended")
+         if (type=="search") {
+            parameters$type[index]    <<- "search"
+            parameters$subtype[index] <<- paste0("Boll_detrended")
+         } else {
+            parameters$type[index]    <<- paste0("Boll_detrended")
+            parameters$subtype[index] <<- inputName
+         }
       parameters$startIndex[index] <<- startIndex
       parameters$inputDF[index]    <<- inputDF
       parameters$inputName[index]  <<- inputName
       parameters$bearish[index]    <<- bearish
       parameters$bullish[index]    <<- bullish  
-      parameters$avgOver[index]    <<-  avgOver
+      parameters$avgOver[index]    <<- avgOver
    }
    calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, costs=costs,
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
@@ -136,7 +157,11 @@ calcOptimalBoll <- function(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOve
       for ( bear in seq(minBear, maxBear, by=byBear) ) {      
          for ( delta in seq(minDelta, maxDelta, by=byDelta) ) {
             bull = bear + delta               
-            strategyName <- paste0("Boll_", avgOver, "_", bear, "_", bull)
+            if (inputName=="TR")
+               strategyName <- paste0("Boll_", avgOver, "_", bear, "_", bull)
+            else
+               strategyName <- paste0("Boll_", inputName, "_", avgOver, "_", bear, "_", bull)
+           
             
             counterTot <- counterTot + 1 
             if(countOnly) {
@@ -166,15 +191,16 @@ calcOptimalBoll <- function(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOve
 
 
 searchForOptimalBoll <- function(inputDF="dat", inputName="TR", 
-                                 minAvgOver= 13L, maxAvgOver =15L, byAvgOver=1L, 
-                                 minBear   =-34,  maxBear   =-30,  byBear  = 0.5, 
-                                 minDelta  =  0,  maxDelta  =  2,  byDelta = 0.5,  
+                                 minAvgOver= 13L, maxAvgOver= 15L, byAvgOver= 1L, 
+                                 minBear=   -34,  maxBear=   -30,  byBear=    0.5, 
+                                 minDelta=    0,  maxDelta=    2,  byDelta=   0.5,  
                                  futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
-                                 minTR=0, maxVol=20, maxDD2=4, minTO=0.6, minScore=7.3,
+                                 minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.6, minScore=7.3,
                                  coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
-                                 xMinVol=12.5, xMaxVol=16.5, xMinDD2=0.45, xMaxDD2=1.2,
+                                 xMinVol=12.5, xMaxVol=16.5, xMinDD2=3, xMaxDD2=11,
                                  type="search", col=F, plotType="symbols", 
-                                 nameLength=20, plotEvery=def$plotEvery, force=F) {
+                                 nameLength=20, plotEvery=def$plotEvery, 
+                                 referenceStrategies=c(def$typicalBoll1, def$typicalBoll2), force=F) {
    
    # calculate how many parameters sets will be run
    calcOptimalBoll(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOver, 
@@ -195,8 +221,8 @@ searchForOptimalBoll <- function(inputDF="dat", inputName="TR",
                    col, plotType, nameLength, plotEvery, force)
       
    print(dashes)
-   showSummaryForStrategy(def$typicalBoll1, nameLength=nameLength, costs=costs)
-   showSummaryForStrategy(def$typicalBoll2, nameLength=nameLength, costs=costs)
+   for ( i in 1:length(referenceStrategies) )
+      showSummaryForStrategy(referenceStrategies[i], nameLength=nameLength, costs=costs)
    plotAllReturnsVsTwo(col=col, searchPlotType=plotType,
                        xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2)
 }
@@ -206,10 +232,11 @@ searchForTwoOptimalBoll <- function(plotType="symbols", force=F) {
    print("Bollinger 1...")
    searchForOptimalBoll(minAvgOver= 13L, maxAvgOver =15L, byAvgOver=1L, 
                         minBear   =-37,  maxBear   =-25,  byBear  = .5, 
-                        minDelta  =  0,  maxDelta  =  3,  byDelta = .5, minScore=7.25)
+                        minDelta  =  0,  maxDelta  =  3,  byDelta = .5, minScore=7.11)
    print("")
    print("Bollinger 2...")
    searchForOptimalBoll(minAvgOver=  9L, maxAvgOver= 12L, byAvgOver=1L, 
                         minBear   = 42,  maxBear   = 52,  byBear  = .5, 
-                        minDelta  =  0,  maxDelta  =  2,  byDelta = .5, minScore=5.95)
+                        minDelta  =  0,  maxDelta  =  2,  byDelta = .5, minScore=5.7)
 }
+

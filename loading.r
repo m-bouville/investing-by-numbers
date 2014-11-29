@@ -82,6 +82,7 @@ setDefaultValues <- function(dataSplit, futureYears,
    setBollDefaultValues()
    setSMAdefaultValues()
    setReversalDefaultValues()
+   setHybridDefaultValues()
    setCombinedDefaultValues()
    
    def$typicalStrategies <<- c(def$typicalBalanced, def$typicalTechnical, def$typicalValue, "stocks")
@@ -174,13 +175,13 @@ splitData <- function(dataSplit, force) {
       def$dataStartYear  <<- (startIndex-1)/12 + def$dataStartYear 
       def$plotStartYear  <<- def$dataStartYear + def$startIndex %/% 12 + 1 
       
-      def$maxTR  <<-400
-      def$yTRmin <<-  5.2
-      def$yTRmax <<-  9
+      def$maxTR  <<-600
+      def$yTRmin <<-  5.5
+      def$yTRmax <<-  9.5
       def$minVol <<- 11
-      def$maxVol <<- 16
+      def$maxVol <<- 15.5
       def$minDD2 <<-  2.5
-      def$maxDD2 <<-  8.5
+      def$maxDD2 <<-  8.
       #def$coeffDD2 <<- def$coeffDD2 * 2 # DD2 is half as big with half as many years, hence the rescaling
 
       DD <<- DD[28:numDD, ]
@@ -316,8 +317,9 @@ checkXlsFileIsUpToDate <- function(fileName="./data/ie_data.xls") {
 
 ## for some columns in 'parameters' and 'stats', there are only a handful of possible values
 makeStringsFactors <- function() {
-   allTypes <- c("constantAlloc", "gold", "UKhousePrice", "CAPE", "detrended", "Bollinger", "SMA", "reversal", "combined", "inflation" )
-   allSubtypes <- c(allTypes, "balanced", "technical", "value", "TR")
+   allTypes <- c("constantAlloc", "gold", "UKhousePrice", "CAPE", "detrended", "Bollinger", "SMA", "reversal", 
+                 "combined", "inflation", "Boll_CAPE", "Boll_detrended" )
+   allSubtypes <- c(allTypes, "balanced", "technical", "value", "hybrid", "TR")
    allTypes <- c(allTypes, "search") # "search" can only be a type, not a subtype
    
    parameters$type    <<- factor(parameters$type, levels=allTypes) 
@@ -339,6 +341,7 @@ makeStringsFactors <- function() {
 createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
    #message("Creating entries for the typical strategies")
    
+   ## Technical strategies
    createSMAstrategy(inputDF=def$SMAinputDF, inputName=def$SMAinputName, SMA1=def$SMA1_1, SMA2=def$SMA2_1, 
                      bearish=def$SMAbearish1, bullish=def$SMAbullish1, 
                      signalMin=def$signalMin, signalMax=def$signalMax,
@@ -373,7 +376,9 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
    #                           signalMin=def$signalMin, signalMax=def$signalMax,
    #                           futureYears=def$futureYears, costs=def$tradingCost, 
    #                           coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force) 
+
    
+   ## Value strategies
    createCAPEstrategy(years=def$CAPEyears_hy1, cheat=def$CAPEcheat, avgOver=def$CAPEavgOver_hy1, 
                       hysteresis=T, hystLoopWidthMidpoint=def$hystLoopWidthMidpoint1,
                       hystLoopWidth=def$hystLoopWidth1, slope=def$slope1,
@@ -398,19 +403,43 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
                            signalMin=def$signalMin, signalMax=def$signalMax,
                            futureYears=def$futureYears, costs=def$tradingCost, 
                            coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
-#    createDetrendedStrategy(inputDF=def$detrendedInputDF, inputName=def$detrendedInputName, 
-#                            avgOver=def$detrendedAvgOver2, 
-#                            bearish=def$detrendedBearish2, bullish=def$detrendedBullish2, 
-#                            signalMin=def$signalMin, signalMax=def$signalMax,
-#                            futureYears=def$futureYears, costs=def$tradingCost, 
-#                            coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
+   #    createDetrendedStrategy(inputDF=def$detrendedInputDF, inputName=def$detrendedInputName, 
+   #                            avgOver=def$detrendedAvgOver2, 
+   #                            bearish=def$detrendedBearish2, bullish=def$detrendedBullish2, 
+   #                            signalMin=def$signalMin, signalMax=def$signalMax,
+   #                            futureYears=def$futureYears, costs=def$tradingCost, 
+   #                            coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
    
+   ## Hybrid strategies
+   if (!(def$Boll_CAPEinputName1 %in% colnames(dat))) calcCAPE(years=def$Boll_CAPEyears1, cheat=def$CAPEcheat)
+   createBollStrategy(inputDF=def$Boll_CAPEinputDF1, inputName=def$Boll_CAPEinputName1, avgOver=def$Boll_CAPEavgOver1,
+                      bearish=def$Boll_CAPEbearish1, bullish=def$Boll_CAPEbullish1, strategyName="",
+                      signalMin=def$signalMin, signalMax=def$signalMax,
+                      futureYears=def$futureYears, costs=def$tradingCost, 
+                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force) 
+   #    if (!(def$Boll_CAPEinputName2 %in% colnames(dat))) calcCAPE(years=def$Boll_CAPEyears2, cheat=def$CAPEcheat)
+   #    createBollStrategy(inputDF=def$Boll_CAPEinputDF2, inputName=def$Boll_CAPEinputName2, avgOver=def$Boll_CAPEavgOver2,
+   #                       bearish=def$Boll_CAPEbearish2, bullish=def$Boll_CAPEbullish2, strategyName="",
+   #                       signalMin=def$signalMin, signalMax=def$signalMax,
+   #                       futureYears=def$futureYears, costs=def$tradingCost, 
+   #                       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force) 
+   createBollStrategy(inputDF="dat", inputName="detrended_TR", avgOver=19, 
+                      bearish=-143, bullish=-143, strategyName="Boll_detrended",
+                      signalMin=def$signalMin, signalMax=def$signalMax,
+                      futureYears=def$futureYears, costs=def$tradingCost, 
+                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)   
+
+   ## Combined strategies
    combineStrategies(def$technicalStrategies, def$technicalFractions, 
                      type="combined", subtype="technical", combineMode="weighted", costs=def$tradingCost, 
                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
 
    combineStrategies(def$valueStrategies, def$valueFractions,
                      type="combined", subtype="value", combineMode="weighted", costs=def$tradingCost, 
+                     coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
+   
+   combineStrategies(def$hybridStrategies, def$hybridFractions,
+                     type="combined", subtype="hybrid", combineMode="weighted", costs=def$tradingCost, 
                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
    
    combineStrategies(def$balancedStrategies, def$balancedFractions,
