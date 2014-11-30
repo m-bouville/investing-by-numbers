@@ -38,21 +38,32 @@ setHybridDefaultValues <- function() {
    
    def$typicalBoll_detrended<<- "Boll_detrended"
 
-   def$typicalSMA_CAPE     <<- def$typicalBoll_CAPE1
+   def$SMA_CAPEinputDF    <<- "dat"
+   def$SMA_CAPEyears1     <<-   10
+   def$SMA_CAPEinputName1 <<- paste0("CAPE", def$SMA_CAPEyears1)
+
+   def$SMA_CAPE_SMA1      <<- 12L
+   def$SMA_CAPE_SMA2      <<-  5L
+   def$SMA_CAPEbearish1   <<- 42
+   def$SMA_CAPEbullish1   <<- 41
+   def$typicalSMA_CAPE1   <<- paste0("SMA_", def$SMA_CAPEinputName1, "_", def$SMA_CAPE_SMA1, "_", 
+                                     def$SMA_CAPE_SMA2, "__", def$SMA_CAPEbearish1, "_", def$SMA_CAPEbullish1)
+   
 }
 
    
-searchForOptimalBoll_CAPE <- function(inputDF="dat", cheat=def$CAPEcheat,
-                                      minCAPEyears= 9L, maxCAPEyears=11L, byCAPEyears=1L, 
-                                      minAvgOver=  14L, maxAvgOver=  22L, byAvgOver=  2L, 
-                                      minBear=   -156,  maxBear=   -128,  byBear=     4, 
-                                      minDelta=     0,  maxDelta=     4,  byDelta=    2,  
-                                      futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
-                                      minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.6, minScore=7.6,
-                                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
-                                      xMinVol=14, xMaxVol=18, xMinDD2=5.5, xMaxDD2=9.5,
-                                      type="search", col=F, plotType="symbols", 
-                                      nameLength=26, plotEvery=def$plotEvery, referenceStrategies=def$typicalBoll_CAPE1, force=F) {
+searchForOptimalBoll_CAPE <- function(
+      inputDF="dat", cheat=def$CAPEcheat,
+      minCAPEyears= 9L, maxCAPEyears=11L, byCAPEyears=1L, 
+      minAvgOver=  14L, maxAvgOver=  22L, byAvgOver=  2L, 
+      minBear=   -156,  maxBear=   -128,  byBear=     4, 
+      minDelta=     0,  maxDelta=     4,  byDelta=    2,  
+      futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
+      minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.6, minScore=7.6,
+      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
+      xMinVol=14, xMaxVol=18, xMinDD2=5.5, xMaxDD2=9.5,
+      type="search", col=F, plotType="symbols", 
+      nameLength=26, plotEvery=def$plotEvery, referenceStrategies=def$typicalBoll_CAPE1, force=F) {
    
    for (CAPEyears in seq(minCAPEyears, maxCAPEyears, by=byCAPEyears)) {
       CAPEname <- paste0("CAPE",CAPEyears)
@@ -93,18 +104,20 @@ searchForTwoOptimalBoll_CAPE <- function(plotType="symbols", force=F) {
 
 searchForOptimalSMA_CAPE <- function(
       inputDF="dat", inputName="CAPE10", 
-      minSMA1=  2L, maxSMA1= 40L, bySMA1= 8L,
-      minSMA2=  1L, maxSMA2= 10L, bySMA2= 2L, 
-      minBear=  4,  maxBear= 24,  byBear= 4, 
-      minDelta= 0,  maxDelta= 4,  byDelta=2, 
+      minSMA1= 11L, maxSMA1= 13L, bySMA1= 1L,
+      minSMA2=  4L, maxSMA2=  6L, bySMA2= 1L, 
+      minBear= 41,  maxBear= 43,  byBear= 1, 
+      minDelta= 0,  maxDelta= 3,  byDelta=1, 
       futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
-      minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.7, minScore=8., 
-      type="search", col=F, plotType="symbols", 
-      nameLength=22, plotEvery=def$plotEvery, force=F) {
+      minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.7, minScore=8, 
+      type="search", col=F, plotType="symbols", nameLength=25, plotEvery=def$plotEvery, 
+      referenceStrategies=def$typicalSMA_CAPE1, force=F) {
+   
+   cleanUpStrategies()
    
    searchForOptimalSMA(inputDF, inputName, minSMA1, maxSMA1, bySMA1, minSMA2, maxSMA2, bySMA2, 
          minBear, maxBear, byBear,  minDelta, maxDelta, byDelta, 
          futureYears, costs, minTR, maxVol, maxDD2, minTO, minScore, 
-         type, col, plotType, nameLength, plotEvery, referenceStrategies=def$typicalSMA_CAPE, force)
+         type, col, plotType, nameLength, plotEvery, referenceStrategies=referenceStrategies, force)
 }
    

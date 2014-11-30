@@ -38,18 +38,19 @@ setPlottingDefaultValues <- function() {
    def$colBollinger <<- "magenta"   
    def$colReversal  <<- "orange"
    def$colInflation <<- "purple"
-   def$colBoll_CAPE <<- "sienna"   
-   def$colBoll_detrended <<- "peru"   
+   def$colBoll_CAPE <<- "palegreen4"   
+   def$colBoll_detrended <<- "seagreen3"   
+   def$colSMA_CAPE <<- "darkolivegreen4"   
    
    def$colValue     <<- "blue"
    def$colTechnical <<- "red"
-   def$colHybrid    <<- "chocolate4"
+   def$colHybrid    <<- "green"
    def$colBalanced  <<- "black"
    
    def$pch          <<- 16L
    def$Mpch         <<- 15L
    
-   def$colConstantAlloc  <<- "green"
+   def$colConstantAlloc  <<- "sienna4"
    def$colBonds     <<- "gray"
    
    # plotAllReturnsVsX()
@@ -61,28 +62,32 @@ setPlottingDefaultValues <- function() {
    def$col2  <<- def$colDetrended
    def$pch2  <<- def$pch
 
-   def$type3 <<- "inflation"
-   def$col3  <<- def$colInflation
+   #    def$type3 <<- "inflation"
+   #    def$col3  <<- def$colInflation
+   #    def$pch3  <<- def$pch
+   
+   def$type3 <<- "SMA"
+   def$col3  <<- def$colSMA
    def$pch3  <<- def$pch
    
-   def$type4 <<- "SMA"
-   def$col4  <<- def$colSMA
+   def$type4 <<- "Bollinger"
+   def$col4  <<- def$colBollinger
    def$pch4  <<- def$pch
    
-   def$type5 <<- "Bollinger"
-   def$col5  <<- def$colBollinger
+   def$type5 <<- "reversal"
+   def$col5  <<- def$colReversal
    def$pch5  <<- def$pch
    
-   def$type6 <<- "reversal"
-   def$col6  <<- def$colReversal
+   def$type6 <<- "Boll_CAPE"
+   def$col6  <<- def$colBoll_CAPE
    def$pch6  <<- def$pch
    
-   def$type7 <<- "Boll_CAPE"
-   def$col7  <<- def$colBoll_CAPE
+   def$type7 <<- "Boll_detrended"
+   def$col7  <<- def$colBoll_detrended
    def$pch7  <<- def$pch
-   
-   def$type8 <<- "Boll_detrended"
-   def$col8  <<- def$colBoll_detrended
+
+   def$type8 <<- "SMA_CAPE"
+   def$col8  <<- def$colSMA_CAPE
    def$pch8  <<- def$pch
    
    # plotAllReturnsVsX(): combined strategies
@@ -310,8 +315,8 @@ plotReturnAndAllocValue <- function(
 
 plotReturnAndAllocHybrid <- function(
       stratName1=def$typicalBoll_CAPE1, stratName2=def$typicalBoll_detrended, 
-      stratName3=def$typicalHybrid, stratName4=def$typicalBalanced,
-      col1=def$colBoll_CAPE, col2=def$colBoll_detrended, col3=def$colHybrid, col4=def$colBalanced,
+      stratName3=def$typicalSMA_CAPE1, stratName4=def$typicalHybrid, 
+      col1=def$colBoll_CAPE, col2=def$colBoll_detrended, col3=def$colSMA_CAPE, col4=def$colHybrid, 
       lwd1=1.5, lwd2=1.5, lwd3=2, lwd4=2,
       startYear=def$plotStartYear, endYear=def$plotEndYear, 
       yLabel="", net=T, minTR=0.8, maxTR=def$maxTR, costs=def$tradingCost,

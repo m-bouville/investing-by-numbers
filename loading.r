@@ -318,7 +318,7 @@ checkXlsFileIsUpToDate <- function(fileName="./data/ie_data.xls") {
 ## for some columns in 'parameters' and 'stats', there are only a handful of possible values
 makeStringsFactors <- function() {
    allTypes <- c("constantAlloc", "gold", "UKhousePrice", "CAPE", "detrended", "Bollinger", "SMA", "reversal", 
-                 "combined", "inflation", "Boll_CAPE", "Boll_detrended" )
+                 "combined", "inflation", "Boll_CAPE", "Boll_detrended", "SMA_CAPE", "SMA_detrended" )
    allSubtypes <- c(allTypes, "balanced", "technical", "value", "hybrid", "TR")
    allTypes <- c(allTypes, "search") # "search" can only be a type, not a subtype
    
@@ -428,7 +428,19 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
                       signalMin=def$signalMin, signalMax=def$signalMax,
                       futureYears=def$futureYears, costs=def$tradingCost, 
                       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)   
-
+   if (!(def$SMA_CAPEinputName1 %in% colnames(dat))) calcCAPE(years=def$SMA_CAPEyears1, cheat=def$CAPEcheat)
+   createSMAstrategy(inputDF=def$SMA_CAPEinputDF, inputName=def$SMA_CAPEinputName1, SMA1=def$SMA_CAPE_SMA1_1, 
+                     SMA2=def$SMA_CAPE_SMA2_1, bearish=def$SMA_CAPEbearish1, bullish=def$SMA_CAPEbullish1, 
+                     signalMin=def$signalMin, signalMax=def$signalMax,
+                     futureYears=def$futureYears, costs=def$tradingCost, 
+                     coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
+   if (!(def$SMA_CAPEinputName2 %in% colnames(dat))) calcCAPE(years=def$SMA_CAPEyears2, cheat=def$CAPEcheat)
+   createSMAstrategy(inputDF=def$SMA_CAPEinputDF, inputName=def$SMA_CAPEinputName2, SMA1=def$SMA_CAPE_SMA1_2, 
+                     SMA2=def$SMA_CAPE_SMA2_2, bearish=def$SMA_CAPEbearish2, bullish=def$SMA_CAPEbullish2, 
+                     signalMin=def$signalMin, signalMax=def$signalMax,
+                     futureYears=def$futureYears, costs=def$tradingCost, 
+                     coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
+   
    ## Combined strategies
    combineStrategies(def$technicalStrategies, def$technicalFractions, 
                      type="combined", subtype="technical", combineMode="weighted", costs=def$tradingCost, 

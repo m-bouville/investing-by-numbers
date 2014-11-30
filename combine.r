@@ -465,7 +465,7 @@ searchForOptimalValue <- function
                              def$typicalCAPE_NH, def$typicalDetrended1), 
        minF = c(20, 18, 19, 27), 
        maxF = c(28, 26, 27, 35), 
-       byF =  c(rep(2, 3), .5),
+       byF =  c(rep(2, 3), 100L),
        futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
        type="search", subtype="value", coeffEntropy=def$coeffEntropyValue, 
        minTR=0, maxVol=def$maxVol, minTO=4, maxDD2=def$maxDD2, minScore=8.82,
@@ -496,15 +496,15 @@ searchForOptimalValue <- function
 }
 
 searchForOptimalHybrid <- function
-      (inputStrategyName = c(def$typicalBoll_CAPE1, "Boll_detrended"), 
-       minF = c(35, 25), 
-       maxF = c(75, 65), 
-       byF  = c( 1, 100L), 
+      (inputStrategyName = def$hybridStrategies, 
+       minF = c(20, 16, 48), 
+       maxF = c(30, 32, 60), 
+       byF  = c(rep(1, 2), 100L), 
        futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
        type="search", subtype="hybrid", coeffEntropy=def$coeffEntropyHybrid, 
-       minTR=0, maxVol=def$maxVol, minTO=1, maxDD2=def$maxDD2, minScore=6.55,
-       col=F, CPUnumber=def$CPUnumber, plotType="line", 
-       combineMode="all", nameLength=17, plotEvery=def$plotEvery, 
+       minTR=0, maxVol=def$maxVol, minTO=1, maxDD2=def$maxDD2, minScore=14.15,
+       col=F, CPUnumber=def$CPUnumber, plotType="symbols", 
+       combineMode="all", nameLength=18, plotEvery=def$plotEvery, 
        xMinVol=14, xMaxVol=16.5, xMinDD2=5., xMaxDD2=8.5, yMin=7.2, yMax=8.2, force=F) {
    
    # calculate how many parameters sets will be run

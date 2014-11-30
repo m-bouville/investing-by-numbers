@@ -467,11 +467,11 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
    if ( is.infinite(stats$turnover[index]) )
       oneOverTO <- 0
    else oneOverTO <- (1/stats$turnover[index]-1/3)
-   stats$score[index] <<- 85 * (   coeffTR  * (stats$TR[index] - 0.08)
+   stats$score[index] <<- 250 * (  coeffTR  * (stats$TR[index] - 0.08)
                                  - coeffVol * (stats$volatility[index] - 0.15)
                                  - coeffDD2 * (stats$DD2[index] - 0.055) / 100
-                                 + (1-coeffTR)/2 * ( stats[index, medianName] + stats[index, fiveName] - 0.05)
-                                 - costs * oneOverTO ) + 7
+                                 + (1-coeffTR)/2 * ( stats[index, medianName] + stats[index, fiveName] - 0.07)
+                                 - costs * oneOverTO ) + 12
    ## 1. The coefficients coeffVol and coeffDD2 make it possible to 'convert' vol and DD2 into return equivalents.
    ## 2. I subtract off constants to reduce the variation of the score when coefficients are changed
 }
@@ -489,9 +489,9 @@ displaySummaryHeader <- function(futureYears=def$futureYears, nameLength=def$nam
       DD2label <- str_pad(paste("DD^",def$DDpower), 7)
    
    print(paste0(str_pad("strategy", nameLength, side="right"), "|  TR   ", futureYears, 
-                " yrs: med, 5%| vol. alloc: avg, now|TO yrs |", DD2label, "| score ") )
+                " yrs: med, 5%| vol. alloc: avg, now|TO yrs |", DD2label, "| score") )
    dashes <- paste0(str_pad("", nameLength, pad="-"), 
-                    "+-------+--------------+-------+-------------+-------+-------+-------")
+                    "+-------+--------------+-------+-------------+-------+-------+------")
    print(dashes)
    return(dashes)
 }
@@ -572,11 +572,10 @@ showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def
    if (DD2%%1 == 0) DD2Pad2 = ". " # no decimals
       else DD2Pad2 = ""
    
-#    if (score>=10) scorePad1 = ""
-#       else scorePad1 = " "
-   if (round(score,3)%%1 == 0) scorePad2 = ".000" # no decimals
-   else if ( round(10*score,2)%%1 == 0 ) scorePad2 = "00" # single decimal
-   else if ( round(100*score,1)%%1 == 0 ) scorePad2 = "0" # two decimals
+   if (score>=10) scorePad1 = ""
+      else scorePad1 = " "
+   if (round(score,2)%%1 == 0) scorePad2 = ".00" # no decimals
+   else if ( round(10*score,1)%%1 == 0 ) scorePad2 = "0" # single decimal
    else scorePad2 = ""
    
    if(ret>minTR & vol<maxVol & DD2<maxDD2 & TO>minTO & score>minScore) 
@@ -587,7 +586,7 @@ showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def
                    avgAllocPad, round(avgAlloc), "%, ", latestAllocPad, round(latestAlloc), "% | ",
                    TOpad1, TO, TOpad2, " | ",
                    DD2Pad1, DD2, DD2Pad2, "% | ", 
-                   round(score, 3), scorePad2, "%" ) )
+                   scorePad1, round(score, 2), scorePad2) )
 }
 
 showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
@@ -637,6 +636,10 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost+def
       # showSummaryForStrategy(def$typicalBoll_CAPE2, displayName="Boll(CAPE) 2 **", futureYears=futureYears, costs=costs, 
       #                        coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
       showSummaryForStrategy("Boll_detrended",       displayName="Boll(detrended)", futureYears=futureYears, costs=costs, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+      showSummaryForStrategy(def$typicalSMA_CAPE1, displayName="SMA(CAPE) 1 **", futureYears=futureYears, costs=costs, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+      showSummaryForStrategy(def$typicalSMA_CAPE2, displayName="SMA(CAPE) 2 **", futureYears=futureYears, costs=costs, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
       print(dashes)
    }

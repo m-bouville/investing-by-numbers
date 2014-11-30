@@ -82,7 +82,7 @@ createSMAstrategy <- function(inputDF="dat", inputName="TR", SMA1=def$SMA1, SMA2
    else if (inputDF=="TR")         input <- TR[, inputName]
    else if (inputDF=="next30yrs")  input <- next30yrs[, inputName]
    else stop("data frame ", inputDF, " not recognized")
-   startIndex <- sum(is.na(input)) + max(SMA1, SMA2) + 1   
+   startIndex <- sum(is.na(input)) + max(SMA1, SMA2) + 1
    
    if (bullish == bearish) 
       bullish = bearish - 1e-3 # bearish=bullish creates problems
@@ -91,8 +91,8 @@ createSMAstrategy <- function(inputDF="dat", inputName="TR", SMA1=def$SMA1, SMA2
    
    SMAname1 <- paste0("SMA_", inputName, "_", SMA1)
    if (!(SMAname1 %in% colnames(dat)) | force)
-      startIndex1 <- calcSMA(inputDF, inputName, SMA1, SMAname1)      
-   startIndex2 <- SMAname2 <- paste0("SMA_", inputName, "_", SMA2)   
+      calcSMA(inputDF, inputName, SMA1, SMAname1)      
+   SMAname2 <- paste0("SMA_", inputName, "_", SMA2)   
    if (!(SMAname2 %in% colnames(dat)) | force)
       calcSMA(inputDF, inputName, SMA2, SMAname2)   
    
@@ -114,13 +114,30 @@ createSMAstrategy <- function(inputDF="dat", inputName="TR", SMA1=def$SMA1, SMA2
       index <- which(parameters$strategy == strategyName)
       
       parameters$strategy[index] <<- strategyName
-      if (type=="search") {
-         parameters$type[index]        <<- "search"
-         parameters$subtype[index]     <<- "SMA"        
-      } else {
-         parameters$type[index]        <<- "SMA"
-         parameters$subtype[index]     <<- inputName
-      }
+      if(inputName=="TR")
+         if (type=="search") {
+            parameters$type[index]    <<- "search"
+            parameters$subtype[index] <<- "SMA"        
+         } else {
+            parameters$type[index]    <<- "SMA"
+            parameters$subtype[index] <<- inputName
+         }
+      else if(substr(inputName, 1, 4)=="CAPE")
+         if (type=="search") {
+            parameters$type[index]    <<- "search"
+            parameters$subtype[index] <<- paste0("SMA_CAPE")
+         } else {
+            parameters$type[index]    <<- paste0("SMA_CAPE")
+            parameters$subtype[index] <<- inputName
+         } 
+      else if(substr(inputName, 1, 9)=="detrended")
+         if (type=="search") {
+            parameters$type[index]    <<- "search"
+            parameters$subtype[index] <<- paste0("SMA_detrended")
+         } else {
+            parameters$type[index]    <<- paste0("SMA_detrended")
+            parameters$subtype[index] <<- inputName
+         }
       parameters$startIndex[index] <<- startIndex
       parameters$inputDF[index]    <<- inputDF
       parameters$inputName[index]  <<- inputName
@@ -139,26 +156,23 @@ createSMAstrategy <- function(inputDF="dat", inputName="TR", SMA1=def$SMA1, SMA2
 }
 
 
-searchForOptimalSMA <- function(inputDF="dat", inputName="TR", 
-                                minSMA1= 13L, maxSMA1= 15L, bySMA1= 1L,
-                                minSMA2=  1L, maxSMA2=  2L, bySMA2= 1L, 
-                                minBear= 11,  maxBear= 14,  byBear= 0.5, 
-                                minDelta= 0,  maxDelta= 3,  byDelta=0.5, 
-                                futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
-                                minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.7, minScore=8.45, 
-                                type="search", col=F, plotType="symbols", 
-                                nameLength=22, plotEvery=def$plotEvery, 
-                                referenceStrategies=def$typicalSMA1, force=F) {
+
+calcOptimalSMA <- function(inputDF, inputName=CAPEname, minSMA1, maxSMA1, bySMA1, minSMA2, maxSMA2, bySMA2, 
+                            minBear, maxBear, byBear,  minDelta, maxDelta, byDelta, 
+                            futureYears, costs, minTR, maxVol, maxDD2, minTO, minScore, 
+                            xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly,
+                            type, col, plotType, nameLength, plotEvery, 
+                            referenceStrategies, force) {
    
+   counterTot <- 0; counterNew <- 0
    lastTimePlotted <- proc.time()
-   dashes <- displaySummaryHeader(futureYears=futureYears, nameLength=nameLength)
-   
+
    for ( SMA1 in seq(minSMA1, maxSMA1, by=bySMA1) ) 
       for ( SMA2 in seq(minSMA2, maxSMA2, by=bySMA2) )       
          for ( bear in seq(minBear, maxBear, by=byBear) ) {     
             for ( delta in seq(minDelta, maxDelta, by=byDelta) ) {
                bull = bear - delta               
-   
+               
                if (inputName=="TR")
                   strategyName <- paste0("SMA_", SMA1, "_", SMA2, "__", bear, "_", bull)
                else
@@ -166,22 +180,66 @@ searchForOptimalSMA <- function(inputDF="dat", inputName="TR",
                
                if (delta==0) bull = bear - 1e-3 # bear=bull creates problems
                
-               createSMAstrategy(inputDF=inputDF, inputName=inputName, SMA1=SMA1, SMA2=SMA2,
-                                 bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
-                                 strategyName=strategyName, force=force)                  
-               showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
-                                      minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
-                                      nameLength=nameLength, force=F)
+               counterTot <- counterTot + 1 
+               if(countOnly) {
+                  if ( !(strategyName %in% colnames(TR)) | !(strategyName %in% colnames(alloc)) )
+                     counterNew <- counterNew + 1                  
+               } else {
+                  createSMAstrategy(inputDF=inputDF, inputName=inputName, SMA1=SMA1, SMA2=SMA2,
+                                    bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
+                                    strategyName=strategyName, force=force)                  
+                  showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
+                                         minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
+                                         nameLength=nameLength, force=F)
+               }
             }
-            if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { # we replot only if it's been a while
-               plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
+            if ( !countOnly && (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { 
+               # we replot only if it's been a while
+               plotAllReturnsVsTwo(col=col, searchPlotType=plotType,
+                                   xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2)
                lastTimePlotted <- proc.time()
             }
          }
+   if(countOnly)
+      print (paste0("Running ", counterTot, " parameter sets (", counterNew, " new)"))
+}
+
+
+searchForOptimalSMA <- function(inputDF="dat", inputName="TR", 
+                                minSMA1= 13L, maxSMA1= 15L, bySMA1= 1L,
+                                minSMA2=  1L, maxSMA2=  2L, bySMA2= 1L, 
+                                minBear= 11,  maxBear= 14,  byBear= 0.5, 
+                                minDelta= 0,  maxDelta= 3,  byDelta=0.5, 
+                                futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
+                                minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.7, minScore=8.45, 
+                                xMinVol=12.5, xMaxVol=16.5, xMinDD2=3, xMaxDD2=11,
+                                type="search", col=F, plotType="symbols", 
+                                nameLength=22, plotEvery=def$plotEvery, 
+                                referenceStrategies=def$typicalSMA1, force=F) {
+   
+   # calculate how many parameters sets will be run
+   calcOptimalSMA(inputDF, inputName, minSMA1, maxSMA1, bySMA1, minSMA2, maxSMA2, bySMA2, 
+                  minBear, maxBear, byBear,  minDelta, maxDelta, byDelta, 
+                  futureYears, costs, minTR, maxVol, maxDD2, minTO, minScore, 
+                  xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2, countOnly=T,
+                  type, col, plotType, nameLength, plotEvery, 
+                  referenceStrategies=referenceStrategies, force)
+   
+   dashes <- displaySummaryHeader(futureYears=futureYears, nameLength=nameLength)
+   
+   # actually calculating
+   calcOptimalSMA(inputDF, inputName, minSMA1, maxSMA1, bySMA1, minSMA2, maxSMA2, bySMA2, 
+                  minBear, maxBear, byBear,  minDelta, maxDelta, byDelta, 
+                  futureYears, costs, minTR, maxVol, maxDD2, minTO, minScore, 
+                  xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2, countOnly=F,
+                  type, col, plotType, nameLength, plotEvery, 
+                  referenceStrategies=referenceStrategies, force)
+      
    print(dashes)
    for ( i in 1:length(referenceStrategies) )
       showSummaryForStrategy(referenceStrategies[i], nameLength=nameLength, costs=costs)
-   plotAllReturnsVsTwo(col=col, costs=costs, searchPlotType=plotType)
+   plotAllReturnsVsTwo(col=col, costs=costs, searchPlotType=plotType,
+                       xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2)
 }
 
 
