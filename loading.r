@@ -52,7 +52,7 @@ setDefaultValues <- function(dataSplit, futureYears,
    
    def$CPUnumber     <<-  1 # Parallelization does not work
    def$plotEvery     <<- 20 # replot every n seconds when searchnig for parameters
-   def$nameLength    <<- 18 # width of strategy name in summaries
+   def$nameLength    <<- 20 # width of strategy name in summaries
    
    ## So-called DD2 is the sum over drawdowns DD_i of (DD_i)^DDpower 
    ## (historically called DD2 because DDpower was set to 2)
@@ -317,8 +317,9 @@ checkXlsFileIsUpToDate <- function(fileName="./data/ie_data.xls") {
 
 ## for some columns in 'parameters' and 'stats', there are only a handful of possible values
 makeStringsFactors <- function() {
-   allTypes <- c("constantAlloc", "gold", "UKhousePrice", "CAPE", "detrended", "Bollinger", "SMA", "reversal", 
-                 "combined", "inflation", "Boll_CAPE", "Boll_detrended", "SMA_CAPE", "SMA_detrended" )
+   allTypes <- c("constantAlloc", "gold", "UKhousePrice", "inflation", 
+                 "CAPE", "detrended", "Bollinger", "SMA", "reversal", "combined", 
+                 "Boll_CAPE", "Boll_detrended", "SMA_CAPE", "SMA_detrended", "reversal_CAPE", "reversal_detrended" )
    allSubtypes <- c(allTypes, "balanced", "technical", "value", "hybrid", "TR")
    allTypes <- c(allTypes, "search") # "search" can only be a type, not a subtype
    
@@ -428,6 +429,7 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
                       signalMin=def$signalMin, signalMax=def$signalMax,
                       futureYears=def$futureYears, costs=def$tradingCost, 
                       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)   
+
    if (!(def$SMA_CAPEinputName1 %in% colnames(dat))) calcCAPE(years=def$SMA_CAPEyears1, cheat=def$CAPEcheat)
    createSMAstrategy(inputDF=def$SMA_CAPEinputDF, inputName=def$SMA_CAPEinputName1, SMA1=def$SMA_CAPE_SMA1_1, 
                      SMA2=def$SMA_CAPE_SMA2_1, bearish=def$SMA_CAPEbearish1, bullish=def$SMA_CAPEbullish1, 
@@ -440,6 +442,21 @@ createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
                      signalMin=def$signalMin, signalMax=def$signalMax,
                      futureYears=def$futureYears, costs=def$tradingCost, 
                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
+
+   if (!(def$reversal_CAPEinputName1 %in% colnames(dat))) calcCAPE(years=def$reversal_CAPEyears1, cheat=def$CAPEcheat)
+   createReversalStrategy(inputDF=def$reversal_CAPEinputDF, inputName=def$reversal_CAPEinputName1, 
+                          avgOver=def$reversal_CAPEavgOver1, returnToMean=def$reversal_CAPEreturnToMean1, 
+                          bearish=def$reversal_CAPEbearish1, bullish=def$reversal_CAPEbullish1, 
+                          signalMin=def$signalMin, signalMax=def$signalMax,
+                          futureYears=def$futureYears, costs=def$tradingCost, 
+                          coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force) 
+   if (!(def$reversal_CAPEinputName2 %in% colnames(dat))) calcCAPE(years=def$reversal_CAPEyears2, cheat=def$CAPEcheat)
+   createReversalStrategy(inputDF=def$reversal_CAPEinputDF, inputName=def$reversal_CAPEinputName2, 
+                          avgOver=def$reversal_CAPEavgOver2, returnToMean=def$reversal_CAPEreturnToMean2, 
+                          bearish=def$reversal_CAPEbearish2, bullish=def$reversal_CAPEbullish2, 
+                          signalMin=def$signalMin, signalMax=def$signalMax,
+                          futureYears=def$futureYears, costs=def$tradingCost, 
+                          coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force) 
    
    ## Combined strategies
    combineStrategies(def$technicalStrategies, def$technicalFractions, 

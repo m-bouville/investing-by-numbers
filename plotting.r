@@ -38,9 +38,11 @@ setPlottingDefaultValues <- function() {
    def$colBollinger <<- "magenta"   
    def$colReversal  <<- "orange"
    def$colInflation <<- "purple"
-   def$colBoll_CAPE <<- "palegreen4"   
-   def$colBoll_detrended <<- "seagreen3"   
-   def$colSMA_CAPE <<- "darkolivegreen4"   
+   
+   def$colBoll_CAPE     <<- "palegreen4"   
+   def$colBoll_detrended<<- "seagreen3"   
+   def$colSMA_CAPE      <<- "darkolivegreen4"   
+   def$colReversal_CAPE <<- "darkolivegreen"   
    
    def$colValue     <<- "blue"
    def$colTechnical <<- "red"
@@ -86,8 +88,8 @@ setPlottingDefaultValues <- function() {
    def$col7  <<- def$colBoll_detrended
    def$pch7  <<- def$pch
 
-   def$type8 <<- "SMA_CAPE"
-   def$col8  <<- def$colSMA_CAPE
+   def$type8 <<- "reversal_CAPE"
+   def$col8  <<- def$colReversal_CAPE
    def$pch8  <<- def$pch
    
    # plotAllReturnsVsX(): combined strategies

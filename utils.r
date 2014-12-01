@@ -641,6 +641,10 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost+def
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
       showSummaryForStrategy(def$typicalSMA_CAPE2, displayName="SMA(CAPE) 2 **", futureYears=futureYears, costs=costs, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+      showSummaryForStrategy(def$typicalReversal_CAPE1, displayName="reversal(CAPE) 1**", futureYears=futureYears, costs=costs, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+      showSummaryForStrategy(def$typicalReversal_CAPE2, displayName="reversal(CAPE) 2**", futureYears=futureYears, costs=costs, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
       print(dashes)
    }
    ## Combined strategies

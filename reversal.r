@@ -58,7 +58,7 @@ calcReversalSignal <- function(rawSignal,
    
    bearish=bearish/100
    bullish=bullish/100
-
+   
    addNumColToSignal(strategyName)
    calcSignalForStrategy(strategyName, input=rawSignal, bearish=bearish, bullish=bullish,
                          signalMin=signalMin, signalMax=signalMax, startIndex=startIndex ) 
@@ -79,15 +79,29 @@ createReversalStrategy <- function(inputDF=def$reversalInputDF, inputName=def$re
                                    coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
 
    reversalName <- paste0("reversal_", inputName, "_", avgOver)
-   if (strategyName=="") 
-      strategyName <- paste0("reversal_", avgOver, "_", returnToMean, "_", bearish, "_", bullish)
+   if(strategyName=="") {
+      if (inputName=="TR")
+         strategyName <- paste0("reversal_", avgOver, "_", returnToMean, "_", bearish, "_", bullish)
+      else
+         strategyName <- paste0("reversal_", inputName, "_", avgOver, "_", returnToMean, "_", bearish, "_", bullish)
+   }
+
    if (bearish==bullish) bullish = bearish + 1e-3 # bear==bull creates problems
+
+   ## Calculating startIndex
+   if (inputDF=="dat")             input <- dat[, inputName]
+   else if (inputDF=="signal")     input <- signal[, inputName]
+   else if (inputDF=="alloc")      input <- alloc[, inputName]
+   else if (inputDF=="TR")         input <- TR[, inputName]
+   else if (inputDF=="next30yrs")  input <- next30yrs[, inputName]
+   else stop("data frame ", inputDF, " not recognized")
+    startIndex <- sum(is.na(input)) + 2*avgOver + 2
    
    if (!(strategyName %in% colnames(TR)) | force) { # if data do not exist yet or we force recalculation:   
       if (!reversalName %in% colnames(dat)) 
          calcReversal(inputDF=inputDF, inputName=inputName, avgOver=avgOver, reversalName=reversalName)
       
-      for(i in (2*avgOver+2):numData)
+      for(i in startIndex:numData)
          dat[i, reversalName] <- dat[i, reversalName] - mean(dat[1:i-1, reversalName], na.rm=T)
       ## dat[, reversalName] = dat[, reversalName] - average of dat[, reversalName]
       ## i.e. we ensure that the average of dat[, reversalName] is 0
@@ -96,20 +110,20 @@ createReversalStrategy <- function(inputDF=def$reversalInputDF, inputName=def$re
       
       rawSignal <- numeric(numData)
       rawSignal <- NA
-      rawSignal[2*avgOver+2] <- 0
-      for (i in (2*avgOver+3):numData ) 
+      rawSignal[startIndex] <- 0
+      for (i in (startIndex+1):numData ) 
          rawSignal[i] <- rawSignal[i-1] + dat[i, reversalName] - returnToMean/100 * rawSignal[i-1]
       ## 'rawSignal' is essentially an integral of dat[, reversalName]
       ## 'returnToMean' brings 'rawSignal' back towards 0 over time, to avoid a long-term drift.
       
-      if (inputName=="TR")
-         startIndex <- 2*avgOver+1 + 12 # padding to allow settling down
-      else {
-         i=1
-         while ( is.na(dat[i, inputName]) )
-            i <- i+1
-         startIndex <- i + 2*avgOver + 12
-      }
+#       if (inputName=="TR")
+#          startIndex <- 2*avgOver+1 + 12 # padding to allow settling down
+#       else {
+#          i=1
+#          while ( is.na(dat[i, inputName]) )
+#             i <- i+1
+#          startIndex <- i + 2*avgOver + 12 + 100
+#       }
       
       calcReversalSignal(rawSignal, bearish=bearish, bullish=bullish, 
                          signalMin=signalMin, signalMax=signalMax, 
@@ -131,13 +145,30 @@ createReversalStrategy <- function(inputDF=def$reversalInputDF, inputName=def$re
       index <- which(parameters$strategy == strategyName)
       
       parameters$strategy[index]    <<- strategyName
-      if (type=="search") {
-         parameters$type[index]        <<- "search"
-         parameters$subtype[index]     <<- "reversal"        
-      } else {
-         parameters$type[index]        <<- "reversal"
-         parameters$subtype[index]     <<- inputName
-      }
+      if(inputName=="TR")
+         if (type=="search") {
+            parameters$type[index]    <<- "search"
+            parameters$subtype[index] <<- "reversal"        
+         } else {
+            parameters$type[index]    <<- "reversal"
+            parameters$subtype[index] <<- inputName
+         }
+      else if(substr(inputName, 1, 4)=="CAPE")
+         if (type=="search") {
+            parameters$type[index]    <<- "search"
+            parameters$subtype[index] <<- "reversal_CAPE"
+         } else {
+            parameters$type[index]    <<- "reversal_CAPE"
+            parameters$subtype[index] <<- inputName
+         }      
+      else if(substr(inputName, 1, 9)=="detrended")
+         if (type=="search") {
+            parameters$type[index]    <<- "search"
+            parameters$subtype[index] <<- "reversal_detrended"
+         } else {
+            parameters$type[index]    <<- "reversal_detrended"
+            parameters$subtype[index] <<- inputName
+         }
       parameters$inputDF[index]     <<- inputDF
       parameters$inputName[index]   <<- inputName
       parameters$startIndex[index]  <<- startIndex
@@ -171,7 +202,11 @@ calcOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$rever
          for ( bear in seq(minBear, maxBear, by=byBear) ) {     
             for ( delta in seq(minDelta, maxDelta, by=byDelta) ) {
                bull = bear + delta
-               strategyName <- paste0("reversal_", avgOver, "_", RTM, "_", bear, "_", bull)
+
+                  if (inputName=="TR")
+                     strategyName <- paste0("reversal_", avgOver, "_", RTM, "_", bear, "_", bull)
+                  else
+                     strategyName <- paste0("reversal_", inputName, "_", avgOver, "_", RTM, "_", bear, "_", bull)
                
                counterTot <- counterTot + 1 
                if(countOnly) {
@@ -206,8 +241,12 @@ searchForOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$
                                     futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
                                     minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.7, minScore=7.2,
                                     xMinVol=13, xMaxVol=17, xMinDD2=3, xMaxDD2=8.5,
-                                    col=F, plotType="symbols", nameLength=27, plotEvery=def$plotEvery, force=F) {
+                                    col=F, plotType="symbols", nameLength=27, plotEvery=def$plotEvery, 
+                                    referenceStrategies=c(def$typicalReversal1, def$typicalReversal2), force=F) {
 
+   if (dat$numericDate[numData] > 2000) # not 'search' time range
+      warning("The data set goes all the way to year ", floor(dat$numericDate[numData]), immediate. = T)
+   
    # calculate how many parameter sets will be run
    calcOptimalReversal(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOver, 
                        minRTM, maxRTM, byRTM, minBear, maxBear, byBear, minDelta, maxDelta, byDelta, 
@@ -223,8 +262,8 @@ searchForOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$
                        xMinVol, xMaxVol, xMinDD2, xMaxDD2, col, plotType, nameLength, plotEvery, force)
    
    print(dashes)
-   showSummaryForStrategy(def$typicalReversal1, nameLength=nameLength, costs=costs)
-   showSummaryForStrategy(def$typicalReversal2, nameLength=nameLength, costs=costs)
+   for ( i in 1:length(referenceStrategies) )
+      showSummaryForStrategy(referenceStrategies[i], nameLength=nameLength, costs=costs)
    plotAllReturnsVsTwo(col=col, searchPlotType=plotType,
                        xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2)
 }
