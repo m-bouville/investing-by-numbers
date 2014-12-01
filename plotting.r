@@ -15,16 +15,16 @@
 
 #default values of plotting parameters
 setPlottingDefaultValues <- function() {
-   def$yTRmin    <<-   6.8
+   def$yTRmin    <<-   7.5
    def$yTRmax    <<-  10
    
    def$pngWidth  <<-1024
    def$pngHeight <<- 768
    
    def$minVol    <<-  11.5
-   def$maxVol    <<-  18
+   def$maxVol    <<-  17.5
    def$minDD2    <<-   3
-   def$maxDD2    <<-  10.5
+   def$maxDD2    <<-  10
    def$maxTO     <<- 160
    
    def$plotEndYear <<- 2015.
@@ -39,9 +39,9 @@ setPlottingDefaultValues <- function() {
    def$colReversal  <<- "orange"
    def$colInflation <<- "purple"
    
-   def$colBoll_CAPE     <<- "palegreen4"   
+   def$colBoll_CAPE     <<- "darkolivegreen4"   
    def$colBoll_detrended<<- "seagreen3"   
-   def$colSMA_CAPE      <<- "darkolivegreen4"   
+   def$colSMA_CAPE      <<- "greenyellow"   
    def$colReversal_CAPE <<- "darkolivegreen"   
    
    def$colValue     <<- "blue"
@@ -52,33 +52,33 @@ setPlottingDefaultValues <- function() {
    def$pch          <<- 16L
    def$Mpch         <<- 15L
    
-   def$colConstantAlloc  <<- "sienna4"
+   def$colConstantAlloc  <<- "chocolate"
    def$colBonds     <<- "gray"
    
    # plotAllReturnsVsX()
-   def$type1 <<- "CAPE"
-   def$col1  <<- def$colCAPE_hy
+   def$type1 <<- "Bollinger"
+   def$col1  <<- def$colBollinger
    def$pch1  <<- def$pch
    
-   def$type2 <<- "detrended"
-   def$col2  <<- def$colDetrended
+   def$type2 <<- "SMA"
+   def$col2  <<- def$colSMA
    def$pch2  <<- def$pch
+   
+   def$type3 <<- "reversal"
+   def$col3  <<- def$colReversal
+   def$pch3  <<- def$pch
+   
+   def$type4 <<- "CAPE"
+   def$col4  <<- def$colCAPE_hy
+   def$pch4  <<- def$pch
+   
+   def$type5 <<- "detrended"
+   def$col5  <<- def$colDetrended
+   def$pch5  <<- def$pch
 
    #    def$type3 <<- "inflation"
    #    def$col3  <<- def$colInflation
    #    def$pch3  <<- def$pch
-   
-   def$type3 <<- "SMA"
-   def$col3  <<- def$colSMA
-   def$pch3  <<- def$pch
-   
-   def$type4 <<- "Bollinger"
-   def$col4  <<- def$colBollinger
-   def$pch4  <<- def$pch
-   
-   def$type5 <<- "reversal"
-   def$col5  <<- def$colReversal
-   def$pch5  <<- def$pch
    
    def$type6 <<- "Boll_CAPE"
    def$col6  <<- def$colBoll_CAPE
@@ -88,8 +88,8 @@ setPlottingDefaultValues <- function() {
    def$col7  <<- def$colBoll_detrended
    def$pch7  <<- def$pch
 
-   def$type8 <<- "reversal_CAPE"
-   def$col8  <<- def$colReversal_CAPE
+   def$type8 <<- "SMA_CAPE"
+   def$col8  <<- def$colSMA_CAPE
    def$pch8  <<- def$pch
    
    # plotAllReturnsVsX(): combined strategies
@@ -115,7 +115,7 @@ setPlottingDefaultValues <- function() {
    def$Spch     <<- def$pch # default symbol
    def$SpchM    <<- def$Mpch # empty square for combined strategies
    
-   def$lineCol   <<- def$colConstantAlloc
+   def$lineCol  <<- def$colConstantAlloc
 }
 
 
@@ -180,13 +180,13 @@ plotSomeSortOfReturn <- function(returnDF1, returnDF2, returnDF3, returnDF4,
 
 
 ##Wrapper passing the proper vectors to plotSomeSortOfReturn()
-plotReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTechnical, 
-                       stratName3=def$typicalValue, stratName4="stocks", 
+plotReturn <- function(stratName1="stocks", stratName2=def$typicalTechnical, 
+                       stratName3=def$typicalValue, stratName4=def$typicalBalanced, 
                        xVect=TR$numericDate, 
-                       col1=def$colBalanced, col2=def$colTechnical, col3=def$colValue, col4=def$colConstantAlloc, 
+                       col1=def$colConstantAlloc, col2=def$colTechnical, col3=def$colValue, col4=def$colBalanced, 
                        lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=2,
                        startYear=def$plotStartYear, endYear=def$plotEndYear, 
-                       costs=def$tradingCost, 
+                       costs=def$tradingCost, detrendBy=0,
                        minTR=.9, maxTR=def$maxTR, yLabel="", legendPlacement="topleft",
                        startIndex=def$startIndex, net=T, normalize=T,
                        pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
@@ -202,20 +202,31 @@ plotReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTec
          yLabel <- paste0("total return (%), net of costs of ", round(costs*100, 1), "%")   
       else # no notion of trading cost (e.g. for asset classes)
          yLabel <- paste0("total return (%)")
+      if (detrendBy != 0)
+         yLabel <- paste0(yLabel, " (detrended by ", detrendBy, "%)")
    }
    
    normDate <- (startYear-def$dataStartYear)*12+1
    
+   ## Rescaling maxTR (with the utmost mathematical precision) and minTR ("less precisely")
+   # fudgeFactor adds a margin of error to maxTR in case the maximum is not reach at the end of the range
+   fudgeFactor <- detrendBy^2 / 200 
+   if (maxTR==def$maxTR)
+      maxTR <- maxTR * exp( -detrendBy/100 * (endYear-startYear) ) * (1+fudgeFactor)
+   #orderOfMagnitude <- 10^(floor(log10(maxTR))-1)
+   #maxTR <- round( maxTR / orderOfMagnitude ) * orderOfMagnitude
+   if (minTR==.9) minTR <- minTR / (1+2*fudgeFactor)
+   
    stratNames <- c(stratName1, stratName2, stratName3, stratName4)
    returnDF  <- TR[, stratNames]
       
-   if(net & costs>0) # reduce TR because of costs
+   if( (net & costs>0) || detrendBy!=0 ) # reduce TR because of costs, or to detrend
       for (strat in 1:4) {
          index <- which(stats$strategy == stratNames[strat])
          if ( length(index>0) ) {
-            TOcost <- costs/12/stats$turnover[index]
+            rate <- costs/12/stats$turnover[index] + detrendBy/100/12
             for (i in startIndex:numData)
-               returnDF[i, strat] <- returnDF[i, strat] * exp(-TOcost*(i-startIndex))
+               returnDF[i, strat] <- returnDF[i, strat] * exp( -rate*(i-startIndex) )
          }
       }
       
@@ -237,9 +248,9 @@ plotReturn <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTec
 }
 
 
-plotAlloc <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTechnical, 
-                      stratName3=def$typicalValue, stratName4="stocks", 
-                      col1=def$colBalanced, col2=def$colTechnical, col3=def$colValue, col4=def$colConstantAlloc, 
+plotAlloc <- function(stratName1="stocks", stratName2=def$typicalTechnical, 
+                      stratName3=def$typicalValue, stratName4=def$typicalBalanced, 
+                      col1=def$colConstantAlloc, col2=def$colTechnical, col3=def$colValue, col4=def$colBalanced, 
                       lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=2,
                       startYear=def$plotStartYear, endYear=def$plotEndYear,
                       pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
@@ -251,7 +262,7 @@ plotAlloc <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTech
    normDate <- (startYear-def$dataStartYear)*12+1
    par(mar=c(2.7, 4.2, 1.5, 1.5))
    xRange <- c(startYear, endYear)
-   yRange <- c(3.4, 96.9)
+   yRange <- c(2.5, 98)
    
    if((stratName1 != "") && stratName1 %in% colnames(alloc)) {   
       plot(alloc$numericDate, 100*alloc[, stratName1], col=col1, xlab="", ylab="stock allocation (%)", 
@@ -281,75 +292,76 @@ plotAlloc <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTech
 }
 
 plotReturnAndAllocTechnical <- function(
-      stratName1=def$typicalSMA1, stratName2=def$typicalBoll1,
+      stratName1=def$typicalBoll1,     stratName2=def$typicalSMA1, 
       stratName3=def$typicalReversal1, stratName4=def$typicalTechnical,
-      col1=def$colSMA, col2=def$colBollinger, col3=def$colReversal, col4=def$colTechnical,
+      col1=def$colBollinger, col2=def$colSMA, col3=def$colReversal, col4=def$colTechnical,
       lwd1=1.5, lwd2=1.5, lwd3=1.5, lwd4=2,
       startYear=def$plotStartYear, endYear=def$plotEndYear, 
-      yLabel="", net=T, minTR=0.8, maxTR=def$maxTR, costs=def$tradingCost,
+      yLabel="", net=T, detrendBy=0, minTR=0.8, maxTR=def$maxTR, costs=def$tradingCost,
       pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
       pngName="figures/return_and_allocation-technical.png") {
    
    plotReturnAndAlloc(stratName1=stratName1, col1=col1, lwd1=lwd1, stratName2=stratName2, col2=col2, lwd2=lwd2,
               stratName3=stratName3, col3=col3, lwd3=lwd3, stratName4=stratName4, col4=col4, lwd4=lwd4, 
-              startYear=startYear, endYear=endYear, costs=costs, 
+              startYear=startYear, endYear=endYear, costs=costs, detrendBy=detrendBy, 
               yLabel=yLabel, net=net, minTR=minTR, maxTR=maxTR,
               pngOutput=pngOutput, pngWidth=pngWidth, pngHeight=pngHeight, pngName=pngName) 
 }
 
 plotReturnAndAllocValue <- function(
       stratName1=def$typicalCAPE_hy1, stratName2=def$typicalCAPE_hy2, 
-      stratName3=def$typicalCAPE_NH, stratName4=def$typicalDetrended1,
-      col1=def$colCAPE_hy, col2=def$colCAPE_hy, col3=def$colCAPE_NH, col4=def$colDetrended, 
-      lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=2,
+      stratName3=def$typicalValue, stratName4="stocks",
+      col1=def$colCAPE_hy, col2=def$colCAPE_hy, col3=def$colValue, col4=def$colConstantAlloc, 
+      lwd1=2, lwd2=1.5, lwd3=2, lwd4=2,
       #stratName4=def$typicalValue,     col4=def$colValue,     lwd4=2,
       startYear=def$plotStartYear, endYear=def$plotEndYear, 
-      yLabel="", net=T, minTR=0.8, maxTR=def$maxTR, costs=def$tradingCost,
+      yLabel="", net=T, detrendBy=0, minTR=0.8, maxTR=def$maxTR, costs=def$tradingCost,
       pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
       pngName="figures/return_and_allocation-value.png") {
    
    plotReturnAndAlloc(stratName1=stratName1, col1=col1, lwd1=lwd1, stratName2=stratName2, col2=col2, lwd2=lwd2,
                       stratName3=stratName3, col3=col3, lwd3=lwd3, stratName4=stratName4, col4=col4, lwd4=lwd4, 
-                      startYear=startYear, endYear=endYear, costs=costs, 
+                      startYear=startYear, endYear=endYear, costs=costs, detrendBy=detrendBy,
                       yLabel=yLabel, net=net, minTR=minTR, maxTR=maxTR,
                       pngOutput=pngOutput, pngWidth=pngWidth, pngHeight=pngHeight, pngName=pngName) 
 }
 
 plotReturnAndAllocHybrid <- function(
-      stratName1=def$typicalBoll_CAPE1, stratName2=def$typicalBoll_detrended, 
-      stratName3=def$typicalSMA_CAPE1, stratName4=def$typicalHybrid, 
-      col1=def$colBoll_CAPE, col2=def$colBoll_detrended, col3=def$colSMA_CAPE, col4=def$colHybrid, 
-      lwd1=1.5, lwd2=1.5, lwd3=2, lwd4=2,
+      stratName1=def$typicalBoll_CAPE1,     stratName2=def$typicalBoll_CAPE2, 
+      stratName3=def$typicalBoll_detrended, stratName4=def$typicalSMA_CAPE1, 
+      col1=def$colBoll_CAPE, col2=def$colBoll_CAPE, col3=def$colBoll_detrended, col4=def$colSMA_CAPE,
+      lwd1=1.5, lwd2=2, lwd3=2, lwd4=1.5,
       startYear=def$plotStartYear, endYear=def$plotEndYear, 
-      yLabel="", net=T, minTR=0.8, maxTR=def$maxTR, costs=def$tradingCost,
+      yLabel="", net=T, detrendBy=0, minTR=0.8, maxTR=def$maxTR, costs=def$tradingCost,
       pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
       pngName="figures/return_and_allocation-hybrid.png") {
    
    plotReturnAndAlloc(stratName1=stratName1, col1=col1, lwd1=lwd1, stratName2=stratName2, col2=col2, lwd2=lwd2,
                       stratName3=stratName3, col3=col3, lwd3=lwd3, stratName4=stratName4, col4=col4, lwd4=lwd4, 
-                      startYear=startYear, endYear=endYear, costs=costs, 
+                      startYear=startYear, endYear=endYear, costs=costs, detrendBy=detrendBy, 
                       yLabel=yLabel, net=net, minTR=minTR, maxTR=maxTR,
                       pngOutput=pngOutput, pngWidth=pngWidth, pngHeight=pngHeight, pngName=pngName) 
 }
 
 plotReturnAndAlloc <- function(
-      stratName1=def$typicalBalanced, stratName2=def$typicalTechnical, 
-      stratName3=def$typicalValue, stratName4=def$typicalHybrid, 
-      col1=def$colBalanced, col2=def$colTechnical, 
-      col3=def$colValue, col4=def$colHybrid, 
-      lwd1=3, lwd2=1.5, lwd3=1.5, lwd4=3,
+      stratName1=def$typicalTechnical, stratName2=def$typicalValue, 
+      stratName3=def$typicalHybrid,    stratName4=def$typicalBalanced, 
+      col1=def$colTechnical, col2=def$colValue, col3=def$colHybrid, col4=def$colBalanced, 
+      lwd1=1.5, lwd2=1.5, lwd3=1.5, lwd4=2.5,
       startYear=def$plotStartYear, endYear=def$plotEndYear, costs=def$tradingCost, 
-      minTR=.9, maxTR=def$maxTR, yLabelReturn="", 
+      detrendBy=0, minTR=.9, maxTR=def$maxTR, yLabelReturn="", 
       legendPlacement="topleft", net=T, normalize=T,
       pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
       pngName="figures/return_and_allocation.png") {
+   
    if(pngOutput)
       png(file=pngName, width=pngWidth, height=pngHeight)
 
-   par(mfrow = c(2, 1))
+   par(mfrow = c(4, 1))
+   layout( matrix(c(1,1,1,2)) ) # return plot takes up 3/4 of the height
    plotReturn(stratName1=stratName1, col1=col1, lwd1=lwd1, stratName2=stratName2, col2=col2, lwd2=lwd2,
               stratName3=stratName3, col3=col3, lwd3=lwd3, stratName4=stratName4, col4=col4, lwd4=lwd4, 
-              startYear=startYear, endYear=endYear, costs=costs, 
+              startYear=startYear, endYear=endYear, costs=costs, detrendBy=detrendBy,
               minTR=minTR, maxTR=maxTR, normalize=normalize, 
               yLabel=yLabelReturn, legendPlacement=legendPlacement, net=net)  
    plotAlloc(stratName1=stratName1, col1=col1, lwd1=lwd1, stratName2=stratName2, col2=col2, lwd2=lwd2,
@@ -366,18 +378,18 @@ plotReturnAndAlloc <- function(
 
 ## same but with stocks, bonds and 80/20 alloc, and without value and technical
 plotReturnAndAllocBalanced <- function(
-      stratName1=def$typicalBalanced, stratName2="stocks", stratName3="constantAlloc80_20", stratName4="bonds", 
-      col1=def$colBalanced, col2=def$colConstantAlloc, col3=def$colConstantAlloc, col4="gray", 
-      lwd1=3, lwd2=3, lwd3=1.5, lwd4=1.5,
+      stratName1="stocks", stratName2="bonds", stratName3=def$typicalValue, stratName4=def$typicalBalanced, 
+      col1=def$colConstantAlloc, col2=def$colBonds, col3=def$colValue, col4=def$colBalanced,
+      lwd1=2.5, lwd2=1.5, lwd3=1.5, lwd4=2.5,
       startYear=def$plotStartYear, endYear=def$plotEndYear, costs=def$tradingCost, 
-      minTR=.9, maxTR=def$maxTR, yLabelReturn="", 
+      detrendBy=0, minTR=.9, maxTR=def$maxTR, yLabelReturn="", 
       legendPlacement="topleft", net=T, normalize=T,
       pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
       pngName="figures/return_and_allocation_balanced.png") {
 
    plotReturnAndAlloc(stratName1=stratName1, col1=col1, lwd1=lwd1, stratName2=stratName2, col2=col2, lwd2=lwd2,
               stratName3=stratName3, col3=col3, lwd3=lwd3, stratName4=stratName4, col4=col4, lwd4=lwd4, 
-              startYear=startYear, endYear=endYear, costs=costs, 
+              startYear=startYear, endYear=endYear, costs=costs, detrendBy=detrendBy,
               minTR=minTR, maxTR=maxTR, normalize=normalize, 
               yLabel=yLabelReturn, legendPlacement=legendPlacement, net=net,
               pngOutput=pngOutput, pngWidth=pngWidth, pngHeight=pngHeight, pngName=pngName) 
@@ -838,22 +850,24 @@ plotRelativeFutureReturnVsStocks <- function
 }
 
 showPlotLegend <- function() {
-   print(paste("SMA:        ", def$colSMA) )
    print(paste("Bollinger:  ", def$colBollinger) )
+   print(paste("SMA:        ", def$colSMA) )
    print(paste("reversal:   ", def$colReversal) )
-   print(paste("CAPE:       ", def$colCAPE) )
+   print(paste("CAPE:       ", def$colCAPE_hy) )
    print(paste("detrended:  ", def$colDetrended) )
    print(paste("Boll(CAPE): ", def$colBoll_CAPE) )
    print(paste("Boll(detr.):", def$colBoll_detrended) )
-   print(paste("inflation:  ", def$colInflation) )
+   print(paste("SMA(CAPE):  ", def$colSMA_CAPE) )
+   #   print(paste("inflation:  ", def$colInflation) )
    print("")   
-   print(paste("value:      ", def$colValue) )
    print(paste("technical:  ", def$colTechnical) )
+   print(paste("value:      ", def$colValue) )
    print(paste("hybrid:     ", def$colHybrid) )
    print(paste("balanced:   ", def$colBalanced) )
-   
-#   print(paste("ConstantAlloc:", def$colConstantAlloc) )
-print("")
+   print("")   
+   print(paste("stocks:     ", def$colConstantAlloc) )
+   print(paste("bonds:      ", def$colBonds) )
+   print("")
 }
 
 
