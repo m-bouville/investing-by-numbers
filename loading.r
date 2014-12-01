@@ -32,7 +32,7 @@ setDefaultValues <- function(dataSplit, futureYears,
    message("default tradingCost:         ", def$tradingCost*100, "% / per year of turnover")
 
    # default value for the trading costs
-   if ( round((tradingCost+riskAsCost)*100,2) %in% c(0.5, 1, 2, 3, 4) ) {
+   if ( round((tradingCost+riskAsCost)*100,2) %in% c(0.5, 1, 2, 3, 4, 6, 8, 10) ) {
    def$riskAsCost    <<- riskAsCost 
    message("default riskAsCost:          ", def$riskAsCost*100, "% / per year of turnover")
    } else stop("The sum of tradingCost and riskAsCost can only be one of 0.5%, 1%, 2%, 3% or 4%, not ", 
@@ -40,15 +40,16 @@ setDefaultValues <- function(dataSplit, futureYears,
 
    # default value for the trading costs for technical strategies
    #    with a high value it is less common to sell to buy back the next month
-   if ( round((tradingCost+riskAsCostTechnical)*100,2) %in% c(0.5, 1, 2, 3, 4) ) {
+   if ( round((tradingCost+riskAsCostTechnical)*100,2) %in% c(0.5, 1, 2, 3, 4, 6, 8, 10) ) {
       def$riskAsCostTechnical     <<- riskAsCostTechnical 
       message("default riskAsCostTechnical: ", def$riskAsCostTechnical*100, "% / per year of turnover")
    } else stop("The sum of tradingCost and riskAsCostTechnical can only be one of 0.5%, 1%, 2%, 3% or 4%, not ", 
                (tradingCost+riskAsCostTechnical)*100, "%." )
    
    def$dataStartYear <<- 1871
-   def$startIndex    <<- round(10.5*12+1)
-   def$plotStartYear <<- (def$startIndex-1)/12+def$dataStartYear
+   def$startIndex    <<- 105  # a good guess
+   def$plotStartYear <<- 1882
+   
    
    def$CPUnumber     <<-  1 # Parallelization does not work
    def$plotEvery     <<- 20 # replot every n seconds when searchnig for parameters
@@ -95,11 +96,12 @@ createStatsDF <- function(futureYears=def$futureYears) {
                         TR = numeric(),  # average real total return (exponential regression)
                         netTR0.5 = numeric(),  # average real total return net of 0.5% of trading costs
                         netTR1 = numeric(),  # average real total return net of 1% of costs (trading + risk)
-                        netTR2 = numeric(),  # average real total return net of 2% of costs (trading + risk)
-                        netTR3 = numeric(),  # average real total return net of 3% of costs (trading + risk)
-                        netTR4 = numeric(),  # average real total return net of 4% of costs (trading + risk)
-                        #                         eval(parse(text=paste0("median", futureYears))), 
-                        #                         parse(text=paste0("five", futureYears)),
+                        netTR2 = numeric(),  # etc. 
+                        netTR3 = numeric(),  # etc. 
+                        netTR4 = numeric(),  
+                        netTR6 = numeric(),  
+                        netTR8 = numeric(),  
+                        netTR10= numeric(),  
                         volatility = numeric(), 
                         avgStockAlloc = numeric(), # average allocation to stocks
                         latestStockAlloc = numeric(), # allocation to stocks as of the last date of the data
@@ -154,14 +156,14 @@ splitData <- function(dataSplit, force) {
       
       def$maxTR  <<-400
       def$yTRmin <<-  7.8
-      def$yTRmax <<-  9.8
+      def$yTRmax <<- 10.2
       def$minVol <<- 12.5
       def$maxVol <<- 20.5
       def$minDD2 <<-  3
       def$maxDD2 <<- 11.5
       #def$coeffDD2 <<- def$coeffDD2 * 2 # DD2 is half as big with half as many years, hence the rescaling
  
-      DD <<- DD[1:28, ]
+      DD <<- DD[1:26, ]
       numDD <<- dim(DD)[[1]]
       
       if (!force)
@@ -173,7 +175,7 @@ splitData <- function(dataSplit, force) {
       dat <<- dat[startIndex:numData, ] # we keep only the second half
       numData <<- numData - startIndex + 1
       def$dataStartYear  <<- (startIndex-1)/12 + def$dataStartYear 
-      def$plotStartYear  <<- def$dataStartYear + def$startIndex %/% 12 + 1 
+      def$plotStartYear  <<- 1942
       
       def$maxTR  <<-600
       def$yTRmin <<-  5.5
@@ -234,15 +236,17 @@ loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=T, lastMon
    rawDat <- readWorksheet(wk, sheet="Data", startRow=8)
    
    numData <<- dim(rawDat)[1]-1 # number of rows (exclude row of comments)
-   message(paste0("According to the xls file, \'", rawDat$P[numData+1], "\'")) # displaying information given in xls file
-   message(paste0("According to the xls file, \'", rawDat$CPI[numData+1], "\'"))
+   if (dataSplit!="search") { # if search the the message are irrelevant
+      message(paste0("According to the xls file, \'", rawDat$P[numData+1], "\'")) # displaying information given in xls file
+      message(paste0("According to the xls file, \'", rawDat$CPI[numData+1], "\'"))
+   }
    rawDat <- rawDat[-(numData+1), ] # removing the row containing the information just displayed
    if (lastMonthSP500=="") {
       # removing the current month, since it is not data for the end of month
       rawDat <- rawDat[-numData, ] 
       numData <<- numData-1
    }
-   else {
+   else if (dataSplit!="search") { # if last-month S&P 500 is of relevance
       rawDat$P[numData] <- lastMonthSP500
       if (rawDat$P[numData-1] == lastMonthSP500)
          warning( "The value of lastMonthSP500 (", lastMonthSP500, ") is equal to the S&P 500 value for ", rawDat$Date[numData-1], immediate.=T )
@@ -272,14 +276,15 @@ loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=T, lastMon
                       dividend   = as.numeric(rawDat$D), # loads nominal dividend (real dividend will be calculated below)
                       price      = as.numeric(rawDat$P), # loads nominal S&P price (real price will be calculated below)
                       earnings   = as.numeric(rawDat$E), # loads nominal earnings (real earnings will be calculated below)
-                      TR= numeric(numData),
+                      TR         = numeric(numData),
                       bonds      = numeric(numData)
    )
    
-   refCPI       <<- dat$CPI[numData] # reference for inflation
-   dat$price    <<- dat$price    / dat$CPI * refCPI # calculating real price
-   dat$dividend <<- dat$dividend / dat$CPI * refCPI # calculating real dividend
-   dat$earnings <<- dat$earnings / dat$CPI * refCPI # calculating real earnings
+   dat$numericDate <<- dat$numericDate+0.49/12 # data are actually for end of month, not middle
+   refCPI          <<- dat$CPI[numData] # reference for inflation
+   dat$price       <<- dat$price    / dat$CPI * refCPI # calculating real price
+   dat$dividend    <<- dat$dividend / dat$CPI * refCPI # calculating real dividend
+   dat$earnings    <<- dat$earnings / dat$CPI * refCPI # calculating real earnings
    
    dat$TR[1] <<- 1
    for(i in 2:numData)
@@ -287,7 +292,7 @@ loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=T, lastMon
    
    dat$bonds <<- read.csv("./data/bonds.csv", header=T)[1:numData, 1]
    # message("Real bond prices were imported from an Excel calculation.")
-   if (lastMonthSP500!="") {
+   if (lastMonthSP500!="" && dataSplit!="search" ) {
       dat$bonds[numData] <<- dat$bonds[numData-1]
       message( "dat$bonds[", numData, "] set to the value of dat$bonds[", numData-1, "], i.e. ", dat$bonds[numData-1] )
    }
@@ -339,140 +344,157 @@ makeStringsFactors <- function() {
 }
 
 # Generating typical strategies
-createTypicalStrategies <- function(extrapolateDividends=T, force=F) {
+createTypicalStrategies <- function(extrapolateDividends=T, costs=def$tradingCost, 
+                                    coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
    #message("Creating entries for the typical strategies")
    
    ## Technical strategies
-   createSMAstrategy(inputDF=def$SMAinputDF, inputName=def$SMAinputName, SMA1=def$SMA1_1, SMA2=def$SMA2_1, 
-                     bearish=def$SMAbearish1, bullish=def$SMAbullish1, 
-                     signalMin=def$signalMin, signalMax=def$signalMax,
-                     futureYears=def$futureYears, costs=def$tradingCost, 
-                     coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
-   #    createSMAstrategy(inputDF=def$SMAinputDF, inputName=def$SMAinputName, SMA1=def$SMA1_2, SMA2=def$SMA2_2, 
-   #                      bearish=def$SMAbearish2, bullish=def$SMAbullish2, 
-   #                      signalMin=def$signalMin, signalMax=def$signalMax,
-   #                      futureYears=def$futureYears, costs=def$tradingCost, 
-   #                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
-   
    createBollStrategy(inputDF=def$BollInputDF, inputName=def$BollInputName, avgOver=def$BollAvgOver1, 
                       bearish=def$BollBearish1, bullish=def$BollBullish1, 
                       signalMin=def$signalMin, signalMax=def$signalMax,
-                      futureYears=def$futureYears, costs=def$tradingCost, 
-                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force) 
+                      futureYears=def$futureYears, costs=costs, 
+                      coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
    createBollStrategy(inputDF=def$BollInputDF, inputName=def$BollInputName, avgOver=def$BollAvgOver2, 
                       bearish=def$BollBearish2, bullish=def$BollBullish2, 
                       signalMin=def$signalMin, signalMax=def$signalMax,
-                      futureYears=def$futureYears, costs=def$tradingCost, 
-                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)   
+                      futureYears=def$futureYears, costs=costs, 
+                      coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)   
+   
+   createSMAstrategy(inputDF=def$SMAinputDF, inputName=def$SMAinputName, SMA1=def$SMA1_1, SMA2=def$SMA2_1, 
+                     bearish=def$SMAbearish1, bullish=def$SMAbullish1, 
+                     signalMin=def$signalMin, signalMax=def$signalMax,
+                     futureYears=def$futureYears, costs=costs, 
+                     coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+   createSMAstrategy(inputDF=def$SMAinputDF, inputName=def$SMAinputName, SMA1=def$SMA1_2, SMA2=def$SMA2_2, 
+                     bearish=def$SMAbearish2, bullish=def$SMAbullish2, 
+                     signalMin=def$signalMin, signalMax=def$signalMax,
+                     futureYears=def$futureYears, costs=costs, 
+                     coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    
    createReversalStrategy(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
                           avgOver=def$reversalAvgOver1, returnToMean=def$reversalReturnToMean1, 
                           bearish=def$reversalBearish1, bullish=def$reversalBullish1, 
                           signalMin=def$signalMin, signalMax=def$signalMax,
-                          futureYears=def$futureYears, costs=def$tradingCost, 
-                          coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force) 
+                          futureYears=def$futureYears, costs=costs, 
+                          coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
    #    createReversalStrategy(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
    #                           avgOver=def$reversalAvgOver2, returnToMean=def$reversalReturnToMean2, 
    #                           bearish=def$reversalBearish2, bullish=def$reversalBullish2, 
    #                           signalMin=def$signalMin, signalMax=def$signalMax,
-   #                           futureYears=def$futureYears, costs=def$tradingCost, 
-   #                           coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force) 
+   #                           futureYears=def$futureYears, costs=costs, 
+   #                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
 
    
    ## Value strategies
-   createCAPEstrategy(years=def$CAPEyears_hy1, cheat=def$CAPEcheat, avgOver=def$CAPEavgOver_hy1, 
+   createCAPEstrategy(years=def$CAPEyears_hy1, cheat=def$CAPEcheat1, avgOver=def$CAPEavgOver_hy1, 
                       hysteresis=T, hystLoopWidthMidpoint=def$hystLoopWidthMidpoint1,
                       hystLoopWidth=def$hystLoopWidth1, slope=def$slope1,
                       signalMin=def$signalMin, signalMax=def$signalMax,
-                      futureYears=def$futureYears, costs=def$tradingCost, 
-                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
-   createCAPEstrategy(years=def$CAPEyears_hy2, cheat=def$CAPEcheat, avgOver=def$CAPEavgOver_hy2, 
+                      futureYears=def$futureYears, costs=costs, 
+                      coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+   createCAPEstrategy(years=def$CAPEyears_hy2, cheat=def$CAPEcheat2, avgOver=def$CAPEavgOver_hy2, 
                       hysteresis=T, hystLoopWidthMidpoint=def$hystLoopWidthMidpoint2,
                       hystLoopWidth=def$hystLoopWidth2, slope=def$slope2,
                       signalMin=def$signalMin, signalMax=def$signalMax,
-                      futureYears=def$futureYears, costs=def$tradingCost, 
-                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
-   createCAPEstrategy(years=def$CAPEyears_NH, cheat=def$CAPEcheat, avgOver=def$CAPEavgOver_NH, 
-                      hysteresis=F, bearish=def$CAPEbearish, bullish=def$CAPEbullish, 
-                      signalMin=def$signalMin, signalMax=def$signalMax,
-                      futureYears=def$futureYears, costs=def$tradingCost, 
-                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)  
-   
-   createDetrendedStrategy(inputDF=def$detrendedInputDF, inputName=def$detrendedInputName, 
-                           avgOver=def$detrendedAvgOver1, 
-                           bearish=def$detrendedBearish1, bullish=def$detrendedBullish1, 
-                           signalMin=def$signalMin, signalMax=def$signalMax,
-                           futureYears=def$futureYears, costs=def$tradingCost, 
-                           coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
+                      futureYears=def$futureYears, costs=costs, 
+                      coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+   #    createCAPEstrategy(years=def$CAPEyears_NH, cheat=def$CAPEcheat, avgOver=def$CAPEavgOver_NH, 
+   #                       hysteresis=F, bearish=def$CAPEbearish, bullish=def$CAPEbullish, 
+   #                       signalMin=def$signalMin, signalMax=def$signalMax,
+   #                       futureYears=def$futureYears, costs=costs, 
+   #                       coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)  
+   #    
+   #    createDetrendedStrategy(inputDF=def$detrendedInputDF, inputName=def$detrendedInputName, 
+   #                            avgOver=def$detrendedAvgOver1, 
+   #                            bearish=def$detrendedBearish1, bullish=def$detrendedBullish1, 
+   #                            signalMin=def$signalMin, signalMax=def$signalMax,
+   #                            futureYears=def$futureYears, costs=costs, 
+   #                            coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    #    createDetrendedStrategy(inputDF=def$detrendedInputDF, inputName=def$detrendedInputName, 
    #                            avgOver=def$detrendedAvgOver2, 
    #                            bearish=def$detrendedBearish2, bullish=def$detrendedBullish2, 
    #                            signalMin=def$signalMin, signalMax=def$signalMax,
-   #                            futureYears=def$futureYears, costs=def$tradingCost, 
-   #                            coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
+   #                            futureYears=def$futureYears, costs=costs, 
+   #                            coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    
    ## Hybrid strategies
-   if (!(def$Boll_CAPEinputName1 %in% colnames(dat))) calcCAPE(years=def$Boll_CAPEyears1, cheat=def$CAPEcheat)
-   createBollStrategy(inputDF=def$Boll_CAPEinputDF1, inputName=def$Boll_CAPEinputName1, avgOver=def$Boll_CAPEavgOver1,
+   if (!(def$Boll_CAPEinputName1 %in% colnames(dat))) 
+      calcCAPE(years=def$Boll_CAPEyears1, cheat=def$Boll_CAPEcheat1)
+   createBollStrategy(inputDF=def$Boll_CAPEinputDF, inputName=def$Boll_CAPEinputName1, avgOver=def$Boll_CAPEavgOver1,
                       bearish=def$Boll_CAPEbearish1, bullish=def$Boll_CAPEbullish1, strategyName="",
                       signalMin=def$signalMin, signalMax=def$signalMax,
-                      futureYears=def$futureYears, costs=def$tradingCost, 
-                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force) 
-   #    if (!(def$Boll_CAPEinputName2 %in% colnames(dat))) calcCAPE(years=def$Boll_CAPEyears2, cheat=def$CAPEcheat)
-   #    createBollStrategy(inputDF=def$Boll_CAPEinputDF2, inputName=def$Boll_CAPEinputName2, avgOver=def$Boll_CAPEavgOver2,
-   #                       bearish=def$Boll_CAPEbearish2, bullish=def$Boll_CAPEbullish2, strategyName="",
-   #                       signalMin=def$signalMin, signalMax=def$signalMax,
-   #                       futureYears=def$futureYears, costs=def$tradingCost, 
-   #                       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force) 
-   createBollStrategy(inputDF="dat", inputName="detrended_TR", avgOver=19, 
-                      bearish=-143, bullish=-143, strategyName="Boll_detrended",
-                      signalMin=def$signalMin, signalMax=def$signalMax,
-                      futureYears=def$futureYears, costs=def$tradingCost, 
-                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)   
+                      futureYears=def$futureYears, costs=costs, 
+                      coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
 
-   if (!(def$SMA_CAPEinputName1 %in% colnames(dat))) calcCAPE(years=def$SMA_CAPEyears1, cheat=def$CAPEcheat)
+   if (!(def$Boll_CAPEinputName2 %in% colnames(dat))) 
+      calcCAPE(years=def$Boll_CAPEyears2, cheat=def$Boll_CAPEcheat2)
+   createBollStrategy(inputDF=def$Boll_CAPEinputDF, inputName=def$Boll_CAPEinputName2, avgOver=def$Boll_CAPEavgOver2,
+                      bearish=def$Boll_CAPEbearish2, bullish=def$Boll_CAPEbullish2, strategyName="",
+                      signalMin=def$signalMin, signalMax=def$signalMax,
+                      futureYears=def$futureYears, costs=costs, 
+                      coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
+
+   if (!(def$Boll_detrendedInputName %in% colnames(dat))) 
+      calcDetrended(def$Boll_detrendedInputDF, "TR")
+   createBollStrategy(inputDF=def$Boll_detrendedInputDF, inputName=def$Boll_detrendedInputName, 
+                      avgOver=def$Boll_detrendedAvgOver1, bearish=def$Boll_detrendedBearish1, 
+                      bullish=def$Boll_detrendedBullish1, strategyName="",
+                      signalMin=def$signalMin, signalMax=def$signalMax,
+                      futureYears=def$futureYears, costs=costs, 
+                      coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)   
+
+   if (!(def$SMA_CAPEinputName1 %in% colnames(dat))) calcCAPE(years=def$SMA_CAPEyears1, cheat=def$SMA_CAPEcheat1)
    createSMAstrategy(inputDF=def$SMA_CAPEinputDF, inputName=def$SMA_CAPEinputName1, SMA1=def$SMA_CAPE_SMA1_1, 
                      SMA2=def$SMA_CAPE_SMA2_1, bearish=def$SMA_CAPEbearish1, bullish=def$SMA_CAPEbullish1, 
                      signalMin=def$signalMin, signalMax=def$signalMax,
-                     futureYears=def$futureYears, costs=def$tradingCost, 
-                     coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
-   if (!(def$SMA_CAPEinputName2 %in% colnames(dat))) calcCAPE(years=def$SMA_CAPEyears2, cheat=def$CAPEcheat)
+                     futureYears=def$futureYears, costs=costs, 
+                     coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+   if (!(def$SMA_CAPEinputName2 %in% colnames(dat))) calcCAPE(years=def$SMA_CAPEyears2, cheat=def$SMA_CAPEcheat2)
    createSMAstrategy(inputDF=def$SMA_CAPEinputDF, inputName=def$SMA_CAPEinputName2, SMA1=def$SMA_CAPE_SMA1_2, 
                      SMA2=def$SMA_CAPE_SMA2_2, bearish=def$SMA_CAPEbearish2, bullish=def$SMA_CAPEbullish2, 
                      signalMin=def$signalMin, signalMax=def$signalMax,
-                     futureYears=def$futureYears, costs=def$tradingCost, 
-                     coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
+                     futureYears=def$futureYears, costs=costs, 
+                     coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
 
-   if (!(def$reversal_CAPEinputName1 %in% colnames(dat))) calcCAPE(years=def$reversal_CAPEyears1, cheat=def$CAPEcheat)
-   createReversalStrategy(inputDF=def$reversal_CAPEinputDF, inputName=def$reversal_CAPEinputName1, 
-                          avgOver=def$reversal_CAPEavgOver1, returnToMean=def$reversal_CAPEreturnToMean1, 
-                          bearish=def$reversal_CAPEbearish1, bullish=def$reversal_CAPEbullish1, 
-                          signalMin=def$signalMin, signalMax=def$signalMax,
-                          futureYears=def$futureYears, costs=def$tradingCost, 
-                          coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force) 
-   if (!(def$reversal_CAPEinputName2 %in% colnames(dat))) calcCAPE(years=def$reversal_CAPEyears2, cheat=def$CAPEcheat)
-   createReversalStrategy(inputDF=def$reversal_CAPEinputDF, inputName=def$reversal_CAPEinputName2, 
-                          avgOver=def$reversal_CAPEavgOver2, returnToMean=def$reversal_CAPEreturnToMean2, 
-                          bearish=def$reversal_CAPEbearish2, bullish=def$reversal_CAPEbullish2, 
-                          signalMin=def$signalMin, signalMax=def$signalMax,
-                          futureYears=def$futureYears, costs=def$tradingCost, 
-                          coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force) 
+   #    if (!(def$reversal_CAPEinputName1 %in% colnames(dat))) calcCAPE(years=def$reversal_CAPEyears1, cheat=def$reversal_CAPEcheat1)
+   #    createReversalStrategy(inputDF=def$reversal_CAPEinputDF, inputName=def$reversal_CAPEinputName1, 
+   #                           avgOver=def$reversal_CAPEavgOver1, returnToMean=def$reversal_CAPEreturnToMean1, 
+   #                           bearish=def$reversal_CAPEbearish1, bullish=def$reversal_CAPEbullish1, 
+   #                           signalMin=def$signalMin, signalMax=def$signalMax,
+   #                           futureYears=def$futureYears, costs=costs, 
+   #                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
+   #    if (!(def$reversal_CAPEinputName2 %in% colnames(dat))) calcCAPE(years=def$reversal_CAPEyears2, cheat=def$reversal_CAPEcheat2)
+   #    createReversalStrategy(inputDF=def$reversal_CAPEinputDF, inputName=def$reversal_CAPEinputName2, 
+   #                           avgOver=def$reversal_CAPEavgOver2, returnToMean=def$reversal_CAPEreturnToMean2, 
+   #                           bearish=def$reversal_CAPEbearish2, bullish=def$reversal_CAPEbullish2, 
+   #                           signalMin=def$signalMin, signalMax=def$signalMax,
+   #                           futureYears=def$futureYears, costs=costs, 
+   #                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
    
    ## Combined strategies
-   combineStrategies(def$technicalStrategies, def$technicalFractions, 
-                     type="combined", subtype="technical", combineMode="weighted", costs=def$tradingCost, 
-                     coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
 
-   combineStrategies(def$valueStrategies, def$valueFractions,
-                     type="combined", subtype="value", combineMode="weighted", costs=def$tradingCost, 
-                     coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
+   combineStrategies(inputStrategyName=def$technicalStrategies, score=def$technicalScores, subtype="technical", 
+                     minScore=def$minScoreTechnical,
+                     costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+
+   combineStrategies(inputStrategyName=def$valueStrategies, score=def$valueScores, subtype="value", 
+                     minScore=def$minScoreValue, 
+                     costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    
-   combineStrategies(def$hybridStrategies, def$hybridFractions,
-                     type="combined", subtype="hybrid", combineMode="weighted", costs=def$tradingCost, 
-                     coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
+   combineStrategies(inputStrategyName=def$hybridStrategies, score=def$hybridScores, subtype="hybrid", 
+                     minScore=def$minScoreHybrid,
+                     costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    
-   combineStrategies(def$balancedStrategies, def$balancedFractions,
-                     type="combined", subtype="balanced", combineMode=def$balancedCombineMode,
-                     costs=def$tradingCost, 
-                     coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=force)
+   combineStrategies(inputStrategyName=def$balancedStrategies, score=def$balancedScores, subtype="balanced", 
+                     minScore=def$minScoreBalanced, 
+                     costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
+   
+   def$startIndex    <<- max(parameters$startIndex)
+   
+
+#    combineStrategies(inputStrategyName=c(def$technicalStrategies, def$valueStrategies, def$hybridStrategies), 
+#                      score=c(def$technicalScores, def$valueScores, def$hybridScores), subtype="balanced", 
+#                      minScore=def$minScore, maxScore=def$maxScore, strategyName="balanced2",
+#                      costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
+
 }

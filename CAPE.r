@@ -17,10 +17,13 @@
 
 #default values of parameters
 setCAPEdefaultValues <- function() {
-   def$CAPEcheat    <<- 2L
+   # at the beginning of the data (for the first 'years' years), 
+   #    earnings are averaged over (years-cheat) instead of 'years'
+   def$CAPEcheat       <<- 4
    
    ## CAPE strategy with hysteresis
    def$CAPEyears_hy1   <<- 10L
+   def$CAPEcheat1      <<- def$CAPEcheat
    def$CAPEavgOver_hy1 <<- 32L           #34L
    def$hystLoopWidthMidpoint1 <<- 19.
    def$hystLoopWidth1  <<- 7.            # 6.4
@@ -29,6 +32,7 @@ setCAPEdefaultValues <- function() {
                                   def$hystLoopWidthMidpoint1, "_", def$hystLoopWidth1, "_", def$slope1)
 
    def$CAPEyears_hy2   <<- 6L
+   def$CAPEcheat2      <<- 0   # given how small 'years' is, we need no 'cheat' at all
    def$CAPEavgOver_hy2 <<- 16L 
    def$hystLoopWidthMidpoint2 <<- 16.
    def$hystLoopWidth2  <<- 16
@@ -100,6 +104,7 @@ calcCAPEsignalWithHysteresis <- function(CAPEname, hystLoopWidthMidpoint=def$hys
                                          hystLoopWidth=def$hystLoopWidth2, slope=def$slope2,
                                          signalMin=def$signalMin, signalMax=def$signalMax, 
                                          startIndex=def$startIndex, strategyName="") {
+   
    bullish <- hystLoopWidthMidpoint - hystLoopWidth/2 + (0.5-signalMin)*slope
    bearish <- hystLoopWidthMidpoint + hystLoopWidth/2 - (signalMax-0.5)*slope
    
@@ -136,6 +141,7 @@ calcCAPEsignalWithHysteresis <- function(CAPEname, hystLoopWidthMidpoint=def$hys
          if (processedCAPE[i] >= signalMax) processedCAPE[i] <- signalMax
       }
    } 
+   signal[1:(startIndex-1), strategyName] <<- NA
    signal[dateRange, strategyName] <<- processedCAPE[dateRange]
 }
 

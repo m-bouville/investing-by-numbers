@@ -244,8 +244,8 @@ searchForOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$
                                     col=F, plotType="symbols", nameLength=27, plotEvery=def$plotEvery, 
                                     referenceStrategies=c(def$typicalReversal1, def$typicalReversal2), force=F) {
 
-   if (dat$numericDate[numData] > 2000) # not 'search' time range
-      warning("The data set goes all the way to year ", floor(dat$numericDate[numData]), immediate. = T)
+   if (dataSplit != "search") 
+      warning("Doing a search for parameters in '", dataSplit, "' mode.", immediate.=T)
    
    # calculate how many parameter sets will be run
    calcOptimalReversal(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOver, 

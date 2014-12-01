@@ -48,17 +48,21 @@ drawdown <- function(strategyName, startYear, endYear) {
    startIndex <- (startYear-def$dataStartYear)*12+1
    endIndex <- min((endYear-def$dataStartYear)*12, numData)
    
-   DD <- 1
-   highValue <- -1
-   
-   for (i in startIndex:(endIndex-1) ) 
-      if ( !is.na(TR[i, strategyName]) ) {
-         if (TR[i, strategyName] > highValue)  
-            highValue <- TR[i, strategyName]
-         else if (TR[i, strategyName] / highValue < DD)
-            DD <- TR[i, strategyName] / highValue
-      }   
-   return(DD-1)
+   if ( is.na( TR[startIndex, strategyName] ) )
+      return(NA) # DD cannot be calculated
+   else {
+      DD <- 1
+      highValue <- -1
+      
+      for (i in startIndex:(endIndex-1) ) 
+         if ( !is.na(TR[i, strategyName]) ) {
+            if (TR[i, strategyName] > highValue)  
+               highValue <- TR[i, strategyName]
+            else if (TR[i, strategyName] / highValue < DD)
+               DD <- TR[i, strategyName] / highValue
+         }   
+      return(DD-1)
+   }
 }
 
 # Adds values for all drawdowns to the DD data frame
@@ -69,8 +73,11 @@ CalcAllDrawdowns <- function(strategyName, force=F) {
          DD[i, strategyName] <<- drawdown(strategyName, DD$startYear[i], DD$endYear[i])
       }
    }
-   if ( is.na(DD[1, strategyName]) ) # If 1st DD cannot be computed b/c it is too early
-      DD[1, strategyName] <<- -0.18  #    we assume the worst, i.e. the drawdown of stocks 
+   for (i in 1:5)
+      if ( is.na(DD[i, strategyName]) ) {         # If first drawdowns cannot be computed b/c it is too early
+         DD[i, strategyName] <<- DD[i, "stocks"]  #    we assume the worst, i.e. the drawdown of stocks
+         warning("A drawdown for '", strategyName, "' had to be approximated.")
+      }
 }
 
 # Displays drawdowns worse than the threshold

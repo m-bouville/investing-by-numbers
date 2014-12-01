@@ -121,7 +121,8 @@ createBollStrategy <- function(inputDF=def$BollInputDF, inputName=def$BollInputN
          } else {
             parameters$type[index]    <<- paste0("Boll_CAPE")
             parameters$subtype[index] <<- inputName
-         }      else if(substr(inputName, 1, 9)=="detrended")
+         }      
+      else if(substr(inputName, 1, 9)=="detrended")
          if (type=="search") {
             parameters$type[index]    <<- "search"
             parameters$subtype[index] <<- paste0("Boll_detrended")
@@ -165,7 +166,7 @@ calcOptimalBoll <- function(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOve
             
             counterTot <- counterTot + 1 
             if(countOnly) {
-               if ( !(strategyName %in% colnames(TR)) | !(strategyName %in% colnames(alloc)) )
+               if ( force || !(strategyName %in% colnames(TR)) || !(strategyName %in% colnames(alloc)) )
                   counterNew <- counterNew + 1                  
             } else {
                createBollStrategy(inputDF, inputName, avgOver=avgOver, type=type,
@@ -201,6 +202,11 @@ searchForOptimalBoll <- function(inputDF="dat", inputName="TR",
                                  type="search", col=F, plotType="symbols", 
                                  nameLength=20, plotEvery=def$plotEvery, 
                                  referenceStrategies=c(def$typicalBoll1, def$typicalBoll2), force=F) {
+ 
+   if (dataSplit != "search") 
+      warning("Doing a search for parameters in '", dataSplit, "' mode.", immediate.=T)
+   
+   cleanUpStrategies()
    
    # calculate how many parameters sets will be run
    calcOptimalBoll(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOver, 
@@ -228,15 +234,15 @@ searchForOptimalBoll <- function(inputDF="dat", inputName="TR",
 }
 
 
-searchForTwoOptimalBoll <- function(plotType="symbols", force=F) {
+searchForTwoOptimalBoll <- function(minScore1=7, minScore2= 6, plotType="symbols", force=F) {
    print("Bollinger 1...")
    searchForOptimalBoll(minAvgOver= 13L, maxAvgOver =15L, byAvgOver=1L, 
                         minBear   =-37,  maxBear   =-25,  byBear  = .5, 
-                        minDelta  =  0,  maxDelta  =  3,  byDelta = .5, minScore=7.11)
+                        minDelta  =  0,  maxDelta  =  3,  byDelta = .5, minScore=minScore1)
    print("")
    print("Bollinger 2...")
    searchForOptimalBoll(minAvgOver=  9L, maxAvgOver= 12L, byAvgOver=1L, 
                         minBear   = 42,  maxBear   = 52,  byBear  = .5, 
-                        minDelta  =  0,  maxDelta  =  2,  byDelta = .5, minScore=5.7)
+                        minDelta  =  0,  maxDelta  =  2,  byDelta = .5, minScore=minScore2)
 }
 

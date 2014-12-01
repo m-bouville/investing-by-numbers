@@ -98,6 +98,7 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
    
    totTime <- proc.time()
    
+   dataSplit <<- numeric(); dataSplit <<- dataSplit
    setDefaultValues(dataSplit=dataSplit, futureYears=futureYears, 
                     tradingCost=tradingCost, riskAsCost=riskAsCost, riskAsCostTechnical=riskAsCostTechnical, force=force)
    if(!file.exists("./data")) dir.create("./data")
@@ -108,7 +109,7 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
       
    ## if data frame does not exist, or is incomplete (had been used for search or testing), 
    ## or if we want to force the loading: we load the xls file
-   if (!exists("dat") || numData<1500 || downloadAndCheckAllFiles) { 
+   if (!exists("dat") || numData<1500 || downloadAndCheckAllFiles || force) { 
    #       message("Starting to load the data from the xls file.")
    #       if (otherAssetClasses)
    #          message("Then we will also load a list of drawdowns, of gold prices and of UK house prices.")
