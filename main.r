@@ -100,7 +100,8 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
    
    dataSplit <<- numeric(); dataSplit <<- dataSplit
    setDefaultValues(dataSplit=dataSplit, futureYears=futureYears, 
-                    tradingCost=tradingCost, riskAsCost=riskAsCost, riskAsCostTechnical=riskAsCostTechnical, force=force)
+                    tradingCost=tradingCost, riskAsCost=riskAsCost, 
+                    riskAsCostTechnical=riskAsCostTechnical, force=force)
    if(!file.exists("./data")) dir.create("./data")
    if (dataSplit=="search" && lastMonthSP500!="") { # lastMonthSP500 makes no sense looking at 1871-1942
       lastMonthSP500=""

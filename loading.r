@@ -48,8 +48,7 @@ setDefaultValues <- function(dataSplit, futureYears,
    
    def$dataStartYear <<- 1871
    def$startIndex    <<- 105  # a good guess
-   def$plotStartYear <<- 1882
-   
+   def$plotStartYear <<- 1882   
    
    def$CPUnumber     <<-  1 # Parallelization does not work
    def$plotEvery     <<- 20 # replot every n seconds when searchnig for parameters
@@ -87,6 +86,14 @@ setDefaultValues <- function(dataSplit, futureYears,
    setCombinedDefaultValues()
    
    def$typicalStrategies <<- c(def$typicalBalanced, def$typicalTechnical, def$typicalValue, "stocks")
+   def$typicalStratNames <<- c(stratName1="stocks", stratName2="bonds", 
+                               stratName3=def$typicalValue, stratName4=def$typicalBalanced)
+   def$typicalStratCols  <<- c(col1=def$colConstantAlloc, col2=def$colBonds, 
+                               col3=def$colValue, col4=def$colBalanced)
+   def$typicalStratNamesSubstrategies <<- c(stratName1=def$typicalTechnical, stratName2=def$typicalValue, 
+                                            stratName3=def$typicalHybrid, stratName4=def$typicalBalanced)
+   def$typicalStratColsSubstrategies  <<- c(col1=def$colTechnical, col2=def$colValue, 
+                                            col3=def$colHybrid, col4=def$colBalanced)
 }
 
 createStatsDF <- function(futureYears=def$futureYears) {

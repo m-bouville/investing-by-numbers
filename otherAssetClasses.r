@@ -5,7 +5,8 @@ loadGoldData <- function() {
    dat$gold <<- NA
    nominalGold <- read.csv("./data/gold.csv", header=T)[, 1]
    
-   index1968 <- which(abs(dat$numericDate-(1968+1/24))<.01 ) # index corresponding to january 1968 (when gold data start)
+   index1968 <- which(abs(dat$numericDate-(1968+1/12))<.01 ) 
+   # index corresponding to january 1968 (when gold data start)
    lastGoldIndex <- length(nominalGold)
    lastDatIndex <- numData
    
@@ -18,11 +19,12 @@ loadGoldData <- function() {
    dat$gold <<- dat$gold / dat$CPI * refCPI # calculating real gold prices
 }
 
-createGoldStrategy <- function(strategyName="", goldAllocation=15, futureYears=def$futureYears, costs=def$tradingCost, force=F) {
+createGoldStrategy <- function(strategyName="", goldAllocation=15, 
+                               futureYears=def$futureYears, costs=def$tradingCost, pngOutput=F, force=F) {
    if (strategyName == "") strategyName <- "gold" 
    if (!strategyName %in% colnames(TR)) TR[, strategyName] <<- numeric(numData)
    
-   index1968 <- which(abs(dat$numericDate-(1968+1/24))<.01 ) # index corresponding to january 1968 (when gold data start)
+   index1968 <- which(abs(dat$numericDate-(1968+1/12))<.01 ) # index corresponding to january 1968 (when gold data start)
    TR[, strategyName] <<- NA
    TR[index1968, strategyName] <<- 1
    for(i in (index1968+1):numData) 
@@ -61,8 +63,8 @@ createGoldStrategy <- function(strategyName="", goldAllocation=15, futureYears=d
                           stratName2="gold",              col2="gold",               lwd2=2,
                           stratName3=def$typicalBalanced, col3=def$colBalanced,      lwd3=2,
                           stratName4=strategyName,        col4="darkorange",         lwd4=3, 
-                          startYear=1968.25, endYear=2014, minTR=.58, maxTR=43, 
-                          pngOutput=F, pngName="figures/return_strategy_with_gold.png")
+                          startYear=1968.25, endYear=2014, minTR=.58, maxTR=45, 
+                          pngOutput=pngOutput, pngName="figures/return_strategy_with_gold.png")
 }
 
 
@@ -70,7 +72,8 @@ createGoldStrategy <- function(strategyName="", goldAllocation=15, futureYears=d
 loadUKhousePriceData <- function(downloadAndCheckAllFiles=F) {
    
    suppressMessages( library(XLConnect) ) # to handle xls file
-   if(!file.exists("uk-house-prices-adjusted-for-inflation.xls") | downloadAndCheckAllFiles) # download file if not already locally available
+   if(!file.exists("./data/uk-house-prices-adjusted-for-inflation.xls") | downloadAndCheckAllFiles) 
+      # download file if not already locally available
       download.file("http://www.nationwide.co.uk/~/media/MainSite/documents/about/house-price-index/downloads/uk-house-prices-adjusted-for-inflation.xls",
                     "./data/uk-house-prices-adjusted-for-inflation.xls", mode = "wb")
    
@@ -87,7 +90,8 @@ loadUKhousePriceData <- function(downloadAndCheckAllFiles=F) {
    addNumColToDat("UKhousePrice")
    dat$UKhousePrice <<- NA
    
-   index1975 <- which(abs(dat$numericDate-(1975+1/24))<.01 ) # index corresponding to january 1975 (when UK property data start)
+   index1975 <- which(abs(dat$numericDate-(1975+1/12))<.01 ) 
+   # index1975 is index corresponding to january 1975 (when UK property data start)
    lastDatIndex <- numData
    
    if ( 3*lastUKhousePriceIndex + index1975 - 2 > lastDatIndex )  # if there are too many months of UKhousePrice data 
@@ -107,7 +111,7 @@ createUKhousePriceStrategy <- function(strategyName="", futureYears=def$futureYe
    if (strategyName == "") strategyName <- "UKhousePrice" 
    addNumColToTR(strategyName)
    
-   index1975 <- which(abs(dat$numericDate-(1975+1/24))<.01 ) # index corresponding to january 1975 (when UK property data start)
+   index1975 <- which(abs(dat$numericDate-(1975+1/12))<.01 ) # index corresponding to january 1975 (when UK property data start)
    TR[, strategyName] <<- NA
    TR[index1975+1, strategyName] <<- 1
    for(i in (index1975+2):numData) 
