@@ -103,37 +103,43 @@ setHybridDefaultValues <- function() {
    
 searchForOptimalBoll_CAPE <- function(
       inputDF="dat", cheat=def$CAPEcheat,
-      minCAPEyears= 8L, maxCAPEyears=17L,  byCAPEyears=1L,
-      minAvgOver=  16L, maxAvgOver=  20L,  byAvgOver=  1L,
-      minBear=   -154,  maxBear=   -134,   byBear=     1, 
-      minDelta=     0,  maxDelta=     1,   byDelta=    1,
+      minCAPEyears=  14L, maxCAPEyears=  16L,  byCAPEyears=   1L,
+      minCAPEavgOver= 0L, maxCAPEavgOver=12L,  byCAPEavgOver= 6L,
+      minAvgOver=    14L, maxAvgOver=    22L,  byAvgOver=     2L,
+      minBear=     -170,  maxBear=     -130,   byBear=        5, 
+      minDelta=       0,  maxDelta=       0,   byDelta=       1,
       futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
-      minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.6, minScore=13.5,
+      minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.6, minScore=14.2,
       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
-      xMinVol=14.5, xMaxVol=18.5, xMinDD2=5, xMaxDD2=9.5,
+      xMinVol=14.5, xMaxVol=18.5, xMinDD2=5.5, xMaxDD2=9.5,
       type="search", col=F, plotType="symbols", 
-      nameLength=28, plotEvery=def$plotEvery, 
+      nameLength=30, plotEvery=def$plotEvery, 
       referenceStrategies=c(def$typicalBoll_CAPE1, def$typicalBoll_CAPE2), force=F) {
    
    cleanUpStrategies()
 
    for (CAPEyears in seq(minCAPEyears, maxCAPEyears, by=byCAPEyears)) {
-      CAPEname <- paste0("CAPE",CAPEyears)
-      print( paste0("Starting the search for an optimal Boll(", CAPEname, ")..." ) )
-      if (!(CAPEname %in% colnames(dat))) 
-         calcCAPE(years=CAPEyears, cheat=cheat)
-      
-      searchForOptimalBoll(inputDF, inputName=CAPEname,
-                           minAvgOver, maxAvgOver, byAvgOver, minBear,  maxBear,  byBear, 
-                           minDelta,  maxDelta,  byDelta, futureYears, costs, 
-                           minTR, maxVol, maxDD2, minTO, minScore,
-                           coeffTR, coeffVol, coeffDD2, 
-                           xMinVol, xMaxVol, xMinDD2, xMaxDD2,
-                           type, col, plotType, nameLength, plotEvery, 
-                           referenceStrategies, force)
-      print("")
-      print("")
-   }  
+      for (CAPEavgOver in seq(minCAPEavgOver, maxCAPEavgOver, by=byCAPEavgOver)) {
+         if (CAPEavgOver>0)
+            CAPEname <- paste0("CAPE", CAPEyears, "avg", CAPEavgOver)
+         else CAPEname <- paste0("CAPE", CAPEyears)
+         
+         print( paste0("Starting the search for an optimal Boll(", CAPEname, ")..." ) )
+         if (!(CAPEname %in% colnames(dat)))
+            calcAvgCAPE(years=CAPEyears, cheat=cheat, avgOver=CAPEavgOver)
+         
+         searchForOptimalBoll(inputDF, inputName=CAPEname,
+                              minAvgOver, maxAvgOver, byAvgOver, minBear,  maxBear,  byBear, 
+                              minDelta,  maxDelta,  byDelta, futureYears, costs, 
+                              minTR, maxVol, maxDD2, minTO, minScore,
+                              coeffTR, coeffVol, coeffDD2, 
+                              xMinVol, xMaxVol, xMinDD2, xMaxDD2,
+                              type, col, plotType, nameLength, plotEvery, 
+                              referenceStrategies, force)
+         print("")
+         print("")
+      }
+   }
 }
 
 

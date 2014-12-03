@@ -155,7 +155,7 @@ calcTRconstAlloc <- function(stockAllocation = 70L, strategyName="", force=F) { 
 }
 
 
-createConstAllocStrategy <- function(stockAllocation = 70L, strategyName="", 
+createConstAllocStrategy <- function(stockAllocation = 70L, strategyName="", costs,
                                      futureYears=def$futureYears, force=F) { # parameter is stock allocation in %
 
    if(stockAllocation<0 | stockAllocation>100) stop("Stock allocation must be between 0 and 100 (percents).")
@@ -181,7 +181,7 @@ createConstAllocStrategy <- function(stockAllocation = 70L, strategyName="",
       stats$latestStockAlloc[index] <<- stockAllocation/100
       stats$turnover[index] <<- Inf
    }   
-   calcStatisticsForStrategy(strategyName, futureYears=futureYears, costs=0, force=force)
+   calcStatisticsForStrategy(strategyName, futureYears=futureYears, costs=costs, force=force)
 }
 
 
@@ -366,35 +366,36 @@ cleanUpStrategies <- function(warnings=F) {
    for ( i in (12:dim(signal)[[2]]) ) # starting after constant allocations
       if ( is.na(signal[numData, i]) || signal[numData, i]==0 ) {
          stratName <- colnames(signal[i])
-         print(paste(stratName, "has a problem (signal = 0).") )        
+         print(paste(stratName, "will be deleted (signal = 0).") )        
          deleteStrategy(stratName, warnings=warnings)
-         counter   <- counter+1   # increment
+         counter   <- counter+1  
       }
    
    # looking for strategies for which 'signal' is complete, but 'TR' is not
    for ( i in (18:dim(TR)[[2]]) )
       if ( TR[numData, i]==0 ) {
          stratName <- colnames(TR[i])
-         print(paste(stratName, "has a problem (TR = 0).") )        
+         print(paste(stratName, "will be deleted (TR = 0).") )        
          deleteStrategy(stratName, warnings=warnings)
-         counter   <- counter+1   # increment
+         counter   <- counter+1
       }
 
    # looking for strategies for which 'TR' is complete, but not DD
    for ( i in (15:dim(DD)[[2]]) )
       if ( DD[numDD-2, i]==0 && DD[numDD-1, i]==0 && DD[numDD, i]==0 ) {
          stratName <- colnames(DD[i])
-         print(paste(stratName, "has a problem (DD = 0).") )        
+         print(paste(stratName, "will be deleted (DD = 0).") )        
          deleteStrategy(stratName, warnings=warnings)
-         counter   <- counter+1   # increment
+         counter   <- counter+1 
       }
    
-   print( paste("entries deleted:", counter) )
+   #print( paste("entries deleted:", counter) )
 }
 
    
 calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears, costs, 
-                                      coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
+                                      coeffTR=def$coeffTR, coeffMed=def$coeffMed, coeffFive=def$coeffFive,
+                                      coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
    
    dateRange <- def$startIndex:numData
    if ( !(strategyName %in% stats$strategy) ) {
@@ -455,8 +456,9 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
          turnover[1:def$startIndex] <- NA
          turnover[dateRange2+1] <- abs(alloc[dateRange2+1, strategyName] - alloc[dateRange2, strategyName])
          stats$turnover[index] <<- 1/12/mean(turnover[dateRange2+1], na.rm=F)
-         stats$invTurnover[index] <<- 1/stats$turnover[index]
       } 
+      stats$invTurnover[index] <<- 1/stats$turnover[index]
+
       stats$netTR0.5[index] <<- stats$TR[index] - 0.5/100/stats$turnover[index]
       stats$netTR1[index]   <<- stats$TR[index] - 1  /100/stats$turnover[index]
       stats$netTR2[index]   <<- stats$TR[index] - 2  /100/stats$turnover[index]
@@ -466,15 +468,13 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
       stats$netTR8[index]   <<- stats$TR[index] - 8  /100/stats$turnover[index]
       stats$netTR10[index]  <<- stats$TR[index] -10  /100/stats$turnover[index]
    }
-   
-   if ( is.infinite(stats$turnover[index]) )
-      oneOverTO <- 0
-   else oneOverTO <- (1/stats$turnover[index]-1/3)
-   stats$score[index] <<- 250 * (  coeffTR  * (stats$TR[index] - 0.08)
-                                 - coeffVol * (stats$volatility[index] - 0.15)
-                                 - coeffDD2 * (stats$DD2[index] - 0.055) / 100
-                                 + (1-coeffTR)/2 * ( stats[index, medianName] + stats[index, fiveName] - 0.07)
-                                 - costs * oneOverTO ) + 12
+
+   stats$score[index] <<- 250 * (  coeffTR  * ( stats$TR[index] - 9/100 )
+                                 + coeffMed * ( stats[index, medianName] - 9/100 )
+                                 + coeffFive* ( stats[index, fiveName]   - 3/100 )
+                                 - coeffVol * ( stats$volatility[index] - 14/100 )
+                                 - coeffDD2 * ( stats$DD2[index] - 6/100 )
+                                 - costs * ( stats$invTurnover[index] - 1/1.2 ) ) + 15
    ## 1. The coefficients coeffVol and coeffDD2 make it possible to 'convert' vol and DD2 into return equivalents.
    ## 2. I subtract off constants to reduce the variation of the score when coefficients are changed
 }
@@ -501,15 +501,18 @@ displaySummaryHeader <- function(futureYears=def$futureYears, nameLength=def$nam
 
 showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def$futureYears, costs, 
                                    minTR=0, maxVol=Inf, maxDD2=Inf, minTO=0, minScore=-Inf, 
-                                   coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
+                                   coeffTR=def$coeffTR, coeffMed=def$coeffMed, coeffFive=def$coeffFive,
+                                   coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
                                    coeffEntropy=0, nameLength=def$nameLength, force=F) {
    
    if ( !(strategyName %in% stats$strategy) )
       calcStatisticsForStrategy(strategyName, futureYears=futureYears, costs=costs,
-                                coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=T) 
+                                coeffTR=coeffTR, coeffMed=coeffMed, coeffFive=coeffFive,
+                                coeffVol=coeffVol, coeffDD2=coeffDD2, force=T) 
    else  # if force==F then we only recalculate the score (quick)
       calcStatisticsForStrategy(strategyName, futureYears=futureYears, costs=costs, 
-                                coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
+                                coeffTR=coeffTR, coeffMed=coeffMed, coeffFive=coeffFive,
+                                coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
 
    index <- which(stats$strategy == strategyName)
    medianName <- paste0("median", futureYears)
@@ -530,16 +533,18 @@ showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def
    DD2        <- round( 100*stats$DD2[index], 1 )
 
    score      <- stats$score[index] 
-   if(coeffEntropy > 0)
-      score   <- score + coeffEntropy * (stats$entropy[index] - 1) 
+   #    if(coeffEntropy > 0)
+   #       score   <- score + coeffEntropy * (stats$entropy[index] - 1) 
 
    if (round(ret,2)%%1 == 0) retPad = ".  "    # no decimals
    else if (round(10*ret,1)%%1 == 0) retPad = "0"  # single decimal
       else retPad = ""
    
-   if (vol%%1 == 0) volPad = ". "
-      else volPad = ""
-
+   if (vol>=10) volPad1 = ""
+      else volPad1 = " "
+   if (vol%%1 == 0) volPad2 = ". "
+      else volPad2 = ""
+   
    if (med>=10) medPad1 = ""
       else medPad1 = " "
    if (med%%1 == 0) medPad2 = ". "
@@ -585,7 +590,7 @@ showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def
       print(paste0(str_pad(displayName, nameLength, side = "right"), "| ", 
                    ret, retPad, "% | ", 
                    medPad1, med, medPad2, "%, ", fivePad1, five, fivePad2, "% | ",
-                   vol, volPad, "% |  ",
+                   volPad1, vol, volPad2, "% |  ",
                    avgAllocPad, round(avgAlloc), "%, ", latestAllocPad, round(latestAlloc), "% | ",
                    TOpad1, TO, TOpad2, " | ",
                    DD2Pad1, DD2, DD2Pad2, "% | ", 
@@ -593,31 +598,32 @@ showSummaryForStrategy <- function(strategyName, displayName="", futureYears=def
 }
 
 showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
+                          costsTechnical=def$tradingCost+def$riskAsCostTechnical, 
                           coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, detailed=T, force=F) {
    # force pertains only to showSummaryForStrategy, not to calc...StrategyReturn (these are all set to F)
 
    dashes <- displaySummaryHeader(futureYears=futureYears, nameLength=def$nameLength)
    
-   showSummaryForStrategy("stocks", displayName="stocks", futureYears=futureYears, costs=0, 
+   showSummaryForStrategy("stocks", displayName="stocks", futureYears=futureYears, costs=costs, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    if(detailed) {
-      showSummaryForStrategy("constantAlloc80_20", displayName="80-20 stock-bond", futureYears=futureYears, costs=0, 
+      showSummaryForStrategy("constantAlloc80_20", displayName="80% stock 20% bond", futureYears=futureYears, costs=costs, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
 
       print(dashes)
       ## Technical strategies
-      showSummaryForStrategy(def$typicalBoll1,      displayName="Bollinger 1", futureYears=futureYears, costs=costs, 
+      showSummaryForStrategy(def$typicalBoll1,      displayName="Bollinger 1", futureYears=futureYears, costs=costsTechnical, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-      showSummaryForStrategy(def$typicalBoll2,      displayName="Bollinger 2", futureYears=futureYears, costs=costs, 
+      showSummaryForStrategy(def$typicalBoll2,      displayName="Bollinger 2", futureYears=futureYears, costs=costsTechnical, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-      showSummaryForStrategy(def$typicalSMA1,       displayName="SMA 1", futureYears=futureYears, costs=costs, 
+      showSummaryForStrategy(def$typicalSMA1,       displayName="SMA 1", futureYears=futureYears, costs=costsTechnical, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)   
-      showSummaryForStrategy(def$typicalSMA2,       displayName="SMA 2", futureYears=futureYears, costs=costs, 
+      showSummaryForStrategy(def$typicalSMA2,       displayName="SMA 2", futureYears=futureYears, costs=costsTechnical, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)   
-      showSummaryForStrategy(def$typicalReversal1,  displayName="reversal", futureYears=futureYears, costs=costs, 
+      showSummaryForStrategy(def$typicalReversal1,  displayName="reversal", futureYears=futureYears, costs=costsTechnical, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-#       showSummaryForStrategy(def$typicalReversal2,  displayName="reversal 2 **", futureYears=futureYears, costs=costs, 
-#                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+      #       showSummaryForStrategy(def$typicalReversal2,  displayName="reversal 2 **", futureYears=futureYears, costs=costsTechnical, 
+      #                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
 
       print(dashes)   
       ## Value strategies
@@ -625,37 +631,39 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost+def
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
       showSummaryForStrategy(def$typicalCAPE_hy2,     displayName="CAPE hysteresis 2", futureYears=futureYears, costs=costs, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-#       showSummaryForStrategy(def$typicalCAPE_NH,      displayName="CAPE no hysteresis**", futureYears=futureYears, costs=costs, 
-#                                 coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-#       showSummaryForStrategy(def$typicalDetrended1, displayName="detrended **", futureYears=futureYears, costs=costs, 
-#                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-#       showSummaryForStrategy(def$typicalDetrended2, displayName="detrended 2 **", futureYears=futureYears, costs=costs, 
-#                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+      showSummaryForStrategy(def$typicalCAPE_NH,      displayName="CAPE no hysteresis**", futureYears=futureYears, costs=costs, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+      showSummaryForStrategy(def$typicalDetrended1, displayName="detrended **", futureYears=futureYears, costs=costs, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+      showSummaryForStrategy(def$typicalDetrended2, displayName="detrended 2 **", futureYears=futureYears, costs=costs, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
 
       print(dashes)   
       ## Hybrid strategies
-      showSummaryForStrategy(def$typicalBoll_CAPE1, displayName="Boll(CAPE) 1", futureYears=futureYears, costs=costs, 
+      showSummaryForStrategy(def$typicalBoll_CAPE1, displayName="Boll(CAPE) 1", futureYears=futureYears, costs=costsTechnical, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-      showSummaryForStrategy(def$typicalBoll_CAPE2, displayName="Boll(CAPE) 2", futureYears=futureYears, costs=costs, 
+      showSummaryForStrategy(def$typicalBoll_CAPE2, displayName="Boll(CAPE) 2", futureYears=futureYears, costs=costsTechnical, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-      showSummaryForStrategy(def$typicalBoll_detrended1, displayName="Boll(detrended)", futureYears=futureYears, costs=costs, 
+      showSummaryForStrategy(def$typicalBoll_detrended1, displayName="Boll(detrended)", futureYears=futureYears, costs=costsTechnical, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-      showSummaryForStrategy(def$typicalSMA_CAPE1, displayName="SMA(CAPE) 1", futureYears=futureYears, costs=costs, 
+      showSummaryForStrategy(def$typicalSMA_CAPE1, displayName="SMA(CAPE) 1", futureYears=futureYears, costs=costsTechnical, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-      showSummaryForStrategy(def$typicalSMA_CAPE2, displayName="SMA(CAPE) 2", futureYears=futureYears, costs=costs, 
+      showSummaryForStrategy(def$typicalSMA_CAPE2, displayName="SMA(CAPE) 2", futureYears=futureYears, costs=costsTechnical, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-#       showSummaryForStrategy(def$typicalReversal_CAPE1, displayName="reversal(CAPE) 1 **", futureYears=futureYears, costs=costs, 
+#       showSummaryForStrategy(def$typicalReversal_CAPE1, displayName="reversal(CAPE) 1 **", 
+#                              futureYears=futureYears, costs=costsTechnical, 
 #                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-#       showSummaryForStrategy(def$typicalReversal_CAPE2, displayName="reversal(CAPE) 2 **", futureYears=futureYears, costs=costs, 
+#       showSummaryForStrategy(def$typicalReversal_CAPE2, displayName="reversal(CAPE) 2 **", 
+#                              futureYears=futureYears, costs=costsTechnical, 
 #                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
       print(dashes)
    }
    ## Combined strategies
-   showSummaryForStrategy(def$typicalTechnical,    displayName="technical", futureYears=futureYears, costs=costs, 
+   showSummaryForStrategy(def$typicalTechnical,    displayName="technical", futureYears=futureYears, costs=costsTechnical, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    showSummaryForStrategy(def$typicalValue,        displayName="value", futureYears=futureYears, costs=costs, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-   showSummaryForStrategy(def$typicalHybrid,       displayName="hybrid", futureYears=futureYears, costs=costs, 
+   showSummaryForStrategy(def$typicalHybrid,       displayName="hybrid", futureYears=futureYears, costs=costsTechnical, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    showSummaryForStrategy(def$typicalBalanced,     displayName="balanced", futureYears=futureYears, costs=costs, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
@@ -666,13 +674,15 @@ print(dashes)
 
 findStrategiesOnCriteria <- function(minTR=0, maxVol=Inf, maxDD2=Inf, minTO=0, minScore=-Inf, 
                                      futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
-                                     coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
+                                     coeffTR=def$coeffTR, coeffMed=def$coeffMed, coeffFive=def$coeffFive,
+                                     coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
                                      nameLength=25, force=F) {
    dashes <- displaySummaryHeader(futureYears=futureYears, nameLength=nameLength)
    for ( i in 1:dim(stats)[[1]] ) 
       showSummaryForStrategy(strategyName=stats$strategy[i], futureYears=def$futureYears, costs=costs, 
                              minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
-                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, 
+                             coeffTR=coeffTR, coeffMed=coeffMed, coeffFive=coeffFive, 
+                             coeffVol=coeffVol, coeffDD2=coeffDD2, 
                              nameLength=nameLength, force=force)     
 }
 

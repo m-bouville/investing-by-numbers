@@ -16,18 +16,18 @@
 
 #default values of parameters:
 setBollDefaultValues <- function() {
-   def$BollInputDF    <<- "dat"
-   def$BollInputName  <<- "TR"
+   def$BollInputDF   <<- "dat"
+   def$BollInputName <<- "TR"
    
-   def$BollAvgOver1    <<-  14L
-   def$BollBearish1    <<- -31.5      # DD^2: -31
-   def$BollBullish1    <<- -31.5      # DD^2: -31
-   def$typicalBoll1    <<- paste0("Boll_", def$BollAvgOver1, "_", def$BollBearish1, "_", def$BollBullish1)
+   def$BollAvgOver1  <<-  14L   #  14L  with costs = 2%
+   def$BollBearish1  <<- -31.5  # -34.5
+   def$BollBullish1  <<- -31.5  # -34.5
+   def$typicalBoll1  <<- paste0("Boll_", def$BollAvgOver1, "_", def$BollBearish1, "_", def$BollBullish1)
    
-   def$BollAvgOver2    <<- 10L
-   def$BollBearish2    <<- 46.5       # DD^2: 46
-   def$BollBullish2    <<- 46.5
-   def$typicalBoll2    <<- paste0("Boll_", def$BollAvgOver2, "_", def$BollBearish2, "_", def$BollBullish2)
+   def$BollAvgOver2  <<-  10L   # 11L with costs=2%
+   def$BollBearish2  <<-  46.5  # 57
+   def$BollBullish2  <<-  46.5  # 58
+   def$typicalBoll2  <<- paste0("Boll_", def$BollAvgOver2, "_", def$BollBearish2, "_", def$BollBullish2)
 }
 
 calcBollSignal <- function(inputDF=def$BollInputDF, inputName=def$BollInputName, avgOver=def$BollAvgOver, 
@@ -192,11 +192,11 @@ calcOptimalBoll <- function(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOve
 
 
 searchForOptimalBoll <- function(inputDF="dat", inputName="TR", 
-                                 minAvgOver= 13L, maxAvgOver= 15L, byAvgOver= 1L, 
-                                 minBear=   -34,  maxBear=   -30,  byBear=    0.5, 
-                                 minDelta=    0,  maxDelta=    2,  byDelta=   0.5,  
+                                 minAvgOver=  4L, maxAvgOver= 40L, byAvgOver= 2L, 
+                                 minBear=  -150,  maxBear=    40,  byBear=    5, 
+                                 minDelta=    0,  maxDelta=    0,  byDelta=   5,
                                  futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
-                                 minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.6, minScore=7.3,
+                                 minTR=-Inf, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.7, minScore=7.3,
                                  coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
                                  xMinVol=12.5, xMaxVol=16.5, xMinDD2=3, xMaxDD2=11,
                                  type="search", col=F, plotType="symbols", 
@@ -233,16 +233,32 @@ searchForOptimalBoll <- function(inputDF="dat", inputName="TR",
                        xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2)
 }
 
-
-searchForTwoOptimalBoll <- function(minScore1=7, minScore2= 6, plotType="symbols", force=F) {
+## First to be run with a low value for costs (e.g. 0.5%) to find optima.
+## Then run around these parameters with a higher value of costs (say 2% or 4%)
+##   to find variants of the optima with slower turnovers
+##   (in order to weed out strategies that tend to sell and buy back immediately, 
+##   thereby increasing turnover without improving performance very much).
+## Since we are looking for a local optimum, what matters is the difference between
+##   2 similar strategies: delta(net return) = delta(gross return) - costs*delta(turnover).
+##   An artificially high value of costs penalizes high turnovers.
+## Too high a value of costs and the new optimum will be in a neighboring valley.
+## Of course, the minScores will have to change with costs.
+searchForTwoOptimalBoll <- function(minScore1=10.5, minScore2=6, 
+                                    costs=def$tradingCost+def$riskAsCostTechnical,
+                                    plotType="symbols", force=F) {
+   message("costs = ", costs*100, "%")
    print("Bollinger 1...")
-   searchForOptimalBoll(minAvgOver= 13L, maxAvgOver =15L, byAvgOver=1L, 
-                        minBear   =-37,  maxBear   =-25,  byBear  = .5, 
-                        minDelta  =  0,  maxDelta  =  3,  byDelta = .5, minScore=minScore1)
+   searchForOptimalBoll(minAvgOver= 13L, maxAvgOver =17L, byAvgOver=1L, 
+                        minBear   =-36,  maxBear   =-30,  byBear  = 0.5, 
+                        minDelta  =  0,  maxDelta  =  2,  byDelta = 0.5, 
+                        referenceStrategies=def$typicalBoll1, costs=costs, 
+                        minScore=minScore1, force=force)
    print("")
    print("Bollinger 2...")
-   searchForOptimalBoll(minAvgOver=  9L, maxAvgOver= 12L, byAvgOver=1L, 
-                        minBear   = 42,  maxBear   = 52,  byBear  = .5, 
-                        minDelta  =  0,  maxDelta  =  2,  byDelta = .5, minScore=minScore2)
+   searchForOptimalBoll(minAvgOver= 10L, maxAvgOver= 12L, byAvgOver=1L,
+                        minBear   = 54,  maxBear   = 60,  byBear  = 0.5,
+                        minDelta  =  0,  maxDelta  =  2,  byDelta = 0.5,
+                        referenceStrategies=def$typicalBoll2, costs=costs, 
+                        minScore=minScore2, force=force)
 }
 

@@ -31,12 +31,12 @@ setCAPEdefaultValues <- function() {
    def$typicalCAPE_hy1 <<- paste0("CAPE", def$CAPEyears_hy1, "avg", def$CAPEavgOver_hy1, "_hy_", 
                                   def$hystLoopWidthMidpoint1, "_", def$hystLoopWidth1, "_", def$slope1)
 
-   def$CAPEyears_hy2   <<- 6L
-   def$CAPEcheat2      <<- 0   # given how small 'years' is, we need no 'cheat' at all
+   def$CAPEyears_hy2   <<-  6L
+   def$CAPEcheat2      <<-  0   # given how small 'years' is, we need no 'cheat' at all
    def$CAPEavgOver_hy2 <<- 16L 
    def$hystLoopWidthMidpoint2 <<- 16.
    def$hystLoopWidth2  <<- 16
-   def$slope2          <<- 3.
+   def$slope2          <<-  3.
    def$typicalCAPE_hy2 <<- paste0("CAPE", def$CAPEyears_hy2, "avg", def$CAPEavgOver_hy2, "_hy_", 
                                   def$hystLoopWidthMidpoint2, "_", def$hystLoopWidth2, "_", def$slope2)
 
@@ -222,25 +222,39 @@ createCAPEstrategy <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver
 }
 
 
+createRange <- function (minValue, maxValue, byValue) {
+   if (minValue != maxValue)
+      return ( c( seq(minValue, maxValue, by=2*byValue), 
+                  seq(minValue+byValue, maxValue, by=2*byValue) ) )
+   else return (minValue)
+   
+}
 
-calcOptimalCAPEwithoutHysteresis <-function
+calcOptimalCAPEwithoutHysteresis <- function
       (minYears, maxYears, byYears, cheat, minAvgOver, maxAvgOver, byAvgOver, 
        minBear, maxBear, byBear, minDelta, maxDelta, byDelta, 
        futureYears, costs, minTR, maxVol, maxDD2, minTO, minScore,
-       coeffTR, coeffVol, coeffDD2, xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly,
+       coeffTR, coeffMed=def$coeffMed, coeffFive=def$coeffFive, coeffVol, coeffDD2, 
+       xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly,
        CPUnumber, col, plotType, nameLength, plotEvery, force) {
    
    lastTimePlotted <- proc.time()
    counterTot <- 0; counterNew <- 0
    
-   for (years in seq(minYears, maxYears, by=byYears)) {
+   # creating ranges that allow to sample the parameter space broadly initially
+   rangeYears   <- createRange(minYears, maxYears, byYears)
+   rangeAvgOver <- createRange(minAvgOver, maxAvgOver, byAvgOver)
+   rangeBear    <- createRange(minBear, maxBear, byBear)
+   rangeDelta   <- createRange(minDelta, maxDelta, byDelta)
+   
+   for (years in rangeYears) {
       if(!countOnly) 
          calcCAPE(years=years, cheat=cheat)
-      for (avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver)) {
+      for (avgOver in rangeAvgOver) {
          if(!countOnly)
             calcAvgCAPE(years=years, cheat=cheat, avgOver=avgOver)
-         for ( bear in seq(minBear, maxBear, by=byBear) ) {      
-            for ( delta in seq(minDelta, maxDelta, by=byDelta) ) {
+         for (bear in rangeBear) {      
+            for (delta in rangeDelta) {
                bull = bear - delta
                strategyName <- paste0("CAPE", years, "avg", avgOver, "_NH_", bear, "_", bull)
                
@@ -255,7 +269,8 @@ calcOptimalCAPEwithoutHysteresis <-function
                                      hysteresis=F, type="search", futureYears=futureYears, force=force)
                   showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
                                          minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, 
-                                         minScore=minScore, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, 
+                                         minScore=minScore, coeffTR=coeffTR, coeffMed=coeffMed, coeffFive=coeffFive, 
+                                         coeffVol=coeffVol, coeffDD2=coeffDD2, 
                                          nameLength=nameLength, force=F)
                }
             }
@@ -279,15 +294,22 @@ searchForOptimalCAPEwithoutHysteresis <-function
        minDelta=   0,  maxDelta=   0.4, byDelta=  0.2, 
        futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
        minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=5, minScore=7.4,
-       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
-       xMinVol=17.5, xMaxVol=20.5, xMinDD2=8, xMaxDD2=10,       
+       coeffTR=def$coeffTR, coeffMed=def$coeffMed, coeffFive=def$coeffFive, 
+       coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
+       xMinVol=11.5, xMaxVol=18.5, xMinDD2=7, xMaxDD2=10.5,       
        CPUnumber=def$CPUnumber, col=F, plotType="symbols", nameLength=22, plotEvery=def$plotEvery, force=F) {
+   
+   if (dataSplit != "search") 
+      warning("Doing a search for parameters in '", dataSplit, "' mode.", immediate.=T)
+   
+   cleanUpStrategies()
    
    # calculate how many parameters sets will be run
    calcOptimalCAPEwithoutHysteresis(minYears, maxYears, byYears, cheat, 
                                     minAvgOver, maxAvgOver, byAvgOver, minBear, maxBear, byBear, minDelta, maxDelta, byDelta, 
                                     futureYears, costs, minTR, maxVol, maxDD2, minTO, minScore,
-                                    coeffTR, coeffVol, coeffDD2, xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly=T,
+                                    coeffTR, coeffMed=coeffMed, coeffFive=coeffFive, coeffVol, coeffDD2, 
+                                    xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly=T,
                                     CPUnumber, col, plotType, nameLength, plotEvery, force)
    dashes <- displaySummaryHeader(futureYears=futureYears, nameLength=nameLength)
    
@@ -295,12 +317,13 @@ searchForOptimalCAPEwithoutHysteresis <-function
    calcOptimalCAPEwithoutHysteresis(minYears, maxYears, byYears, cheat, 
        minAvgOver, maxAvgOver, byAvgOver, minBear, maxBear, byBear, minDelta, maxDelta, byDelta, 
        futureYears, costs, minTR, maxVol, maxDD2, minTO, minScore,
-       coeffTR, coeffVol, coeffDD2, xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly=F,
+       coeffTR, coeffMed=coeffMed, coeffFive=coeffFive, coeffVol, coeffDD2, 
+       xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly=F,
        CPUnumber, col, plotType, nameLength, plotEvery, force)
    
    print(dashes)
    showSummaryForStrategy(def$typicalCAPE_NH, costs=costs, nameLength=nameLength, 
-                          coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
+                          coeffTR=coeffTR, coeffMed=coeffMed, coeffFive=coeffFive, coeffVol=coeffVol, coeffDD2=coeffDD2)
    plotAllReturnsVsTwo(col=col, costs=costs, searchPlotType=plotType,
                        xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2)
 }
@@ -310,25 +333,33 @@ calcOptimalCAPEwithHysteresis <- function(minYears, maxYears, byYears, cheat,
        minAvgOver, maxAvgOver, byAvgOver, minMid, maxMid, byMid, 
        minWidth, maxWidth, byWidth, minSlope, maxSlope, bySlope, 
        futureYears, costs, minTR, maxVol, maxDD2, minTO, minScore,
-       coeffTR, coeffVol, coeffDD2, xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly,
+       coeffTR, coeffMed=def$coeffMed, coeffFive=def$coeffFive, coeffVol, coeffDD2, 
+       xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly,
        CPUnumber, col, plotType, nameLength, plotEvery, force) {
    
    counterTot <- 0; counterNew <- 0
    lastTimePlotted <- proc.time()
-    
-   for (years in seq(minYears, maxYears, by=byYears)) {
+
+   # creating ranges that allow to sample the parameter space broadly initially
+   rangeYears   <- createRange(minYears, maxYears, byYears)
+   rangeAvgOver <- createRange(minAvgOver, maxAvgOver, byAvgOver)
+   rangeMid     <- createRange(minMid,   maxMid, byMid)
+   rangeWidth   <- createRange(minWidth, maxWidth, byWidth)
+   rangeSlope   <- createRange(minSlope, maxSlope, bySlope)
+   
+   for (years in rangeYears) {
       if(!countOnly) 
          calcCAPE(years=years, cheat=cheat)
-      for (avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver)) {
+      for (avgOver in rangeAvgOver) {
          if(!countOnly) 
             calcAvgCAPE(years=years, cheat=cheat, avgOver=avgOver)
          if (avgOver>0)
             CAPEname <- paste0("CAPE", years, "avg", avgOver)
          else CAPEname <- paste0("CAPE", years)
          
-         for ( mid in seq(minMid, maxMid, by=byMid) )   
-            for ( width in seq(minWidth, maxWidth, by=byWidth) ) {      
-               for ( slope in seq(minSlope, maxSlope, by=bySlope) ) {
+         for (mid in rangeMid)   
+            for (width in rangeWidth) {      
+               for (slope in rangeSlope) {
                   strategyName <- paste0(CAPEname, "_hy_", mid, "_", width, "_", slope)
                   
                   counterTot <- counterTot + 1 
@@ -342,7 +373,8 @@ calcOptimalCAPEwithHysteresis <- function(minYears, maxYears, byYears, cheat,
                                      hysteresis=T, type="search", futureYears=futureYears, force=force)
                      showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
                                          minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
-                                         coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, 
+                                         coeffTR=coeffTR, coeffMed=coeffMed, coeffFive=coeffFive, 
+                                         coeffVol=coeffVol, coeffDD2=coeffDD2, 
                                          nameLength=nameLength, force=F)
                   }
                
@@ -360,24 +392,36 @@ calcOptimalCAPEwithHysteresis <- function(minYears, maxYears, byYears, cheat,
       print (paste0("Running ", counterTot, " parameter sets (", counterNew, " new)"))
 }
 
-searchForOptimalCAPEwithHysteresis <-function(minYears=10L, maxYears=10L, byYears=1L, cheat=2, 
-       minAvgOver=33L,  maxAvgOver=35L,  byAvgOver=1L, 
-       minMid=    19.0, maxMid=    19.6, byMid=    0.2, 
-       minWidth=   5.8, maxWidth=   7.2, byWidth=  0.2,
-       minSlope=   2.0, maxSlope=   2.6, bySlope=  0.2, 
-       futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
-       minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=5, minScore=7.6,
-       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
-       xMinVol=17.5, xMaxVol=20.5, xMinDD2=6.5, xMaxDD2=10,
-       CPUnumber=def$CPUnumber, col=F, plotType="symbols", 
-       nameLength=30, plotEvery=def$plotEvery, force=F) {
+
+searchForOptimalCAPEwithHysteresis <-function(
+         minYears=  10L,  maxYears=  10L,  byYears=  1L, cheat=2, 
+         minAvgOver=33L,  maxAvgOver=35L,  byAvgOver=1L, 
+         minMid=    19.0, maxMid=    19.6, byMid=    0.2, 
+         minWidth=   5.8, maxWidth=   7.2, byWidth=  0.2,
+         minSlope=   2.0, maxSlope=   2.6, bySlope=  0.2, 
+         futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
+         minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=5, minScore=7.6,
+         coeffTR=def$coeffTR, coeffMed=def$coeffMed, coeffFive=def$coeffFive,
+         coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
+         xMinVol=11.5, xMaxVol=18.5, xMinDD2=7, xMaxDD2=10.5,
+         CPUnumber=def$CPUnumber, col=F, plotType="symbols", 
+         nameLength=28, plotEvery=def$plotEvery, 
+         referenceStrategies=c(def$typicalCAPE_hy1, def$typicalCAPE_hy2), force=F) {
    
+   if (dataSplit != "search") 
+      warning("Doing a search for parameters in '", dataSplit, "' mode.", immediate.=T)
+   message("Parametrization will take place over ", 
+           floor(dat$numericDate[1]), "-", floor(dat$numericDate[numData]), ".")
+   
+   cleanUpStrategies()
+    
    # calculate how many parameters sets will be run
    calcOptimalCAPEwithHysteresis(minYears, maxYears, byYears, cheat, 
       minAvgOver, maxAvgOver, byAvgOver, minMid, maxMid, byMid, 
       minWidth, maxWidth, byWidth, minSlope, maxSlope, bySlope, 
       futureYears, costs, minTR, maxVol, maxDD2, minTO, minScore,
-      coeffTR, coeffVol, coeffDD2, xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly=T,
+      coeffTR, coeffMed, coeffFive, coeffVol, coeffDD2, 
+      xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly=T,
       CPUnumber, col, plotType, nameLength, plotEvery, force)
    
    dashes <- displaySummaryHeader(futureYears=futureYears, nameLength=nameLength)
@@ -387,20 +431,31 @@ searchForOptimalCAPEwithHysteresis <-function(minYears=10L, maxYears=10L, byYear
        minAvgOver, maxAvgOver, byAvgOver, minMid, maxMid, byMid, 
        minWidth, maxWidth, byWidth, minSlope, maxSlope, bySlope, 
        futureYears, costs, minTR, maxVol, maxDD2, minTO, minScore,
-       coeffTR, coeffVol, coeffDD2, xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly=F,
+       coeffTR, coeffMed, coeffFive, coeffVol, coeffDD2, 
+       xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly=F,
        CPUnumber, col, plotType, nameLength, plotEvery, force)   
 
    print(dashes)
-   showSummaryForStrategy(def$typicalCAPE_hy1, costs=costs, nameLength=nameLength, 
-                          coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
-   showSummaryForStrategy(def$typicalCAPE_hy2, costs=costs, nameLength=nameLength, 
-                          coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
+   for ( i in 1:length(referenceStrategies) )
+      showSummaryForStrategy(referenceStrategies[i], nameLength=nameLength, 
+                             coeffTR=coeffTR, coeffMed=coeffMed, coeffFive=coeffFive, 
+                             coeffVol=coeffVol, coeffDD2=coeffDD2, costs=costs)
    plotAllReturnsVsTwo(col=col, searchPlotType=plotType, costs=costs,
                        xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2)
 }
 
 
+
 searchForThreeOptimalCAPE <-function(plotType="symbols", force=F) {
+   searchForOptimalCAPEwithHysteresis(   cheat=6, 
+                                         minYears=   8L,  maxYears=  24L,  byYears=   4L, 
+                                         minAvgOver=12L,  maxAvgOver=36L,  byAvgOver=12L, 
+                                         minMid=    10,   maxMid=    22,   byMid=     2, 
+                                         minWidth=   2,   maxWidth=  10,   byWidth=   4,
+                                         minSlope=   1,   maxSlope=   5,   bySlope=   2,
+                                         plotEvery=30, coeffTR=0.7, coeffMed=0.15, coeffFive=0.15, minScore=9)
+   
+   
    print("searching for optimal CAPE strategy with hysteresis 1...")
    searchForOptimalCAPEwithoutHysteresis()
    

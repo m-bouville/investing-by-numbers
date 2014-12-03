@@ -13,38 +13,42 @@
 
 
 
-setDefaultValues <- function(dataSplit, futureYears, 
+setDefaultValues <- function(dataSplit, futureYears, removeDepression, 
                              tradingCost, riskAsCost, riskAsCostTechnical, force=F) {
    if (!exists("def") | force) def <<- list()
    
-   if(dataSplit=="search") 
-      message("Time range: \'SEARCH\' phase")
-   else if(dataSplit=="testing") 
-      message("Time range: \'TESTING\' phase")      
-   else if(dataSplit=="none") 
-      message("Time range:  \'NONE\' phase")      
-   else stop("dataSplit can only be one of 'none', 'search' or 'testing', not ", dataSplit)
-   
    def$futureYears   <<- futureYears    # default value for the number of years over which future returns are calculated
-   message("default futureYears: ", def$futureYears, " years")
+   
+   if(dataSplit=="search") {
+      if (removeDepression) 
+         rangeName <- "\'SEARCH\' phase with Depression removed"
+      else rangeName <- "\'SEARCH\' phase"
+   }
+   else if(dataSplit=="testing") 
+      rangeName <- "\'TESTING\' phase"
+   else if(dataSplit=="none") 
+      rangeName <- "\'NONE\' phase"
+   else stop("dataSplit can only be one of 'none', 'search' or 'testing', not ", dataSplit)
+   message("Time range: ", rangeName, " (futureYears = ", def$futureYears, " years)")
+   
    
    def$tradingCost   <<- tradingCost    # default value for the trading costs
-   message("default tradingCost:         ", def$tradingCost*100, "% / per year of turnover")
 
    # default value for the trading costs
-   if ( round((tradingCost+riskAsCost)*100,2) %in% c(0.5, 1, 2, 3, 4, 6, 8, 10) ) {
-   def$riskAsCost    <<- riskAsCost 
-   message("default riskAsCost:          ", def$riskAsCost*100, "% / per year of turnover")
-   } else stop("The sum of tradingCost and riskAsCost can only be one of 0.5%, 1%, 2%, 3% or 4%, not ", 
-               (tradingCost+riskAsCost)*100, "%." )
-
+   if ( round((tradingCost+riskAsCost)*100,2) %in% c(0, 0.5, 1, 2, 3, 4, 6, 8, 10) ) 
+      def$riskAsCost    <<- riskAsCost 
+   else stop("The sum of tradingCost and riskAsCost can only be one of 0.5%, 1%, 2%, 3% or 4%, 6%, 8% or 10% -- not ", 
+             (tradingCost+riskAsCost)*100, "%." )
+   
    # default value for the trading costs for technical strategies
    #    with a high value it is less common to sell to buy back the next month
-   if ( round((tradingCost+riskAsCostTechnical)*100,2) %in% c(0.5, 1, 2, 3, 4, 6, 8, 10) ) {
+   if ( round((tradingCost+riskAsCostTechnical)*100,2) %in% c(0, 0.5, 1, 2, 3, 4, 6, 8, 10) ) 
       def$riskAsCostTechnical     <<- riskAsCostTechnical 
-      message("default riskAsCostTechnical: ", def$riskAsCostTechnical*100, "% / per year of turnover")
-   } else stop("The sum of tradingCost and riskAsCostTechnical can only be one of 0.5%, 1%, 2%, 3% or 4%, not ", 
-               (tradingCost+riskAsCostTechnical)*100, "%." )
+   else stop("The sum of tradingCost and riskAsCostTechnical can only be one of 0.5%, 1%, 2%, 3%, 4%, 6%, 8% or 10% -- not ", 
+             (tradingCost+riskAsCostTechnical)*100, "%." )
+   
+   message("default costs: (tradingCost, riskAsCost, riskAsCostTechnical) = (", 
+           def$tradingCost*100, "%, ", def$riskAsCost*100, "%, ", def$riskAsCostTechnical*100, "%)")
    
    def$dataStartYear <<- 1871
    def$startIndex    <<- 105  # a good guess
@@ -61,20 +65,17 @@ setDefaultValues <- function(dataSplit, futureYears,
    def$signalMin     <<- -0.2 # lowest possible value (asymptote) for signal
    def$signalMax     <<- 1 - def$signalMin
    
-   #### coeffTR, coeffVol and coeffDD2 are coefficients to calculate the score
-   ## coefficients of total return 
-   ##    coefficients for median and 5% returns over next n years are both equal to (1-coeffTR)/2.
+   #### coeffTR, coeffMed, coeffFive, coeffVol and coeffDD2 are coefficients to calculate the score
+   ## coefficients of total return and for the median and 5% returns over next n years (sum of 3 is 1).
    def$coeffTR       <<- 0.4
-
-   ## how many extra percentage points of return justify one extra percentage point of volatility.
-   ## 0.05 means that we are indifferent if the volatility increases by 1%, 
-   ## provided that the return increases by 0.05%
-   def$coeffVol      <<- 0.05
-
-   ## how many extra percentage points of return justify one extra unit of DD2.
-   ## 1/8 means that we are indifferent if DD2 increases by 0.8, 
-   ## provided that the return increases by at least 0.1%
-   def$coeffDD2      <<- 3.5
+   def$coeffMed      <<- 0.3
+   def$coeffFive     <<- 1-def$coeffTR-def$coeffMed
+   
+   ## how many extra percentage points of return justify one extra percentage point of volatility (resp. DD2).
+   ## 0.1 means that we are indifferent if the volatility (resp. DD2) increases by 1%, 
+   ## provided that the annual return increases by 0.15%
+   def$coeffVol      <<- 0.1
+   def$coeffDD2      <<- 0.1
    
    setPlottingDefaultValues()
    setCAPEdefaultValues()
@@ -90,6 +91,8 @@ setDefaultValues <- function(dataSplit, futureYears,
                                stratName3=def$typicalValue, stratName4=def$typicalBalanced)
    def$typicalStratCols  <<- c(col1=def$colConstantAlloc, col2=def$colBonds, 
                                col3=def$colValue, col4=def$colBalanced)
+   def$typicalStratNames <<- c(stratName1="stocks", stratName2="bonds", 
+                               stratName3=def$typicalValue, stratName4=def$typicalBalanced)
    def$typicalStratNamesSubstrategies <<- c(stratName1=def$typicalTechnical, stratName2=def$typicalValue, 
                                             stratName3=def$typicalHybrid, stratName4=def$typicalBalanced)
    def$typicalStratColsSubstrategies  <<- c(col1=def$colTechnical, col2=def$colValue, 
@@ -116,7 +119,7 @@ createStatsDF <- function(futureYears=def$futureYears) {
                         invTurnover = numeric(), # 1 / turnover
                         DD2 = numeric(), # sum of the squares of the drawdowns
                         score = numeric(), 
-                        entropy = numeric(), 
+                        #entropy = numeric(), 
                         stringsAsFactors=F)
    stats[, paste0("median", futureYears)] <<- numeric()
    stats[, paste0("five", futureYears)] <<- numeric()
@@ -155,10 +158,32 @@ createParametersDF <- function() {
 }
 
 
-splitData <- function(dataSplit, force) {
-   if (dataSplit == "search") {
-      numData <<- numData %/% 2
-      dat <<- dat[1:numData, ] # we keep only the first half
+splitData <- function(dataSplit, removeDepression, force) {
+   if (dataSplit == "search" && removeDepression) {
+      numData <<- 12*(1926-1870)  # data range will go up to the end of 1926
+      dat <<- dat[1:numData, ] 
+      def$plotStartYear <<- 1881
+      def$plotEndYear   <<- round( (numData-1)/12 + def$dataStartYear )
+      
+      def$maxTR  <<- 20
+      def$yTRmin <<-  5.
+      def$yTRmax <<-  9
+      def$minVol <<- 11.5
+      def$maxVol <<- 17.
+      def$minDD2 <<-  3.7
+      def$maxDD2 <<- 9.8
+ 
+      DD <<- DD[1:18, ] # last drawdown is in 1926
+      # DD <<- DD[1:20, ]; DD <<- DD[-19, ]     # last drawdown is in 1929 
+      numDD <<- dim(DD)[[1]]
+      
+      if (!force)
+         warning("When switching to \'search\' from a complete data set or from \'testing\', 
+              it is recommended to run \'start\' with \'force=T\'.", immediate.=T)
+   } 
+   else if (dataSplit == "search" && !removeDepression) {
+      numData <<- numData %/% 2  # we keep only the first half
+      dat <<- dat[1:numData, ] 
       def$plotEndYear <<- round( (numData-1)/12 + def$dataStartYear )
       
       def$maxTR  <<-400
@@ -168,15 +193,15 @@ splitData <- function(dataSplit, force) {
       def$maxVol <<- 20.5
       def$minDD2 <<-  3
       def$maxDD2 <<- 11.5
-      #def$coeffDD2 <<- def$coeffDD2 * 2 # DD2 is half as big with half as many years, hence the rescaling
- 
+      
       DD <<- DD[1:26, ]
       numDD <<- dim(DD)[[1]]
       
       if (!force)
          warning("When switching to \'search\' from a complete data set or from \'testing\', 
-              it is recommended to run \'start\' with \'force=T\'.")
-   } else if (dataSplit == "testing") {
+              it is recommended to run \'start\' with \'force=T\'.", immediate.=T)
+   }
+   else if (dataSplit == "testing") {
       ## we subtract 10 years to start in 1932, so that the first strategies can be got around 1942
       startIndex <- ( numData %/% 24 - 10) * 12 + 1 
       dat <<- dat[startIndex:numData, ] # we keep only the second half
@@ -216,7 +241,7 @@ addFutureReturnsToDat <- function(force=F) {
       next30yrs <<- data.frame(date = dat$date, numericDate = dat$numericDate)
 }
 
-addConstAllocToDat <- function(smoothConstantAlloc, force=F) {
+addConstAllocToDat <- function(smoothConstantAlloc, costs=def$tradingCost, force=F) {
    time0 <- proc.time()
    #message("Creating constant-allocation stock-bond strategies.") 
    if(smoothConstantAlloc)
@@ -224,7 +249,7 @@ addConstAllocToDat <- function(smoothConstantAlloc, force=F) {
    else 
       constAllocList <- c(100, 80, 60, 45, 30, 0)
    invisible ( lapply( constAllocList, function(alloc) createConstAllocStrategy(
-      alloc, futureYears=def$futureYears, force=force) ) )
+      alloc, futureYears=def$futureYears, costs=costs, force=force) ) )
    #    message( "Time spent creating constant-allocation stock-bond strategies: ", 
    #              round(summary(proc.time())[[1]] - time0[[1]] , 1), " s." )
 }
@@ -243,21 +268,22 @@ loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=T, lastMon
    rawDat <- readWorksheet(wk, sheet="Data", startRow=8)
    
    numData <<- dim(rawDat)[1]-1 # number of rows (exclude row of comments)
-   if (dataSplit!="search") { # if search the the message are irrelevant
-      message(paste0("According to the xls file, \'", rawDat$P[numData+1], "\'")) # displaying information given in xls file
-      message(paste0("According to the xls file, \'", rawDat$CPI[numData+1], "\'"))
-   }
+   ShillerMessage1 <- paste0("According to the xls file, \'", rawDat$P[numData+1], "\'")
+   ShillerMessage2 <- paste0("According to the xls file, \'", rawDat$CPI[numData+1], "\'")
+
    rawDat <- rawDat[-(numData+1), ] # removing the row containing the information just displayed
    if (lastMonthSP500=="") {
-      # removing the current month, since it is not data for the end of month
-      rawDat <- rawDat[-numData, ] 
+      rawDat <- rawDat[-numData, ]  # removing the current month, since it is not data for the end of month
       numData <<- numData-1
    }
-   else if (dataSplit!="search") { # if last-month S&P 500 is of relevance
-      rawDat$P[numData] <- lastMonthSP500
+   else if (dataSplit != "search") { # if last-month S&P 500 is provided and of relevance
+      rawDat$P[numData] <- lastMonthSP500 # replacing with end-of-month value
       if (rawDat$P[numData-1] == lastMonthSP500)
-         warning( "The value of lastMonthSP500 (", lastMonthSP500, ") is equal to the S&P 500 value for ", rawDat$Date[numData-1], immediate.=T )
+         warning( "The value of lastMonthSP500 (", lastMonthSP500, ") is equal to the S&P 500 value for ", 
+                  rawDat$Date[numData-1], immediate.=T )
+      else message("Most recent S&P 500 value set to ", lastMonthSP500)
    }
+   message(ShillerMessage2)
       
    # if the latest dividends are missing (if it is too early for the data to be available), 
    # ... either we extrapolate them or we remove the rows
@@ -277,12 +303,13 @@ loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=T, lastMon
          }   
    
    # data are for the last (business) day of each month, 28th is close enough
-   dat <<- data.frame(date       = ISOdate( floor(rawDat$Date), round((rawDat$Date%%1)*100,0)+1, 1, hour=0, min=0, sec=0 ) - 1,
+   dat <<- data.frame(date       = ISOdate( floor(rawDat$Date), 
+                                            round((rawDat$Date%%1)*100,0)+1, 1, hour=0, min=0, sec=0 ) - 1,
                       numericDate= as.numeric(rawDat$Fraction),
                       CPI        = as.numeric(rawDat$CPI), # reference for inflation
-                      dividend   = as.numeric(rawDat$D), # loads nominal dividend (real dividend will be calculated below)
-                      price      = as.numeric(rawDat$P), # loads nominal S&P price (real price will be calculated below)
-                      earnings   = as.numeric(rawDat$E), # loads nominal earnings (real earnings will be calculated below)
+                      dividend   = as.numeric(rawDat$D), # loads nominal dividend (real ones to be calculated below)
+                      price      = as.numeric(rawDat$P), # loads nominal S&P price (real ones to be calculated below)
+                      earnings   = as.numeric(rawDat$E), # loads nominal earnings (real ones to be calculated below)
                       TR         = numeric(numData),
                       bonds      = numeric(numData)
    )
@@ -338,7 +365,8 @@ makeStringsFactors <- function() {
    parameters$type    <<- factor(parameters$type, levels=allTypes) 
    parameters$subtype <<- factor(parameters$subtype, levels=allSubtypes)
    parameters$inputDF <<- factor(parameters$inputDF, 
-                                    levels = c( "dat", "signal", "alloc", "TR", "next5yrs", "next10yrs", "next15yrs", "next20yrs", "next30yrs" ) )
+                                    levels = c( "dat", "signal", "alloc", "TR", 
+                                                "next5yrs", "next10yrs", "next15yrs", "next20yrs", "next30yrs" ) )
    
    stats$type         <<- factor(stats$type, levels=allTypes) 
    stats$subtype      <<- factor(stats$subtype, levels=allSubtypes)
@@ -405,24 +433,24 @@ createTypicalStrategies <- function(extrapolateDividends=T, costs=def$tradingCos
                       signalMin=def$signalMin, signalMax=def$signalMax,
                       futureYears=def$futureYears, costs=costs, 
                       coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-   #    createCAPEstrategy(years=def$CAPEyears_NH, cheat=def$CAPEcheat, avgOver=def$CAPEavgOver_NH, 
-   #                       hysteresis=F, bearish=def$CAPEbearish, bullish=def$CAPEbullish, 
-   #                       signalMin=def$signalMin, signalMax=def$signalMax,
-   #                       futureYears=def$futureYears, costs=costs, 
-   #                       coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)  
-   #    
-   #    createDetrendedStrategy(inputDF=def$detrendedInputDF, inputName=def$detrendedInputName, 
-   #                            avgOver=def$detrendedAvgOver1, 
-   #                            bearish=def$detrendedBearish1, bullish=def$detrendedBullish1, 
-   #                            signalMin=def$signalMin, signalMax=def$signalMax,
-   #                            futureYears=def$futureYears, costs=costs, 
-   #                            coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-   #    createDetrendedStrategy(inputDF=def$detrendedInputDF, inputName=def$detrendedInputName, 
-   #                            avgOver=def$detrendedAvgOver2, 
-   #                            bearish=def$detrendedBearish2, bullish=def$detrendedBullish2, 
-   #                            signalMin=def$signalMin, signalMax=def$signalMax,
-   #                            futureYears=def$futureYears, costs=costs, 
-   #                            coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+      createCAPEstrategy(years=def$CAPEyears_NH, cheat=def$CAPEcheat, avgOver=def$CAPEavgOver_NH, 
+                         hysteresis=F, bearish=def$CAPEbearish, bullish=def$CAPEbullish, 
+                         signalMin=def$signalMin, signalMax=def$signalMax,
+                         futureYears=def$futureYears, costs=costs, 
+                         coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)  
+      
+      createDetrendedStrategy(inputDF=def$detrendedInputDF, inputName=def$detrendedInputName, 
+                              avgOver=def$detrendedAvgOver1, 
+                              bearish=def$detrendedBearish1, bullish=def$detrendedBullish1, 
+                              signalMin=def$signalMin, signalMax=def$signalMax,
+                              futureYears=def$futureYears, costs=costs, 
+                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+      createDetrendedStrategy(inputDF=def$detrendedInputDF, inputName=def$detrendedInputName, 
+                              avgOver=def$detrendedAvgOver2, 
+                              bearish=def$detrendedBearish2, bullish=def$detrendedBullish2, 
+                              signalMin=def$signalMin, signalMax=def$signalMax,
+                              futureYears=def$futureYears, costs=costs, 
+                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    
    ## Hybrid strategies
    if (!(def$Boll_CAPEinputName1 %in% colnames(dat))) 
@@ -463,20 +491,22 @@ createTypicalStrategies <- function(extrapolateDividends=T, costs=def$tradingCos
                      futureYears=def$futureYears, costs=costs, 
                      coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
 
-   #    if (!(def$reversal_CAPEinputName1 %in% colnames(dat))) calcCAPE(years=def$reversal_CAPEyears1, cheat=def$reversal_CAPEcheat1)
-   #    createReversalStrategy(inputDF=def$reversal_CAPEinputDF, inputName=def$reversal_CAPEinputName1, 
-   #                           avgOver=def$reversal_CAPEavgOver1, returnToMean=def$reversal_CAPEreturnToMean1, 
-   #                           bearish=def$reversal_CAPEbearish1, bullish=def$reversal_CAPEbullish1, 
-   #                           signalMin=def$signalMin, signalMax=def$signalMax,
-   #                           futureYears=def$futureYears, costs=costs, 
-   #                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
-   #    if (!(def$reversal_CAPEinputName2 %in% colnames(dat))) calcCAPE(years=def$reversal_CAPEyears2, cheat=def$reversal_CAPEcheat2)
-   #    createReversalStrategy(inputDF=def$reversal_CAPEinputDF, inputName=def$reversal_CAPEinputName2, 
-   #                           avgOver=def$reversal_CAPEavgOver2, returnToMean=def$reversal_CAPEreturnToMean2, 
-   #                           bearish=def$reversal_CAPEbearish2, bullish=def$reversal_CAPEbullish2, 
-   #                           signalMin=def$signalMin, signalMax=def$signalMax,
-   #                           futureYears=def$futureYears, costs=costs, 
-   #                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
+   # if (!(def$reversal_CAPEinputName1 %in% colnames(dat))) 
+   #    calcCAPE(years=def$reversal_CAPEyears1, cheat=def$reversal_CAPEcheat1)
+   # createReversalStrategy(inputDF=def$reversal_CAPEinputDF, inputName=def$reversal_CAPEinputName1, 
+   #                        avgOver=def$reversal_CAPEavgOver1, returnToMean=def$reversal_CAPEreturnToMean1, 
+   #                        bearish=def$reversal_CAPEbearish1, bullish=def$reversal_CAPEbullish1, 
+   #                        signalMin=def$signalMin, signalMax=def$signalMax,
+   #                        futureYears=def$futureYears, costs=costs, 
+   #                        coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
+   # if (!(def$reversal_CAPEinputName2 %in% colnames(dat))) 
+   #    calcCAPE(years=def$reversal_CAPEyears2, cheat=def$reversal_CAPEcheat2)
+   # createReversalStrategy(inputDF=def$reversal_CAPEinputDF, inputName=def$reversal_CAPEinputName2, 
+   #                        avgOver=def$reversal_CAPEavgOver2, returnToMean=def$reversal_CAPEreturnToMean2, 
+   #                        bearish=def$reversal_CAPEbearish2, bullish=def$reversal_CAPEbullish2, 
+   #                        signalMin=def$signalMin, signalMax=def$signalMax,
+   #                        futureYears=def$futureYears, costs=costs, 
+   #                        coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
    
    ## Combined strategies
 

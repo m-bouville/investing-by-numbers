@@ -28,7 +28,7 @@ setPlottingDefaultValues <- function() {
    def$maxTO     <<- 160
    
    def$plotEndYear <<- 2015.
-   def$maxTR     <<- 200000
+   def$maxTR     <<- 150000
          
    # Colors consistently used for the various strategies
    def$colCAPE_NH   <<- "cyan4"
@@ -492,12 +492,12 @@ plotReturnSideways <- function(stratName1=def$typicalBalanced, stratName2="stock
         col=inflationCol, ylim=c(inflationMin/100, inflationMax/100), ylab= "", yaxt='n' )
    par(new=F)
    
-   plotReturn(startYear=1999,   endYear=2011.25,   minTR=minTR, maxTR=maxTR,
+   plotReturn(startYear=1999,   endYear=2011.5,   minTR=minTR, maxTR=maxTR,
               stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4,
               col1=col1, col2=col2, col3=col3, col4=col4, lwd1=lwd1, lwd2=lwd2, lwd3=lwd3, lwd4=lwd4,
               legendPlacement="none")
    par(new=T)
-   plot(dat$numericDate, dat[[inflationName]], xlim=c(1999, 2011.25), type="l", lty=2, lwd=lwd4, 
+   plot(dat$numericDate, dat[[inflationName]], xlim=c(1999, 2011.5), type="l", lty=2, lwd=lwd4, 
         col=inflationCol, ylim=c(inflationMin/100, inflationMax/100), ylab= "", yaxt='n' )
    par(new=F)
    
@@ -1044,9 +1044,11 @@ plotAllReturnsVsSomeParameter <- function(type1=def$type1, col1=def$col1, pch1=d
       Stype <- "p"
    else stop(searchPlotType, " is not a legitimate value for argument searchPlotType, only line, dots or symbols")
       
-   if (costs==0.5/100)
+   if (costs==0)
+      def$yStatsName <<- "TR"
+   else if (costs==0.5/100)
       def$yStatsName <<- "netTR0.5"
-   else if (round(100*costs,2) %in% c(1, 2, 3, 4) )
+   else if (round(100*costs,2) %in% c(1, 2, 3, 4, 6, 8, 10) )
       def$yStatsName <<- paste0("netTR", round(100*costs,2) )
    else stop("No \'netTR", round(costs*100), "\' entry exists in 'stats'.")
    
@@ -1432,6 +1434,8 @@ createStrategiesAndSavePlots_generic <- function(futureYears, tradingCost, dataS
                         figureTitle=figureTitle )
    plotReturnAndAlloc(pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight,
                       pngName=paste0("figures/", rangeName, "-return_and_allocation.png") )
+   plotReturnAndAllocSubstrategies(detrendBy=5, pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight,
+                                   pngName=paste0("figures/", rangeName, "-return_and_allocation-detrended.png") )
    #    plotFutureReturnVsCAPE(futureYears=futureYears, maxTR=21, 
    #                           pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight, 
    #                           pngName=paste0("figures/", rangeNameShort, "-return_over_next_", 

@@ -73,7 +73,7 @@ CalcAllDrawdowns <- function(strategyName, force=F) {
          DD[i, strategyName] <<- drawdown(strategyName, DD$startYear[i], DD$endYear[i])
       }
    }
-   for (i in 1:5)
+   for ( i in 1:length(is.na(DD[strategyName])) )
       if ( is.na(DD[i, strategyName]) ) {         # If first drawdowns cannot be computed b/c it is too early
          DD[i, strategyName] <<- DD[i, "stocks"]  #    we assume the worst, i.e. the drawdown of stocks
          warning("A drawdown for '", strategyName, "' had to be approximated.")

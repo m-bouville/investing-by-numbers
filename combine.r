@@ -12,33 +12,28 @@
 ############################################
 
 setCombinedDefaultValues <- function() {
-   def$minScore             <<- 13
+   def$minScore             <<- 10
    
    def$technicalStrategies  <<- c(def$typicalBoll1, def$typicalBoll2, 
                                   def$typicalSMA1, def$typicalSMA2, 
                                   def$typicalReversal1)
-   def$technicalScores      <<- c(16.56, 15.92, 16.35, 14.65, 15.17)  # 'none', riskAsCostTechnical=3.5%
-   # def$technicalScores    <<- c(17.36, 17.38, 17.10, 15.05, 15.52)  # 'none', riskAsCostTechnical=0
-   def$typicalTechnical     <<- "technical"
+   def$technicalScores      <<- c(14.81, 12.66, 14.96, 13.17, 13.76)  # 'testing', riskAsCostTechnical=1.5%
+   #def$technicalScores     <<- c(15.33, 14.45, 15.20, 12.53, 13.13)  # 'testing', riskAsCostTechnical=0.5%
    def$minScoreTechnical    <<- def$minScore 
    
    def$valueStrategies      <<- c(def$typicalCAPE_hy1, def$typicalCAPE_hy2) #, def$typicalCAPE_NH, def$typicalDetrended1)
-   def$valueScores          <<- c(13.63, 14.60)  # 'none', riskAsCost=0.5%
-   # def$valueScores        <<- c(13.30, 14.26)  # 'none', riskAsCost=0
-   def$typicalValue         <<- "value" 
+   def$valueScores          <<- c(10.99, 11.33)  # 'testing', riskAsCost=0.5%
    def$minScoreValue        <<- def$minScore 
    
    def$hybridStrategies     <<- c(def$typicalBoll_CAPE1, def$typicalBoll_CAPE2, def$typicalBoll_detrended1, 
                                   def$typicalSMA_CAPE1, def$typicalSMA_CAPE2)
-   def$hybridScores         <<- c(17.45, 15.17, 16.52, 14.91, 14.13)  # 'none', riskAsCostTechnical=3.5%
-   # def$hybridScores       <<- c(18.12, 15.83, 17.34, 15.19, 14.15)  # 'none', riskAsCostTechnical=0 
-   def$typicalHybrid        <<- "hybrid"
+   def$hybridScores         <<- c(15.74, 10.92, 15.44, 13.07, 12.60)  # 'testing', riskAsCostTechnical=1.5%
+   #def$hybridScores        <<- c(16.08, 11.36, 16.07, 12.31, 11.41)  # 'testing', riskAsCostTechnical=0.5%
    def$minScoreHybrid       <<- def$minScore 
    
    def$balancedStrategies   <<- c(def$typicalTechnical, def$typicalValue, def$typicalHybrid)
-   def$balancedScores       <<- c(17.49, 14.09, 17.54)   # 'none', riskAsCost=0.5% / 3.5%
-   # def$balancedScores     <<- c(17.61, 13.85, 17.74)   # 'none', riskAsCost=0
-   def$typicalBalanced      <<- "balanced"
+   def$balancedScores       <<- c(14.78, 11.24, 15.87)   # 'testing', riskAsCostX=0.5% / 1.5%
+   #def$balancedScores      <<- c(15.05, 11.20, 16.31)   # 'testing', riskAsCostX=0.5%
    def$minScoreBalanced     <<- def$minScore 
 }
 
@@ -76,9 +71,7 @@ combineStrategies <- function(
       stop("inputStrategyName and score must have the same length (resp. ",
            length(inputStrategyName), " and ", length(score), " right now).")         
    numLoops <- length(inputStrategyName)
-   
-   if(strategyName=="") strategyName <- subtype
-   
+      
    fraction <- numeric( length(score) )
    for ( i in 1:length(score) ) {
       if (score[i] < minScore) fraction[i] <- 0  # scores less than minScore are not used
@@ -96,6 +89,23 @@ combineStrategies <- function(
    
    total <- sum(fraction)
    fraction <- fraction/total # make the total 1
+
+   if(strategyName=="") {
+      strategyName <- subtype
+      for ( i in 1:length(fraction) ) 
+         strategyName <- paste0(strategyName, "_", round(100*fraction[i]) )
+      if(subtype=="technical")     def$typicalTechnical <<- strategyName
+      else if(subtype=="value")    def$typicalValue     <<- strategyName
+      else if(subtype=="hybrid")   def$typicalHybrid    <<- strategyName
+      else if(subtype=="balanced") def$typicalBalanced  <<- strategyName
+      
+      # update default lists of strategies
+      def$balancedStrategies <<- c(def$typicalTechnical, def$typicalValue, def$typicalHybrid)
+      def$typicalStratNames <<- c(stratName1="stocks", stratName2="bonds", 
+                                  stratName3=def$typicalValue, stratName4=def$typicalBalanced)
+      def$typicalStratNamesSubstrategies <<- c(stratName1=def$typicalTechnical, stratName2=def$typicalValue, 
+                                               stratName3=def$typicalHybrid, stratName4=def$typicalBalanced)
+   }  
    
    if (!(strategyName %in% colnames(alloc)) | force) {   
       calcCombinedStrategySignal(inputStrategyName=inputStrategyName, fraction=fraction, 

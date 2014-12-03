@@ -190,15 +190,21 @@ calcOptimalDetrended <- function(inputDF, inputName, minAvgOver, maxAvgOver, byA
 }
 
 searchForOptimalDetrended <- function(inputDF=def$detrendedInputDF, inputName=def$detrendedInputName, 
-                                      minAvgOver=20L, maxAvgOver=42L, byAvgOver=2L, 
-                                      minBear=22, maxBear=32, byBear=1, 
-                                      minDelta=0, maxDelta=1.5, byDelta=0.5, 
+                                      minAvgOver= 6L, maxAvgOver=48L,  byAvgOver=2L,
+                                      minBear=    6,  maxBear=   40,   byBear=   1,
+                                      minDelta=   0,  maxDelta=   1.5, byDelta=  1,
                                       futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
-                                      minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=4, minScore=8.6, 
+                                      minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=4, minScore=12, 
                                       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, col=F, 
                                       plotType="symbols", CPUnumber=def$CPUnumber, 
-                                      xMinVol=15.5, xMaxVol=19.5, xMinDD2=7.7, xMaxDD2=9.2,
+                                      xMinVol=15.5, xMaxVol=19.5, xMinDD2=8, xMaxDD2=9.5,
+                                      referenceStrategies=c(def$typicalDetrended1, def$typicalDetrended2), 
                                       nameLength=23, plotEvery=def$plotEvery, force=F) {
+ 
+   if (dataSplit != "search") 
+      warning("Doing a search for parameters in '", dataSplit, "' mode.", immediate.=T)
+   
+   cleanUpStrategies()
    
    # calculate how many parameters sets will be run   
    calcOptimalDetrended(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOver, 
@@ -219,10 +225,9 @@ searchForOptimalDetrended <- function(inputDF=def$detrendedInputDF, inputName=de
                         CPUnumber, nameLength, plotEvery, force)
 
    print(dashes)
-   showSummaryForStrategy(def$typicalDetrended1, costs=costs, 
-                          coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, nameLength=nameLength)
-   showSummaryForStrategy(def$typicalDetrended2, costs=costs, 
-                          coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, nameLength=nameLength)
+   for ( i in 1:length(referenceStrategies) )
+      showSummaryForStrategy(referenceStrategies[i], nameLength=nameLength, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, costs=costs)
    plotAllReturnsVsTwo(col=col, costs=costs, searchPlotType=plotType)
 }
 

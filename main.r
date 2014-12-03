@@ -14,13 +14,17 @@
 
 showToDoList <- function() {
    print("What's still left TO DO:")
-   print(" - Improve value strategy results.")
-   print(" - Change the way 2 strategies are combined: right now I use constant weights.")
-   print("       I'd like to tell (how?) when a strategy is likely to do well to increase its weight.")
-   print(" - Automate parameter search.")
-   print(" - Switch to ggplot2 for scatter plots?")
-   print(" - Try to speed up code (especially parameter searches) through compiling and (or) parallelization.")
-   print(" - Store constant allocations in csv file.")
+   print(" - Improve value strategy results (the parametrization is controlled by the Depression:")
+   print("       the strategy getting this absolutely right will make a killing,")
+   print("       which results in strategies hyperspecialized in handling 1929-32 and little else.")
+   print(" - Exclude Depression from 'search' data set -> 1871-1925 ??")
+   print(" - Fix or discard reversal.")
+   print(" - Combine strategies more actively. Right now I use constant weights, ")
+   print("       but I'd like to tell (how?) when a strategy is likely to do well to increase its weight.")
+   print(" - Automate parameter searches (conjugate gradient?).")
+   #print(" - Switch to ggplot2 for scatter plots? (Not a priority.)")
+   #print(" - Try to speed up code (especially parameter searches) through compiling and (or) parallelization.")
+   #print(" - Store constant allocations in csv file.")
    print("")
 }
 
@@ -63,6 +67,8 @@ showForNewcomer <- function() {
 
 # Loading and preparing data
 start <- function(dataSplit="none",           # "none" for all data, "search" and "testing" for half the data
+                  removeDepression=F,         # the parametrization of value strategies tends to be controlled by the Depression
+                                              #    setting 'removeDepression' to T stops the 'search' time range at the end of 1929.
                   extrapolateDividends=T,     # whether to extrapolate missing recent dividends (or remove incomplete months)
                   smoothConstantAlloc=F,      # calculates more constant-allocation portfolios, for smoother curves in plots
                   downloadAndCheckAllFiles=F, # downloads data files even if they exist locally,
@@ -71,7 +77,7 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
                   futureYears=10L,            # to calculate the return over the next so many years
                   tradingCost=0.5/100,        # cost of turning the portfolio entirely 
                   riskAsCost=0.5/100,
-                  riskAsCostTechnical=3.5/100,
+                  riskAsCostTechnical=1.5/100,
                   otherAssetClasses=F,        # loads gold and UK house prices
                   newcomer=F,                 # displays some information on the code
                   force=F) {
@@ -99,18 +105,23 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
    totTime <- proc.time()
    
    dataSplit <<- numeric(); dataSplit <<- dataSplit
-   setDefaultValues(dataSplit=dataSplit, futureYears=futureYears, 
+   setDefaultValues(dataSplit=dataSplit, futureYears=futureYears, removeDepression=removeDepression,
                     tradingCost=tradingCost, riskAsCost=riskAsCost, 
                     riskAsCostTechnical=riskAsCostTechnical, force=force)
    if(!file.exists("./data")) dir.create("./data")
-   if (dataSplit=="search" && lastMonthSP500!="") { # lastMonthSP500 makes no sense looking at 1871-1942
-      lastMonthSP500=""
+   if (dataSplit=="search" && lastMonthSP500!="") { # 'lastMonthSP500' makes no sense looking at 1871-1942
+      lastMonthSP500="" # ignore 'lastMonthSP500'
       message("lastMonthSP500 value will not be used for 'search'.")
    }
+   if (dataSplit!="search" && removeDepression)
+      message("Depression will not be removed.") # we ignore 'removeDepression'
+   if (dataSplit=="search" && removeDepression) {
+      #message("Depression will be removed (data will stop at the end of 1929).") # we ignore 'removeDepression'
+      removeDepression <<- T   # set a global variable
+   }
       
-   ## if data frame does not exist, or is incomplete (had been used for search or testing), 
-   ## or if we want to force the loading: we load the xls file
-   if (!exists("dat") || numData<1500 || downloadAndCheckAllFiles || force) { 
+   ## if data frame does not exist or if we want to force the loading: we load the xls file
+   if (!exists("dat") || downloadAndCheckAllFiles || force) { 
    #       message("Starting to load the data from the xls file.")
    #       if (otherAssetClasses)
    #          message("Then we will also load a list of drawdowns, of gold prices and of UK house prices.")
@@ -119,7 +130,7 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
    }
    if (!exists("DD") | force) loadDDlist(otherAssetClasses=otherAssetClasses, force=force) # loading the dates of major drawdowns
    
-   if (dataSplit != "none") splitData(dataSplit=dataSplit, force=force)
+   if (dataSplit != "none") splitData(dataSplit=dataSplit, removeDepression=removeDepression, force=force)
    else {
       dat$splitting <<- factor(numData)
       levels(dat$splitting) <<- c("search", "testing")
@@ -146,7 +157,7 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
    }
    
    addInflationToDat()
-   addConstAllocToDat(smoothConstantAlloc, force=force)
+   addConstAllocToDat(smoothConstantAlloc, costs=tradingCost, force=force)
    
    if(newcomer) showForNewcomer()
    
@@ -186,9 +197,9 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
 #    else message( "This took ", round(summary(proc.time())[[3]] - totTime[[3]] , 0), " s.")
 }
 
-# start(dataSplit="search", futureYears=10L,   riskAsCostTechnical=3.5/100, force=T)
-# start(dataSplit="none",   lastMonthSP500=2067.56, futureYears=15L, riskAsCost=0, riskAsCostTechnical=0, force=T)
-# start(dataSplit="testing",lastMonthSP500=2067.56, futureYears=10L, riskAsCost=0, riskAsCostTechnical=0, force=T)
+# start(dataSplit="search", futureYears=10L, removeDepression=T, force=T)
+# start(dataSplit="none",   futureYears=15L, lastMonthSP500=2067.56, riskAsCost=0, riskAsCostTechnical=0, force=T)
+# start(dataSplit="testing",futureYears=10L, lastMonthSP500=2067.56, riskAsCost=0, riskAsCostTechnical=0, force=T)
 # plotAllReturnsVsFour()
 # checkXlsFileIsUpToDate()
 
