@@ -22,13 +22,13 @@ setSMAdefaultValues <- function() {
    def$SMA2_1       <<-  1L
    def$SMAbearish1  <<- 12
    def$SMAbullish1  <<- 12
-   def$typicalSMA1  <<- paste0("SMA_", def$SMA1_1, "_", def$SMA2_1, "__", def$SMAbearish1, "_", def$SMAbullish1)
+   def$typicalSMA1  <<- paste0("SMA_", def$SMA1_1, "_", def$SMA2_1, "_", def$SMAbearish1, "_", def$SMAbullish1)
 
    def$SMA1_2       <<- 10L
    def$SMA2_2       <<-  5L
    def$SMAbearish2  <<- 19
    def$SMAbullish2  <<- 18.5
-   def$typicalSMA2  <<- paste0("SMA_", def$SMA1_2, "_", def$SMA2_2, "__", def$SMAbearish2, "_", def$SMAbullish2)
+   def$typicalSMA2  <<- paste0("SMA_", def$SMA1_2, "_", def$SMA2_2, "_", def$SMAbearish2, "_", def$SMAbullish2)
 }
 
 ## calculating simple moving average (SMA)
@@ -70,9 +70,9 @@ createSMAstrategy <- function(inputDF="dat", inputName="TR", SMA1=def$SMA1, SMA2
    
    if(strategyName=="") {
       if (inputName=="TR")
-         strategyName <- paste0("SMA_", SMA1, "_", SMA2, "__", bearish, "_", bullish)
+         strategyName <- paste0("SMA_", SMA1, "_", SMA2, "_", bearish, "_", bullish)
       else
-         strategyName <- paste0("SMA_", inputName, "_", SMA1, "_", SMA2, "__", bearish, "_", bullish)
+         strategyName <- paste0("SMA_", SMA1, "_", SMA2, "_", bearish, "_", bullish, "__", inputName)
    }
    
    ## Calculating startIndex
@@ -166,17 +166,23 @@ calcOptimalSMA <- function(inputDF, inputName=CAPEname, minSMA1, maxSMA1, bySMA1
    
    counterTot <- 0; counterNew <- 0
    lastTimePlotted <- proc.time()
-
-   for ( SMA1 in seq(minSMA1, maxSMA1, by=bySMA1) ) 
-      for ( SMA2 in seq(minSMA2, maxSMA2, by=bySMA2) )       
-         for ( bear in seq(minBear, maxBear, by=byBear) ) {     
-            for ( delta in seq(minDelta, maxDelta, by=byDelta) ) {
-               bull = bear - delta               
+   
+   # creating ranges that allow to sample the parameter space broadly initially
+   rangeSMA1  <- createRange(minSMA1,  maxSMA1,  bySMA1)
+   rangeSMA2  <- createRange(minSMA2,  maxSMA2,  bySMA2)
+   rangeBear  <- createRange(minBear,  maxBear,  byBear)
+   rangeDelta <- createRange(minDelta, maxDelta, byDelta)   
+   
+   for (SMA1 in rangeSMA1) 
+      for (SMA2 in rangeSMA2)       
+         for (bear in rangeBear) {     
+            for (delta in rangeDelta) {
+               bull = bear - delta 
                
                if (inputName=="TR")
-                  strategyName <- paste0("SMA_", SMA1, "_", SMA2, "__", bear, "_", bull)
+                  strategyName <- paste0("SMA_", SMA1, "_", SMA2, "_", bear, "_", bull)
                else
-                  strategyName <- paste0("SMA_", inputName, "_", SMA1, "_", SMA2, "__", bear, "_", bull)
+                  strategyName <- paste0("SMA_", SMA1, "_", SMA2, "_", bear, "_", bull, "__", inputName)
                
                if (delta==0) bull = bear - 1e-3 # bear=bull creates problems
                
@@ -216,6 +222,11 @@ searchForOptimalSMA <- function(inputDF="dat", inputName="TR",
                                 type="search", col=F, plotType="symbols", 
                                 nameLength=22, plotEvery=def$plotEvery, 
                                 referenceStrategies=def$typicalSMA1, force=F) {
+   
+   if (dataSplit != "search") 
+      warning("Doing a search for parameters in '", dataSplit, "' mode.", immediate.=T)
+   
+   cleanUpStrategies()
    
    # calculate how many parameters sets will be run
    calcOptimalSMA(inputDF, inputName, minSMA1, maxSMA1, bySMA1, minSMA2, maxSMA2, bySMA2, 

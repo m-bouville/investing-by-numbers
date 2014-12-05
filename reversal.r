@@ -83,7 +83,7 @@ createReversalStrategy <- function(inputDF=def$reversalInputDF, inputName=def$re
       if (inputName=="TR")
          strategyName <- paste0("reversal_", avgOver, "_", returnToMean, "_", bearish, "_", bullish)
       else
-         strategyName <- paste0("reversal_", inputName, "_", avgOver, "_", returnToMean, "_", bearish, "_", bullish)
+         strategyName <- paste0("reversal_", avgOver, "_", returnToMean, "_", bearish, "_", bullish, "__", , inputName)
    }
 
    if (bearish==bullish) bullish = bearish + 1e-3 # bear==bull creates problems
@@ -206,7 +206,7 @@ calcOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$rever
                   if (inputName=="TR")
                      strategyName <- paste0("reversal_", avgOver, "_", RTM, "_", bear, "_", bull)
                   else
-                     strategyName <- paste0("reversal_", inputName, "_", avgOver, "_", RTM, "_", bear, "_", bull)
+                     strategyName <- paste0("reversal_", avgOver, "_", RTM, "_", bear, "_", bull, "__", inputName)
                
                counterTot <- counterTot + 1 
                if(countOnly) {

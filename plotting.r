@@ -42,7 +42,8 @@ setPlottingDefaultValues <- function() {
    def$colBoll_CAPE     <<- "darkolivegreen4"   
    def$colBoll_detrended<<- "seagreen3"   
    def$colSMA_CAPE      <<- "greenyellow"   
-   def$colReversal_CAPE <<- "darkolivegreen"   
+   # def$colReversal_CAPE <<- "darkolivegreen"
+   def$colBoll_Boll <<- "darkolivegreen4"
    
    def$colValue     <<- "blue"
    def$colTechnical <<- "red"
@@ -88,9 +89,13 @@ setPlottingDefaultValues <- function() {
    def$col7  <<- def$colBoll_detrended
    def$pch7  <<- def$pch
 
-   def$type8 <<- "SMA_CAPE"
-   def$col8  <<- def$colSMA_CAPE
+   def$type8 <<- "Boll_Boll"
+   def$col8  <<- def$colBoll_Boll
    def$pch8  <<- def$pch
+   
+#    def$type8 <<- "SMA_CAPE"
+#    def$col8  <<- def$colSMA_CAPE
+#    def$pch8  <<- def$pch
    
    # plotAllReturnsVsX(): combined strategies
    def$Msubtype1 <<- "value"
@@ -330,10 +335,10 @@ plotReturnAndAllocValue <- function(
 }
 
 plotReturnAndAllocHybrid <- function(
-         stratName1=def$typicalBoll_CAPE1,     stratName2=def$typicalBoll_CAPE2, 
-         stratName3=def$typicalBoll_detrended, stratName4=def$typicalSMA_CAPE1, 
-         col1=def$colBoll_CAPE, col2=def$colBoll_CAPE, col3=def$colBoll_detrended, col4=def$colSMA_CAPE,
-         lwd1=1.5, lwd2=2, lwd3=2, lwd4=1.5,
+         stratName1=def$typicalBoll_CAPE1, stratName2=def$typicalBoll_detrended, 
+         stratName3=def$typicalSMA_CAPE1,  stratName4=def$typicalBoll_Boll1,
+         col1=def$colBoll_CAPE, col2=def$colBoll_detrended, col3=def$colSMA_CAPE, col4=def$colBoll_Boll, 
+         lwd1=1.5, lwd2=1.5, lwd3=2, lwd4=2,
          startYear=def$plotStartYear, endYear=def$plotEndYear, 
          yLabel="", net=T, detrendBy=0, minTR=0.8, maxTR=def$maxTR, costs=def$tradingCost,
          pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
@@ -440,7 +445,7 @@ plotReturnSideways <- function(stratName1=def$typicalBalanced, stratName2="stock
                                col1=def$colBalanced,  col2=def$colConstantAlloc, col3=def$colBonds, 
                                lwd1=2, lwd2=3, lwd3=1.5, lwd4=2.5, 
                                inflationYears=7, derivativeYears=0, inflationCol=def$colInflation, 
-                               inflationMin=0, inflationMax=12, minTR=0.6, maxTR=2.,
+                               inflationMin=0, inflationMax=12, minTR=0.7, maxTR=2.2,
                                pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
                                pngName="figures/sideways_markets.png") {
    
@@ -474,30 +479,30 @@ plotReturnSideways <- function(stratName1=def$typicalBalanced, stratName2="stock
         col=inflationCol, ylim=c(inflationMin/100, inflationMax/100), ylab= "", yaxt='n' )
    par(new=F)
    
-   plotReturn(startYear=1936.5, endYear=1949.5, minTR=minTR, maxTR=maxTR, 
+   plotReturn(startYear=1936, endYear=1949.5, minTR=minTR, maxTR=maxTR, 
               stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4,
               col1=col1, col2=col2, col3=col3, col4=col4, lwd1=lwd1, lwd2=lwd2, lwd3=lwd3, lwd4=lwd4,
               legendPlacement="none")
    par(new=T)
-   plot(dat$numericDate, dat[[inflationName]], xlim=c(1936.5, 1949.5), type="l", lty=2, lwd=lwd4, 
+   plot(dat$numericDate, dat[[inflationName]], xlim=c(1936, 1949.5), type="l", lty=2, lwd=lwd4, 
         col=inflationCol, ylim=c(inflationMin/100, inflationMax/100), ylab= "", yaxt='n' )
    par(new=F)
    
-   plotReturn(startYear=1965,   endYear=1982,   minTR=minTR, maxTR=maxTR, 
+   plotReturn(startYear=1964.75,   endYear=1982,   minTR=minTR, maxTR=maxTR, 
               stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4,
               col1=col1, col2=col2, col3=col3, col4=col4, lwd1=lwd1, lwd2=lwd2, lwd3=lwd3, lwd4=lwd4,
               legendPlacement="none")
    par(new=T)
-   plot(dat$numericDate, dat[[inflationName]], xlim=c(1965, 1982), type="l", lty=2, lwd=lwd4, 
+   plot(dat$numericDate, dat[[inflationName]], xlim=c(1964.75, 1982), type="l", lty=2, lwd=lwd4, 
         col=inflationCol, ylim=c(inflationMin/100, inflationMax/100), ylab= "", yaxt='n' )
    par(new=F)
    
-   plotReturn(startYear=1999,   endYear=2011.5,   minTR=minTR, maxTR=maxTR,
+   plotReturn(startYear=1998.25,   endYear=2011.5,   minTR=minTR, maxTR=maxTR,
               stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4,
               col1=col1, col2=col2, col3=col3, col4=col4, lwd1=lwd1, lwd2=lwd2, lwd3=lwd3, lwd4=lwd4,
               legendPlacement="none")
    par(new=T)
-   plot(dat$numericDate, dat[[inflationName]], xlim=c(1999, 2011.5), type="l", lty=2, lwd=lwd4, 
+   plot(dat$numericDate, dat[[inflationName]], xlim=c(1998.25, 2011.5), type="l", lty=2, lwd=lwd4, 
         col=inflationCol, ylim=c(inflationMin/100, inflationMax/100), ylab= "", yaxt='n' )
    par(new=F)
    

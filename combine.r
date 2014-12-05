@@ -17,23 +17,21 @@ setCombinedDefaultValues <- function() {
    def$technicalStrategies  <<- c(def$typicalBoll1, def$typicalBoll2, 
                                   def$typicalSMA1, def$typicalSMA2, 
                                   def$typicalReversal1)
-   def$technicalScores      <<- c(14.81, 12.66, 14.96, 13.17, 13.76)  # 'testing', riskAsCostTechnical=1.5%
-   #def$technicalScores     <<- c(15.33, 14.45, 15.20, 12.53, 13.13)  # 'testing', riskAsCostTechnical=0.5%
+   def$technicalScores      <<- c(13.57, 12.08, 13.73, 11.17, 12.59)  # 'testing', riskAsCost=1.5%
    def$minScoreTechnical    <<- def$minScore 
    
-   def$valueStrategies      <<- c(def$typicalCAPE_hy1, def$typicalCAPE_hy2) #, def$typicalCAPE_NH, def$typicalDetrended1)
-   def$valueScores          <<- c(10.99, 11.33)  # 'testing', riskAsCost=0.5%
+   def$valueStrategies      <<- c(def$typicalCAPE_hy1, def$typicalCAPE_hy2, def$typicalDetrended1) #, def$typicalCAPE_NH)
+   def$valueScores          <<- c(12.69, 12.73, 11.08)  # 'testing', riskAsCost=1.5%
    def$minScoreValue        <<- def$minScore 
    
    def$hybridStrategies     <<- c(def$typicalBoll_CAPE1, def$typicalBoll_CAPE2, def$typicalBoll_detrended1, 
-                                  def$typicalSMA_CAPE1, def$typicalSMA_CAPE2)
-   def$hybridScores         <<- c(15.74, 10.92, 15.44, 13.07, 12.60)  # 'testing', riskAsCostTechnical=1.5%
-   #def$hybridScores        <<- c(16.08, 11.36, 16.07, 12.31, 11.41)  # 'testing', riskAsCostTechnical=0.5%
+                                  def$typicalSMA_CAPE1, def$typicalSMA_CAPE2, 
+                                  def$typicalBoll_Boll1, def$typicalBoll_Boll2)
+   def$hybridScores         <<- c(14.89, 10.80, 14.00, 12.09, 11.70, 15.31, 11.85)  # 'testing', riskAsCost=1.5%
    def$minScoreHybrid       <<- def$minScore 
    
    def$balancedStrategies   <<- c(def$typicalTechnical, def$typicalValue, def$typicalHybrid)
-   def$balancedScores       <<- c(14.78, 11.24, 15.87)   # 'testing', riskAsCostX=0.5% / 1.5%
-   #def$balancedScores      <<- c(15.05, 11.20, 16.31)   # 'testing', riskAsCostX=0.5%
+   def$balancedScores       <<- c(13.87, 12.78, 15.16)   # 'testing', riskAsCost=1.5%
    def$minScoreBalanced     <<- def$minScore 
 }
 

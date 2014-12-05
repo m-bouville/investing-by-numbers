@@ -67,17 +67,14 @@ showForNewcomer <- function() {
 
 # Loading and preparing data
 start <- function(dataSplit="none",           # "none" for all data, "search" and "testing" for half the data
-                  removeDepression=F,         # the parametrization of value strategies tends to be controlled by the Depression
-                                              #    setting 'removeDepression' to T stops the 'search' time range at the end of 1929.
-                  extrapolateDividends=T,     # whether to extrapolate missing recent dividends (or remove incomplete months)
-                  smoothConstantAlloc=F,      # calculates more constant-allocation portfolios, for smoother curves in plots
-                  downloadAndCheckAllFiles=F, # downloads data files even if they exist locally,
-                                              #    to check whether they are up to date
-                  lastMonthSP500="",          # to enter by hand the value of the S&P 500 at the end of last month
                   futureYears=10L,            # to calculate the return over the next so many years
                   tradingCost=0.5/100,        # cost of turning the portfolio entirely 
-                  riskAsCost=0.5/100,
-                  riskAsCostTechnical=1.5/100,
+                  riskAsCost= 1.5/100,
+                  lastMonthSP500="",          # to enter by hand the value of the S&P 500 at the end of last month
+                  removeDepression=F,         # stops the 'search' time range before the Depression.
+                  extrapolateDividends=T,     # whether to extrapolate missing recent dividends (or remove incomplete months)
+                  smoothConstantAlloc=F,      # calculates more constant-allocation portfolios, for smoother curves in plots
+                  downloadAndCheckAllFiles=F, # force downloading data files to check whether they are up to date
                   otherAssetClasses=F,        # loads gold and UK house prices
                   newcomer=F,                 # displays some information on the code
                   force=F) {
@@ -197,9 +194,9 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
 #    else message( "This took ", round(summary(proc.time())[[3]] - totTime[[3]] , 0), " s.")
 }
 
-# start(dataSplit="search", futureYears=10L, removeDepression=T, force=T)
-# start(dataSplit="none",   futureYears=15L, lastMonthSP500=2067.56, riskAsCost=0, riskAsCostTechnical=0, force=T)
-# start(dataSplit="testing",futureYears=10L, lastMonthSP500=2067.56, riskAsCost=0, riskAsCostTechnical=0, force=T)
+# start(dataSplit="search", futureYears=10L, force=T)
+# start(dataSplit="none",   futureYears=15L, lastMonthSP500=2067.56, riskAsCost=0, force=T)
+# start(dataSplit="testing",futureYears=10L, lastMonthSP500=2067.56, riskAsCost=0, force=T)
 # plotAllReturnsVsFour()
 # checkXlsFileIsUpToDate()
 
