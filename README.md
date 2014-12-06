@@ -1,15 +1,15 @@
 Investing by numbers  --  Mathieu Bouville, PhD
 ===============================================
 
-The world of investing has many tribes: some buy and hold, others pick stocks (which takes time and skill, and incurs trading costs). The coolest kids on the block are into day-trading (which is time-consuming and more lucrative for the intermediaries than for the traders themselves). The latter kind of speculation generally relies on charts (hence "chartism"). Part of it is magic and superstition, part of it is mathematical tools. The mathematical strategies that are objective can be backtested, i.e. we can see what would have happened had we applied them in the past. 
+The world of investing has many tribes: some buy and hold, others pick stocks (which takes time and skill, and incurs trading costs). The coolest kids on the block are into day-trading (which is time-consuming and more lucrative for the intermediaries than for the traders themselves). The latter kind of speculation generally relies on charts (hence "chartism"). Part of it is magical thinking and superstition, part of it is mathematical tools. The mathematical strategies that are objective can be backtested, i.e. we can see what would have happened had we applied them in the past: no need to believe in magic. 
 
 
 ### Keeping it slow
-A key characteristic of any strategy is its time scale. A strategy that can tell that the stock market is overpriced will necessarily trade infrequently because it may take years to be proven right: in the nineties the market was more overpriced than in 1929, but it stayed overpriced for years before crashing.
+A key characteristic of any strategy is its time scale. A strategy that can tell that the stock market is overpriced will necessarily trade infrequently because it may take years to be proven right: in the late nineties the market was more overpriced than in 1929, but it stayed overpriced for years before crashing.
 
 Some indicators aim at telling that the market is in a trend (up or down). If one expects the market to keep trending up one buys, if one expects a downward trend one sells. Such trends can exist over minutes or years. Trading on the shorter time scales is a full-time activity.
 
-I use monthly data starting in the 19th century (I deal with stocks as an asset class rather than with indivdual stocks), not daily or tick-by-tick data from the past few years. Two advantages of strategies trading less often are:
+I use monthly data starting in the 19th century (I deal with stocks as an asset class rather than with individual stocks), not daily or tick-by-tick data from the past few years. Two advantages of strategies trading less often are:
 - they are less time consuming, i.e. not a full-time job, 
 - the trading costs are not as huge an issue.
 I test the strategies,
@@ -19,7 +19,7 @@ So I do not claim that a certain strategy should work in theory, I actually test
 
 
 ### Strategies for the average investor
-I focus on time scales of years, which essentially means investing in stocks except  when the market is unfavorable. Such asset allocation is suitable for normal, non-professional investors:
+I focus on time scales of years, which essentially means investing in stocks except when the market is unfavorable. Such asset allocation is suitable for normal, non-professional investors:
 - it is based solely on dynamic changes to the stock-bond allocation,
 - there is no short position,
 - there is no stock-picking,
@@ -29,126 +29,26 @@ I focus on time scales of years, which essentially means investing in stocks exc
 - the strategies use only data that are publically available.
 
 
+### Diving into the details
 
-# Strategies
+The strategies are described in https://github.com/m-bouville/investing-by-numbers/tree/master/docs/strategies.md
 
-## Value-based strategies
-
-### Cyclically adjusted price-to-earnings ratio (CAPE)
-The price-to-earnings ratio (P/E) is a common tool for valuing a stock or a group of stock (such as an index). A difficulty is that earnings may be negative in a recession, making the P/E ratio negative as well. And if earnings drop temporarily due to the state of the economy and the stock price drops to the same extent, the P/E ratio does not change; yet it is a good time to buy because earnings will recover along with the economy. So the P/E ratio is not a very reliable guide to time the market.
-
-The cyclically adjusted P/E (CAPE) is simply a P/E ratio calculated using a longer-term historical number, for instance the average earnings over the past ten years. The idea is that such a number gives a reasonable idea of what the earnings will be over an economic cycle. When the CAPE is high, stocks are deemed expensive, and cheap when the CAPE is low. The CAPE was at or above 30 for three months in 1929, and we all know what followed. It was even above 40 in 1999 and 2000!
-
-The current project is based on something I did some time ago, based initially on CAPE strategies. So you can look at http://mathieu.bouville.name/finance/CAPE/ for a more extensive introduction to the subject.
-
-
-### Detrended price
-We calculate a long-term trend (exponential regression) for the stock prices and compare the current price to this trend. Is the current price much higher than we would expect? This would be cause for caution. If stock prices are much lower than their long-term trend we conclude that they are cheap and buy.
-
-
-### Final remarks
-A drawback of these strategies is that they may require to stay out of the stock market for over a decade. And I am not sure whether one would have the nerve to try to beat stocks by shunning them for so long. 
-
-A common claim regarding any strategy is that if it were so easy to outperform, everybody would do it. But one must remember that mutual funds care about returns only indirectly. Why will they not stay out of the market for half a dozen years when there is a bubble? Because by the time they are proven right (having a higher return than competitors with lower volatility), the fund has been closed down because all investors fled. The main risk for fund managers is a drop of asset under management, not of asset prices.
+The code is described in https://github.com/m-bouville/investing-by-numbers/tree/master/docs/code_structure.md
 
 
 
-
-## Technical strategies
-These are based on variations of the prices only. There is no attempt at finding out whether the price is objectively high or low (as with the value strategies) but instead the question is 'will it go up or down in the near future'. In the late 1990s for instance, prices were high but still increasing, so value strategies were out of the stock market whereas technical ones were in.
-
-### Bollinger bands
-The basic idea is to see whether the price is much higher than it was recently in terms of how many standard deviations away it is (somewhat similar to the z-statistics). See https://en.wikipedia.org/wiki/Bollinger_Bands for instance for a description. 
-
-### Simple moving averages (SMA)
-A simple moving average over a year is simply the average price over the past year. If the current price is higher then prices are currently going up, which is used as indication of a bull market.
-
-### Reversal
-The trend reversal strategy does not find out whether prices are going up (time to be in the market), or going down (we should be out of the market). Instead it finds out whether a rise or fall is starting. So when the signal is positive, instead of _setting_ the allocation to a high value, we _increase_ its value. For this reason the algorithm is rather different from other strategies.
-
-
-
-## Combining strategies
-I take a weighted average of the best CAPE strategy and the best detrended strategy to get a new strategy. Likewise I take a weighted average of Bollinger, SMA and momentum strategies. I then take again an average to obtain a 'balanced' strategy, which is the best of the whole bunch.
-
-
-
-
-
-# Code
-### The files
-- Each strategy is handled in a separate .r file, named after it, e.g. Bollinger.r or detrended.r;
-- utils.r has generic functions (used for all strategies);
-- plotting.r is in charge of generating plots;
-- init.r loads the data and does some initialization;
-- DD.r calculates drawdowns;
-- otherAssetClasses.r loads the data and does some initialization for gold and UK housing prices (strategies for the latter can be found in https://github.com/m-bouville/investing-by-numbers/blob/master/UK_property-market.pdf).
-
-**To get started, just source main.r.**
-
-Some useful functions can be seen by calling 'showUsefulFunctions()'.
-
-
-## Data structure
-### 'dat' dataframe
-The data are initially loaded into a dataframe named 'dat'. Everything this dataframe contains is in real terms. Each row corresponds to a month (starting in January 1871). Columns include: 
-- 'date';
-- 'numeric date', the date as a real number (convenient for plotting);
-- 'CPI', the consumer price index (used to calculation inflation, and hence real prices);
-- 'dividend' (real);
-- 'earnings' (real);
-- 'TR', i.e. (real) total return = stock price + dividends;
-- 'bonds', (real) bond prices;
-- some data calculated for the strategy, such as CAPE or moving averages.
-
-
-### 'signal', 'alloc' and 'TR' dataframes
-In all three, each row corresponds to a month and each column to a strategy. The signal is a number representing the opinion of the strategy, it is a sort of precursor to the stock allocation; the big difference being that the allocation has to be between 0 and 1. 
-
-The reason for this extra step is that an allocation of 0 does not tell us whether the strategy is simply bearish at the time or extremely bearish. So the average allocation between 2 strategies at 0% and 40% would be 20% even if the former is super pessimistic. With 'signal' on the other hand, one strategy could count as -40% and the other as 40%, with an average of 0% -- accounting for the difference between a mild pessimism and an extreme one.
-
-
-### 'stats' and 'parameters' dataframes
-The 'stats' dataframe contains the summary of statistics for the strategies. It is filled by calcStatisticsForStrategy() and its contents displayed by showSummaryForStrategy(); the function showSummaries() displays the statistics of the basic strategies in one go (all three functions are in utils.r). It has column names like:
-- 'TR', the average real total return;
-- 'netTR2', the average real total return, net of 2% of costs (tradingCost + riskAsCost) - because we demand that strategies that trade more also earn more, as said before;
-- 'volatility';
-- 'avgStockAlloc' and 'latestStockAlloc', the latter indicating what the strategy says we should be doing now;
-- 'turnover' (in years) and its inverse 'invTurnover' (used in plots);
-- 'DD2' is the sum of the squares of the drawdowns (i.e. price drops).
-
-The 'parameters' dataframe contains the parameters used to generate the strategies.  This is mostly for the record and is not commonly read. Note that the strategy names themselves include the values of the main parameters, e.g. 'CAPE10_avg30__90_95'.
-
-
-### Miscellaneous
-- 'numData' is the number of months in the data (and often the last index in ranges and loops). Currently at 1720.
-- 'def' stores a bunch of default values for function arguments as well as for parameters. It is created by setDefaultValues() in init.r.
-
-
-## How allocation and return are calculated
-The figure https://github.com/m-bouville/investing-by-numbers/blob/master/figures/structure.jpg shows the sequence for a given strategy:
-- A function with a name like createXstrategy() is called; the necessary parameters are passed as arguments. For instance: for CAPE, it will be createCAPEstrategy(), found in CAPE.r.
-- With some strategies, the data have to be preprocessed. In the case of the CAPE strategy, for instance, a column named 'CAPE10_2avg30' will be added to the 'dat' dataframe.
-- A signal (a column in the dataframe 'signal') is created based on the algorithm for the strategy and parameters for that strategy. This is done by the function calcXsignal() in the strategy R file (e.g. calcCAPEsignal() found in CAPE.r).
-- An allocation (a column in the dataframe 'alloc') is generated from the signal (this has no parameter) by the function calcAllocFromSignal(), found in utils.r.
-- A return (in the dataframe 'TR', for total return) is calculated based on the allocation by calcStrategyReturn(), found in utils.r. (All returns are in real terms, i.e. net of inflation.)
-- From this, one can calculate things like drawdowns and volatility.
-
-
-### Combining strategies
-In combine.r, one can put together several strategies based on a weighted average of their 'signal'. 
-
-In practice, this is done hierarchically: we combine value strategies with value strategies, and technical strategies with technical strategies. Then we combine the 2 resulting strategies to make up a 'balanced' strategy.
-
-
-## Results
+### Results
 The parameters are optimized using data from 1871 to 1942:
-- https://github.com/m-bouville/investing-by-numbers/blob/master/figures/return_and_allocation-1871_1942.png
-- https://github.com/m-bouville/investing-by-numbers/blob/master/figures/return_vs_four-1871_1942.png
+- https://github.com/m-bouville/investing-by-numbers/blob/master/figures/1871_1942-return_and_allocation.png
+- https://github.com/m-bouville/investing-by-numbers/blob/master/figures/1871_1942-return_vs_four.png
 
 Then tested between 1942 and 2014:
-- https://github.com/m-bouville/investing-by-numbers/blob/master/figures/return_and_allocation-1942_2014.png
-- https://github.com/m-bouville/investing-by-numbers/blob/master/figures/return_vs_four-1942_2014.png
+- https://github.com/m-bouville/investing-by-numbers/blob/master/figures/1942_2014-return_and_allocation.png
+- https://github.com/m-bouville/investing-by-numbers/blob/master/figures/1942_2014-return_vs_four.png
+
+- https://github.com/m-bouville/investing-by-numbers/blob/master/figures/return_strategy_with_gold.png shows results with gold
+- https://github.com/m-bouville/investing-by-numbers/blob/master/figures/sideways_markets.png shows 4 time periods when markets move sideways.
+
 
 
 ### Color codes for the plots
