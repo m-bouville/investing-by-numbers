@@ -196,7 +196,7 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
 
 # start(dataSplit="search", futureYears=10L, force=T)
 # start(dataSplit="none",   futureYears=15L, lastMonthSP500=2067.56, riskAsCost=0, force=T)
-# start(dataSplit="testing",futureYears=10L, lastMonthSP500=2067.56, riskAsCost=0, force=T)
+# start(dataSplit="testing",futureYears=10L, lastMonthSP500=2067.56, riskAsCost=1.5/100, force=T)
 # plotAllReturnsVsFour()
 # checkXlsFileIsUpToDate()
 

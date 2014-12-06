@@ -409,28 +409,28 @@ createTypicalStrategies <- function(extrapolateDividends=T, costs=def$tradingCos
                           signalMin=def$signalMin, signalMax=def$signalMax,
                           futureYears=def$futureYears, costs=costs, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
-   #    createReversalStrategy(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
-   #                           avgOver=def$reversalAvgOver2, returnToMean=def$reversalReturnToMean2, 
-   #                           bearish=def$reversalBearish2, bullish=def$reversalBullish2, 
-   #                           signalMin=def$signalMin, signalMax=def$signalMax,
-   #                           futureYears=def$futureYears, costs=costs, 
-   #                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
+#       createReversalStrategy(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
+#                              avgOver=def$reversalAvgOver2, returnToMean=def$reversalReturnToMean2, 
+#                              bearish=def$reversalBearish2, bullish=def$reversalBullish2, 
+#                              signalMin=def$signalMin, signalMax=def$signalMax,
+#                              futureYears=def$futureYears, costs=costs, 
+#                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
 
    
    ## Value strategies
-   createCAPEstrategy(years=def$CAPEyears_hy1, cheat=def$CAPEcheat1, avgOver=def$CAPEavgOver_hy1, 
+   createCAPEstrategy(years=def$CAPEyears_hy1, cheat=def$CAPEcheat_hy1, avgOver=def$CAPEavgOver_hy1, 
                       hysteresis=T, hystLoopWidthMidpoint=def$hystLoopWidthMidpoint1,
                       hystLoopWidth=def$hystLoopWidth1, slope=def$slope1,
                       signalMin=def$signalMin, signalMax=def$signalMax,
                       futureYears=def$futureYears, costs=costs, 
                       coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-   createCAPEstrategy(years=def$CAPEyears_hy2, cheat=def$CAPEcheat2, avgOver=def$CAPEavgOver_hy2, 
+   createCAPEstrategy(years=def$CAPEyears_hy2, cheat=def$CAPEcheat_hy2, avgOver=def$CAPEavgOver_hy2, 
                       hysteresis=T, hystLoopWidthMidpoint=def$hystLoopWidthMidpoint2,
                       hystLoopWidth=def$hystLoopWidth2, slope=def$slope2,
                       signalMin=def$signalMin, signalMax=def$signalMax,
                       futureYears=def$futureYears, costs=costs, 
                       coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-   createCAPEstrategy(years=def$CAPEyears_NH, cheat=def$CAPEcheat, avgOver=def$CAPEavgOver_NH, 
+   createCAPEstrategy(years=def$CAPEyears_NH, cheat=def$CAPEcheat_NH, avgOver=def$CAPEavgOver_NH, 
                       hysteresis=F, bearish=def$CAPEbearish, bullish=def$CAPEbullish, 
                       signalMin=def$signalMin, signalMax=def$signalMax,
                       futureYears=def$futureYears, costs=costs, 
@@ -442,12 +442,12 @@ createTypicalStrategies <- function(extrapolateDividends=T, costs=def$tradingCos
                            signalMin=def$signalMin, signalMax=def$signalMax,
                            futureYears=def$futureYears, costs=costs, 
                            coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-   createDetrendedStrategy(inputDF=def$detrendedInputDF, inputName=def$detrendedInputName, 
-                           avgOver=def$detrendedAvgOver2, 
-                           bearish=def$detrendedBearish2, bullish=def$detrendedBullish2, 
-                           signalMin=def$signalMin, signalMax=def$signalMax,
-                           futureYears=def$futureYears, costs=costs, 
-                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+#    createDetrendedStrategy(inputDF=def$detrendedInputDF, inputName=def$detrendedInputName, 
+#                            avgOver=def$detrendedAvgOver2, 
+#                            bearish=def$detrendedBearish2, bullish=def$detrendedBullish2, 
+#                            signalMin=def$signalMin, signalMax=def$signalMax,
+#                            futureYears=def$futureYears, costs=costs, 
+#                            coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    
    ## Hybrid strategies
    if (!(def$Boll_CAPEinputName1 %in% colnames(dat))) 
@@ -488,22 +488,22 @@ createTypicalStrategies <- function(extrapolateDividends=T, costs=def$tradingCos
                      futureYears=def$futureYears, costs=costs, 
                      coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
 
-   # if (!(def$reversal_CAPEinputName1 %in% colnames(dat))) 
-   #    calcCAPE(years=def$reversal_CAPEyears1, cheat=def$reversal_CAPEcheat1)
-   # createReversalStrategy(inputDF=def$reversal_CAPEinputDF, inputName=def$reversal_CAPEinputName1, 
-   #                        avgOver=def$reversal_CAPEavgOver1, returnToMean=def$reversal_CAPEreturnToMean1, 
-   #                        bearish=def$reversal_CAPEbearish1, bullish=def$reversal_CAPEbullish1, 
-   #                        signalMin=def$signalMin, signalMax=def$signalMax,
-   #                        futureYears=def$futureYears, costs=costs, 
-   #                        coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
-   # if (!(def$reversal_CAPEinputName2 %in% colnames(dat))) 
-   #    calcCAPE(years=def$reversal_CAPEyears2, cheat=def$reversal_CAPEcheat2)
-   # createReversalStrategy(inputDF=def$reversal_CAPEinputDF, inputName=def$reversal_CAPEinputName2, 
-   #                        avgOver=def$reversal_CAPEavgOver2, returnToMean=def$reversal_CAPEreturnToMean2, 
-   #                        bearish=def$reversal_CAPEbearish2, bullish=def$reversal_CAPEbullish2, 
-   #                        signalMin=def$signalMin, signalMax=def$signalMax,
-   #                        futureYears=def$futureYears, costs=costs, 
-   #                        coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
+   if (!(def$reversal_CAPEinputName1 %in% colnames(dat))) 
+      calcCAPE(years=def$reversal_CAPEyears1, cheat=def$reversal_CAPEcheat1)
+   createReversalStrategy(inputDF=def$reversal_CAPEinputDF,  inputName=def$reversal_CAPEinputName1, 
+                          avgOver=def$reversal_CAPEavgOver1, returnToMean=def$reversal_CAPEreturnToMean1, 
+                          bearish=def$reversal_CAPEbearish1, bullish=def$reversal_CAPEbullish1, 
+                          signalMin=def$signalMin, signalMax=def$signalMax,
+                          strategyName=def$typicalReversal_CAPE1, futureYears=def$futureYears, costs=costs, 
+                          coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
+   if (!(def$reversal_CAPEinputName2 %in% colnames(dat))) 
+      calcCAPE(years=def$reversal_CAPEyears2, cheat=def$reversal_CAPEcheat2)
+   createReversalStrategy(inputDF=def$reversal_CAPEinputDF, inputName=def$reversal_CAPEinputName2, 
+                          avgOver=def$reversal_CAPEavgOver2, returnToMean=def$reversal_CAPEreturnToMean2, 
+                          bearish=def$reversal_CAPEbearish2, bullish=def$reversal_CAPEbullish2, 
+                          signalMin=def$signalMin, signalMax=def$signalMax,
+                          strategyName=def$typicalReversal_CAPE2, futureYears=def$futureYears, costs=costs, 
+                          coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
    
    createBollStrategy(inputDF="dat", inputName="TR", avgOver=def$Boll_BollAvgOver1_1, bearish=def$Boll_BollBearish1_1, 
                       bullish=def$Boll_BollBullish1_1, futureYears=def$futureYears, force=force)

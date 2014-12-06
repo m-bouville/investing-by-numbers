@@ -20,8 +20,9 @@ setCombinedDefaultValues <- function() {
    def$technicalScores      <<- c(13.57, 12.08, 13.73, 11.17, 12.59)  # 'testing', riskAsCost=1.5%
    def$minScoreTechnical    <<- def$minScore 
    
-   def$valueStrategies      <<- c(def$typicalCAPE_hy1, def$typicalCAPE_hy2, def$typicalDetrended1) #, def$typicalCAPE_NH)
-   def$valueScores          <<- c(12.69, 12.73, 11.08)  # 'testing', riskAsCost=1.5%
+   def$valueStrategies      <<- c(def$typicalCAPE_hy1, def$typicalCAPE_hy2, 
+                                  def$typicalCAPE_NH,  def$typicalDetrended1)
+   def$valueScores          <<- c(12.69, 12.73, 10.62, 11.09)  # 'testing', riskAsCost=1.5%
    def$minScoreValue        <<- def$minScore 
    
    def$hybridStrategies     <<- c(def$typicalBoll_CAPE1, def$typicalBoll_CAPE2, def$typicalBoll_detrended1, 
@@ -31,7 +32,7 @@ setCombinedDefaultValues <- function() {
    def$minScoreHybrid       <<- def$minScore 
    
    def$balancedStrategies   <<- c(def$typicalTechnical, def$typicalValue, def$typicalHybrid)
-   def$balancedScores       <<- c(13.87, 12.78, 15.16)   # 'testing', riskAsCost=1.5%
+   def$balancedScores       <<- c(13.80, 12.79, 15.15)   # 'testing', riskAsCost=1.5%
    def$minScoreBalanced     <<- def$minScore 
 }
 

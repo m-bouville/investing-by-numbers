@@ -288,6 +288,13 @@ regression <- function(x, y) { # y = a + b x
    return( c(a, b) )
 }
 
+createRange <- function (minValue, maxValue, byValue) {
+   if (minValue != maxValue)
+      return ( c( seq(minValue, maxValue, by=2*byValue), 
+                  seq(minValue+byValue, maxValue, by=2*byValue) ) )
+   else return (minValue)
+   
+}
 
 deleteStrategy <- function(stratName, warnings=T) {
    # delete strategy from DFs where it is entered as a column
@@ -388,6 +395,16 @@ cleanUpStrategies <- function(warnings=F) {
          deleteStrategy(stratName, warnings=warnings)
          counter   <- counter+1 
       }
+   
+   # looking for strategies for which 'DD' is complete, but 'stats' is not
+   for ( i in (7:dim(stats)[[1]]) )
+      if ( is.na(stats$score[i] )) {
+         stratName <- stats$strategy[i]
+         print(paste(stratName, "will be deleted (score = NA).") )        
+         deleteStrategy(stratName, warnings=warnings)
+         counter   <- counter+1 
+      }
+   
    
    #print( paste("entries deleted:", counter) )
 }
@@ -624,8 +641,8 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost+def
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)   
       showSummaryForStrategy(def$typicalReversal1,  displayName="reversal", futureYears=futureYears, costs=costsTechnical, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-      #       showSummaryForStrategy(def$typicalReversal2,  displayName="reversal 2 **", futureYears=futureYears, costs=costsTechnical, 
-      #                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+#       showSummaryForStrategy(def$typicalReversal2,  displayName="reversal 2 **", futureYears=futureYears, costs=costsTechnical, 
+#                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
 
       print(dashes)   
       ## Value strategies
@@ -633,12 +650,12 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost+def
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
       showSummaryForStrategy(def$typicalCAPE_hy2,     displayName="CAPE hysteresis 2", futureYears=futureYears, costs=costs, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-      showSummaryForStrategy(def$typicalCAPE_NH,      displayName="CAPE no hysteresis**", futureYears=futureYears, costs=costs, 
+      showSummaryForStrategy(def$typicalCAPE_NH,      displayName="CAPE no hysteresis", futureYears=futureYears, costs=costs, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
       showSummaryForStrategy(def$typicalDetrended1, displayName="detrended", futureYears=futureYears, costs=costs, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-      showSummaryForStrategy(def$typicalDetrended2, displayName="detrended 2 **", futureYears=futureYears, costs=costs, 
-                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+#       showSummaryForStrategy(def$typicalDetrended2, displayName="detrended 2 **", futureYears=futureYears, costs=costs, 
+#                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
 
       print(dashes)   
       ## Hybrid strategies
@@ -652,12 +669,12 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost+def
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
       showSummaryForStrategy(def$typicalSMA_CAPE2, displayName="SMA(CAPE) 2", futureYears=futureYears, costs=costsTechnical, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-   #       showSummaryForStrategy(def$typicalReversal_CAPE1, displayName="reversal(CAPE) 1 **", 
-   #                              futureYears=futureYears, costs=costsTechnical, 
-   #                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-   #       showSummaryForStrategy(def$typicalReversal_CAPE2, displayName="reversal(CAPE) 2 **", 
-   #                              futureYears=futureYears, costs=costsTechnical, 
-   #                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+      showSummaryForStrategy(def$typicalReversal_CAPE1, displayName="reversal(CAPE) 1 **", 
+                             futureYears=futureYears, costs=costsTechnical, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+      showSummaryForStrategy(def$typicalReversal_CAPE2, displayName="reversal(CAPE) 2 **", 
+                             futureYears=futureYears, costs=costsTechnical, 
+                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    showSummaryForStrategy(def$typicalBoll_Boll1, displayName="Boll(Boll) 1", futureYears=futureYears, costs=costsTechnical, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    showSummaryForStrategy(def$typicalBoll_Boll2, displayName="Boll(Boll) 2", futureYears=futureYears, costs=costsTechnical, 

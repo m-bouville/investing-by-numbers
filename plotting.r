@@ -16,7 +16,7 @@
 #default values of plotting parameters
 setPlottingDefaultValues <- function() {
    def$yTRmin    <<-   7.5
-   def$yTRmax    <<-  10
+   def$yTRmax    <<-   9.8
    
    def$pngWidth  <<-1024
    def$pngHeight <<- 768
@@ -77,10 +77,6 @@ setPlottingDefaultValues <- function() {
    def$col5  <<- def$colDetrended
    def$pch5  <<- def$pch
 
-   #    def$type3 <<- "inflation"
-   #    def$col3  <<- def$colInflation
-   #    def$pch3  <<- def$pch
-   
    def$type6 <<- "Boll_CAPE"
    def$col6  <<- def$colBoll_CAPE
    def$pch6  <<- def$pch
@@ -93,10 +89,15 @@ setPlottingDefaultValues <- function() {
    def$col8  <<- def$colBoll_Boll
    def$pch8  <<- def$pch
    
-#    def$type8 <<- "SMA_CAPE"
-#    def$col8  <<- def$colSMA_CAPE
-#    def$pch8  <<- def$pch
+   def$type9 <<- "SMA_CAPE"
+   def$col9  <<- def$colSMA_CAPE
+   def$pch9  <<- def$pch
    
+   def$type10<<- "inflation"
+   def$col10 <<- def$colInflation
+   def$pch10 <<- def$pch
+   
+
    # plotAllReturnsVsX(): combined strategies
    def$Msubtype1 <<- "value"
    def$Mcol1     <<- def$colValue
@@ -318,10 +319,9 @@ plotReturnAndAllocTechnical <- function(
 
 plotReturnAndAllocValue <- function(
          stratName1=def$typicalCAPE_hy1, stratName2=def$typicalCAPE_hy2, 
-         stratName3=def$typicalValue, stratName4="stocks",
-         col1=def$colCAPE_hy, col2=def$colCAPE_hy, col3=def$colValue, col4=def$colConstantAlloc, 
-         lwd1=2, lwd2=1.5, lwd3=2, lwd4=2,
-         #stratName4=def$typicalValue,     col4=def$colValue,     lwd4=2,
+         stratName3=def$typicalCAPE_NH,  stratName4=def$typicalDetrended1,
+         col1=def$colCAPE_hy, col2=def$colCAPE_hy, col3=def$colCAPE_NH, col4=def$colDetrended, 
+         lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=1.5,
          startYear=def$plotStartYear, endYear=def$plotEndYear, 
          yLabel="", net=T, detrendBy=0, minTR=0.8, maxTR=def$maxTR, costs=def$tradingCost,
          pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
@@ -978,6 +978,8 @@ plotAllReturnsVsSomeParameter <- function(type1=def$type1, col1=def$col1, pch1=d
                                           type6=def$type6, col6=def$col6, pch6=def$pch6, 
                                           type7=def$type7, col7=def$col7, pch7=def$pch7, 
                                           type8=def$type8, col8=def$col8, pch8=def$pch8, 
+                                          type9=def$type9, col9=def$col9, pch9=def$pch9, 
+                                          type10=def$type10,col10=def$col10,pch10=def$pch10,
                                           Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
                                           Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
                                           Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
@@ -1023,7 +1025,9 @@ plotAllReturnsVsSomeParameter <- function(type1=def$type1, col1=def$col1, pch1=d
          if (stats$subtype[i] == def$type6) Scol <- def$col6
          if (stats$subtype[i] == def$type7) Scol <- def$col7
          if (stats$subtype[i] == def$type8) Scol <- def$col8
-         
+         if (stats$subtype[i] == def$type9) Scol <- def$col9
+         if (stats$subtype[i] == def$type10)Scol <- def$col10
+
          if (stats$subtype[i] == def$Msubtype1) {
             Scol <- def$Mcol1
             Spch <- def$SpchM} # 
@@ -1086,6 +1090,12 @@ plotAllReturnsVsSomeParameter <- function(type1=def$type1, col1=def$col1, pch1=d
    points(xFactor*subset(stats[, xStatsName], stats$type==type8), 
           yFactor*subset(stats[, yStatsName], stats$type==type8), 
           pch=pch8, col=col8, xlab="", ylab="", xlim=xRange, ylim=yRange)
+   points(xFactor*subset(stats[, xStatsName], stats$type==type9), 
+          yFactor*subset(stats[, yStatsName], stats$type==type9), 
+          pch=pch9, col=col9, xlab="", ylab="", xlim=xRange, ylim=yRange)
+   points(xFactor*subset(stats[, xStatsName], stats$type==type10), 
+          yFactor*subset(stats[, yStatsName], stats$type==type10), 
+          pch=pch10,col=col10,xlab="", ylab="", xlim=xRange, ylim=yRange)
    ## Multistrategies:
    points(xFactor*subset(stats[, xStatsName], (stats$type=="combined" & stats$subtype==Msubtype1) ), 
         yFactor*subset(stats[, yStatsName], (stats$type=="combined" & stats$subtype==Msubtype1) ), 
@@ -1123,6 +1133,8 @@ plotAllReturnsVsVolatility <- function(type1=def$type1, col1=def$col1, pch1=def$
                                        type6=def$type6, col6=def$col6, pch6=def$pch6, 
                                        type7=def$type7, col7=def$col7, pch7=def$pch7, 
                                        type8=def$type8, col8=def$col8, pch8=def$pch8, 
+                                       type9=def$type9, col9=def$col9, pch9=def$pch9, 
+                                       type10=def$type10,col10=def$col10,pch10=def$pch10,
                                        Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
                                        Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
                                        Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
@@ -1139,6 +1151,7 @@ plotAllReturnsVsVolatility <- function(type1=def$type1, col1=def$col1, pch1=def$
                                  type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
                                  type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6, 
                                  type7=type7, col7=col7, pch7=pch7, type8=type8, col8=col8, pch8=pch8, 
+                                 type9=type9, col9=col9, pch9=pch9,type10=type10,col10=col10,pch10=pch10,
                                  Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
                                  Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
                                  Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
@@ -1158,6 +1171,8 @@ plotAllReturnsVsDrawdown <- function(type1=def$type1, col1=def$col1, pch1=def$pc
                                      type6=def$type6, col6=def$col6, pch6=def$pch6, 
                                      type7=def$type7, col7=def$col7, pch7=def$pch7, 
                                      type8=def$type8, col8=def$col8, pch8=def$pch8, 
+                                     type9=def$type9, col9=def$col9, pch9=def$pch9, 
+                                     type10=def$type10,col10=def$col10,pch10=def$pch10,
                                      Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
                                      Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
                                      Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
@@ -1174,6 +1189,7 @@ plotAllReturnsVsDrawdown <- function(type1=def$type1, col1=def$col1, pch1=def$pc
                                  type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
                                  type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6, 
                                  type7=type7, col7=col7, pch7=pch7, type8=type8, col8=col8, pch8=pch8, 
+                                 type9=type9, col9=col9, pch9=pch9,type10=type10,col10=col10,pch10=pch10,
                                  Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
                                  Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
                                  Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
@@ -1193,6 +1209,8 @@ plotAllReturnsVsAverageAlloc <- function(type1=def$type1, col1=def$col1, pch1=de
                                          type6=def$type6, col6=def$col6, pch6=def$pch6, 
                                          type7=def$type7, col7=def$col7, pch7=def$pch7, 
                                          type8=def$type8, col8=def$col8, pch8=def$pch8, 
+                                         type9=def$type9, col9=def$col9, pch9=def$pch9, 
+                                         type10=def$type10,col10=def$col10,pch10=def$pch10,
                                          Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
                                          Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
                                          Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
@@ -1209,6 +1227,7 @@ plotAllReturnsVsAverageAlloc <- function(type1=def$type1, col1=def$col1, pch1=de
                                  type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
                                  type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6, 
                                  type7=type7, col7=col7, pch7=pch7, type8=type8, col8=col8, pch8=pch8, 
+                                 type9=type9, col9=col9, pch9=pch9,type10=type10,col10=col10,pch10=pch10,
                                  Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
                                  Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
                                  Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
@@ -1228,6 +1247,8 @@ plotAllReturnsVsInverseTurnover <- function(type1=def$type1, col1=def$col1, pch1
                                             type6=def$type6, col6=def$col6, pch6=def$pch6, 
                                             type7=def$type7, col7=def$col7, pch7=def$pch7, 
                                             type8=def$type8, col8=def$col8, pch8=def$pch8, 
+                                            type9=def$type9, col9=def$col9, pch9=def$pch9, 
+                                            type10=def$type10,col10=def$col10,pch10=def$pch10,
                                             Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
                                             Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
                                             Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
@@ -1247,6 +1268,7 @@ plotAllReturnsVsInverseTurnover <- function(type1=def$type1, col1=def$col1, pch1
                                  type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
                                  type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6, 
                                  type7=type7, col7=col7, pch7=pch7, type8=type8, col8=col8, pch8=pch8, 
+                                 type9=type9, col9=col9, pch9=pch9,type10=type10,col10=col10,pch10=pch10,
                                  Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
                                  Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
                                  Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
@@ -1268,6 +1290,8 @@ plotAllReturnsVsFour <- function(type1=def$type1, col1=def$col1, pch1=def$pch1,
                                  type6=def$type6, col6=def$col6, pch6=def$pch6, 
                                  type7=def$type7, col7=def$col7, pch7=def$pch7, 
                                  type8=def$type8, col8=def$col8, pch8=def$pch8, 
+                                 type9=def$type9, col9=def$col9, pch9=def$pch9, 
+                                 type10=def$type10,col10=def$col10,pch10=def$pch10,
                                  Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
                                  Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
                                  Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
@@ -1292,6 +1316,7 @@ plotAllReturnsVsFour <- function(type1=def$type1, col1=def$col1, pch1=def$pch1,
                               type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
                               type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6,  
                               type7=type7, col7=col7, pch7=pch7, type8=type8, col8=col8, pch8=pch8, 
+                              type9=type9, col9=col9, pch9=pch9,type10=type10,col10=col10,pch10=pch10,
                               Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
                               Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
                               Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
@@ -1304,6 +1329,7 @@ plotAllReturnsVsFour <- function(type1=def$type1, col1=def$col1, pch1=def$pch1,
                             type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
                             type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6, 
                             type7=type7, col7=col7, pch7=pch7, type8=type8, col8=col8, pch8=pch8, 
+                            type9=type9, col9=col9, pch9=pch9,type10=type10,col10=col10,pch10=pch10,
                             Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
                             Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
                             Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
@@ -1316,6 +1342,7 @@ plotAllReturnsVsFour <- function(type1=def$type1, col1=def$col1, pch1=def$pch1,
                                 type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
                                 type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6, 
                                 type7=type7, col7=col7, pch7=pch7, type8=type8, col8=col8, pch8=pch8, 
+                                type9=type9, col9=col9, pch9=pch9,type10=type10,col10=col10,pch10=pch10,
                                 Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
                                 Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
                                 Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
@@ -1328,6 +1355,7 @@ plotAllReturnsVsFour <- function(type1=def$type1, col1=def$col1, pch1=def$pch1,
                                    type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
                                    type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6, 
                                    type7=type7, col7=col7, pch7=pch7, type8=type8, col8=col8, pch8=pch8, 
+                                   type9=type9, col9=col9, pch9=pch9,type10=type10,col10=col10,pch10=pch10,
                                    Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
                                    Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
                                    Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
@@ -1354,6 +1382,8 @@ plotAllReturnsVsTwo <- function(type1=def$type1, col1=def$col1, pch1=def$pch1,
                                 type6=def$type6, col6=def$col6, pch6=def$pch6, 
                                 type7=def$type7, col7=def$col7, pch7=def$pch7, 
                                 type8=def$type8, col8=def$col8, pch8=def$pch8, 
+                                type9=def$type9, col9=def$col9, pch9=def$pch9, 
+                                type10=def$type10,col10=def$col10,pch10=def$pch10,
                                 Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
                                 Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
                                 Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
@@ -1378,6 +1408,7 @@ plotAllReturnsVsTwo <- function(type1=def$type1, col1=def$col1, pch1=def$pch1,
                               type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
                               type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6,  
                               type7=type7, col7=col7, pch7=pch7, type8=type8, col8=col8, pch8=pch8, 
+                              type9=type9, col9=col9, pch9=pch9,type10=type10,col10=col10,pch10=pch10,
                               Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
                               Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
                               Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
@@ -1390,6 +1421,7 @@ plotAllReturnsVsTwo <- function(type1=def$type1, col1=def$col1, pch1=def$pch1,
                             type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
                             type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6, 
                             type7=type7, col7=col7, pch7=pch7, type8=type8, col8=col8, pch8=pch8, 
+                            type9=type9, col9=col9, pch9=pch9,type10=type10,col10=col10,pch10=pch10,
                             Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
                             Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
                             Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
