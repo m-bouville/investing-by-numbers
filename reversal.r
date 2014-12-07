@@ -19,19 +19,26 @@ setReversalDefaultValues <- function() {
    def$reversalInputDF       <<- "dat"
    def$reversalInputName     <<- "TR"
    
-   def$reversalAvgOver1      <<-   9L
+   def$reversalAvgOver1      <<-   9L     # optimized with costs = 2%
    def$reversalReturnToMean1 <<-  13.5
    def$reversalBearish1      <<- -50
-   def$reversalBullish1      <<- -50     # DD^2: 50
+   def$reversalBullish1      <<- -50 
    def$typicalReversal1      <<- paste0("reversal_", def$reversalAvgOver1, "_", def$reversalReturnToMean1, "_", 
                                         def$reversalBearish1, "_", def$reversalBullish1)
    
-   def$reversalAvgOver2      <<- 11L     # 6L
-   def$reversalReturnToMean2 <<- 17      # 4.2
-   def$reversalBearish2      <<-  2      # 3.6
-   def$reversalBullish2      <<-  2      # 4   
+   def$reversalAvgOver2      <<- 11L     # optimized with costs = 2%  # 11L
+   def$reversalReturnToMean2 <<- 21      # 17
+   def$reversalBearish2      <<-  0      # 2
+   def$reversalBullish2      <<-  0      # 2   
    def$typicalReversal2      <<- paste0("reversal_", def$reversalAvgOver2, "_", def$reversalReturnToMean2, "_", 
                                         def$reversalBearish2, "_", def$reversalBullish2)
+
+#    def$reversalAvgOver2      <<-  6L     # optimized with costs = 2%  # 6L
+#    def$reversalReturnToMean2 <<-  4.2    # 4.2
+#    def$reversalBearish2      <<-  3.4    # 3.6
+#    def$reversalBullish2      <<-  3.4    # 4   
+#    def$typicalReversal2      <<- paste0("reversal_", def$reversalAvgOver2, "_", def$reversalReturnToMean2, "_", 
+#                                         def$reversalBearish2, "_", def$reversalBullish2)
 }
 
 
@@ -83,7 +90,8 @@ createReversalStrategy <- function(inputDF=def$reversalInputDF, inputName=def$re
       if (inputName=="TR")
          strategyName <- paste0("reversal_", avgOver, "_", returnToMean, "_", bearish, "_", bullish)
       else
-         strategyName <- paste0("reversal_", avgOver, "_", returnToMean, "_", bearish, "_", bullish, "__", , inputName)
+         strategyName <- paste0("reversal_", avgOver, "_", returnToMean, "_", bearish, "_", bullish, 
+                                "__", inputName)
    }
 
    if (bearish==bullish) bullish = bearish + 1e-3 # bear==bull creates problems
@@ -194,19 +202,26 @@ calcOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$rever
                                 minTR=0, maxVol=20, maxDD2=5, minTO=0.7, minScore=14.8, countOnly,
                                 xMinVol, xMaxVol, xMinDD2, xMaxDD2,
                                 col=F, plotType="symbols", nameLength=25, plotEvery=def$plotEvery, force=F) {
+
    counterTot <- 0; counterNew <- 0
    lastTimePlotted <- proc.time()  
-   
-   for ( avgOver in seq(minAvgOver, maxAvgOver, by=byAvgOver) ) 
-      for ( RTM in seq(minRTM, maxRTM, by=byRTM) ) 
-         for ( bear in seq(minBear, maxBear, by=byBear) ) {     
-            for ( delta in seq(minDelta, maxDelta, by=byDelta) ) {
-               bull = bear + delta
 
-                  if (inputName=="TR")
-                     strategyName <- paste0("reversal_", avgOver, "_", RTM, "_", bear, "_", bull)
-                  else
-                     strategyName <- paste0("reversal_", avgOver, "_", RTM, "_", bear, "_", bull, "__", inputName)
+   # creating ranges that allow to sample the parameter space broadly initially
+   rangeAvgOver <- createRange(minAvgOver, maxAvgOver, byAvgOver)
+   rangeRTM     <- createRange(minRTM,     maxRTM,     byRTM)
+   rangeBear    <- createRange(minBear,    maxBear,    byBear)
+   rangeDelta   <- createRange(minDelta,   maxDelta,   byDelta)   
+   
+   for (avgOver in rangeAvgOver) 
+      for (RTM in rangeRTM) 
+         for (bear in rangeBear) {
+            for (delta in rangeDelta) {
+               bull = bear + delta
+               
+               if (inputName=="TR")
+                  strategyName <- paste0("reversal_", avgOver, "_", RTM, "_", bear, "_", bull)
+               else
+                  strategyName <- paste0("reversal_", avgOver, "_", RTM, "_", bear, "_", bull, "__", inputName)
                
                counterTot <- counterTot + 1 
                if(countOnly) {
@@ -214,11 +229,11 @@ calcOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$rever
                      counterNew <- counterNew + 1                  
                } else {
                   createReversalStrategy(inputDF=inputDF, inputName=inputName, avgOver=avgOver, returnToMean=RTM, 
-                                      bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
-                                      strategyName=strategyName, costs=costs, force=force)                  
+                                         bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
+                                         strategyName=strategyName, costs=costs, force=force)                  
                   showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
-                                      minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
-                                      nameLength=nameLength, force=F)
+                                         minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
+                                         nameLength=nameLength, force=F)
                }
             }
             if ( !countOnly && (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { 
@@ -240,12 +255,16 @@ searchForOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$
                                     minDelta=  0,  maxDelta=   1,  byDelta=  0.2, 
                                     futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
                                     minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.7, minScore=7.2,
-                                    xMinVol=13, xMaxVol=17, xMinDD2=3, xMaxDD2=8.5,
-                                    col=F, plotType="symbols", nameLength=27, plotEvery=def$plotEvery, 
+                                    xMinVol=13, xMaxVol=16.5, xMinDD2=4, xMaxDD2=9,
+                                    col=F, plotType="symbols", nameLength=30, plotEvery=def$plotEvery, 
                                     referenceStrategies=c(def$typicalReversal1, def$typicalReversal2), force=F) {
 
    if (dataSplit != "search") 
       warning("Doing a search for parameters in '", dataSplit, "' mode.", immediate.=T)
+   if (costs < 1/100) 
+      warning("costs = ", costs*100, "%.", immediate.=T)
+   
+   cleanUpStrategies()
    
    # calculate how many parameter sets will be run
    calcOptimalReversal(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOver, 
@@ -269,21 +288,39 @@ searchForOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$
 }
 
 
-searchForTwoOptimalReversal <-function(plotType="symbols", force=F) {
-   print("Reversal 1")
-   searchForOptimalReversal(minAvgOver=8L, maxAvgOver=10L, byAvgOver=1L,
-                            minRTM=   13,  maxRTM=    14.5,byRTM=    0.5,
-                            minBear= -53,  maxBear=  -49,  byBear=   0.5,
-                            minDelta=  0,  maxDelta=   1,  byDelta=  0.5, minScore=7.85 )
-   print("")
-   
-   print("Reversal 2")
-   searchForOptimalReversal(minAvgOver=10L, maxAvgOver=12L, byAvgOver=1L,
-                            minRTM=    17,  maxRTM=    21,  byRTM=    1,
-                            minBear=   -2,  maxBear=    3,  byBear=   1,
-                            minDelta=   0,  maxDelta=   1,  byDelta=  1, minScore=7.8 )
-#    searchForOptimalReversal(minAvgOver=5L,  maxAvgOver= 7L,  byAvgOver=1L,
-#                             minRTM=    4.,  maxRTM=     4.4, byRTM=    0.2,
-#                             minBear=   3.,  maxBear=    4.2, byBear=   0.4,
-#                             minDelta=  0,   maxDelta=   1.2, byDelta=  0.4, minScore=7.29 )
+searchForThreeOptimalReversal <-function(minScore1=14.7, minScore2=15.65, minScore3=14.7, 
+                                         do1=T, do2=T, do3=T, plotType="symbols", force=F) {
+   if(do1) {
+      print("Reversal 1")
+      searchForOptimalReversal(minAvgOver=8L, maxAvgOver=10L,  byAvgOver=1L,
+                               minRTM=   13,  maxRTM=    14,   byRTM=    0.5,
+                               minBear= -52,  maxBear=  -49,   byBear=   0.5,
+                               minDelta=  0,  maxDelta=   1.5, byDelta=  0.5, 
+                               referenceStrategies=def$typicalReversal1, minScore=minScore1 )
+   }
+   if( do1 && (do2||do3) ) { # needed only if there is something to seperate
+      print("")
+      print("***********************************************************************************************")
+      print("")
+   }
+   if(do2) {
+      print("Reversal 2")
+      searchForOptimalReversal(minAvgOver=10L, maxAvgOver=12L, byAvgOver=1L,
+                               minRTM=    19,  maxRTM=    22,  byRTM=    0.5,
+                               minBear=   -2,  maxBear=    1,  byBear=   0.5,
+                               minDelta=   0,  maxDelta=   1,  byDelta=  0.5, 
+                               referenceStrategies=def$typicalReversal2, minScore=minScore2 )
+   }
+   if( do3 && (do1||do2) ) { # needed only if there is something to seperate
+      print("")
+      print("***********************************************************************************************")
+      print("")
+   }
+   if(do3) {
+      print("Reversal 3")
+      searchForOptimalReversal(minAvgOver=5L,  maxAvgOver= 7L,  byAvgOver=1L,
+                               minRTM=    4.,  maxRTM=     4.4, byRTM=    0.2,
+                               minBear=   2.6, maxBear=    3.8, byBear=   0.2,
+                               minDelta=  0,   maxDelta=   1.,  byDelta=  0.2, minScore=minScore3 )
+   }
 }

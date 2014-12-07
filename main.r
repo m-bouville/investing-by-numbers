@@ -66,7 +66,7 @@ showForNewcomer <- function() {
 }
 
 # Loading and preparing data
-start <- function(dataSplit="none",           # "none" for all data, "search" and "testing" for half the data
+start <- function(dataSplit="all",           # "all" for all data, "search" and "testing" for half the data
                   futureYears=10L,            # to calculate the return over the next so many years
                   tradingCost=0.5/100,        # cost of turning the portfolio entirely 
                   riskAsCost= 1.5/100,
@@ -127,7 +127,7 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
    }
    if (!exists("DD") | force) loadDDlist(otherAssetClasses=otherAssetClasses, force=force) # loading the dates of major drawdowns
    
-   if (dataSplit != "none") splitData(dataSplit=dataSplit, removeDepression=removeDepression, force=force)
+   if (dataSplit != "all") splitData(dataSplit=dataSplit, removeDepression=removeDepression, force=force)
    else {
       dat$splitting <<- factor(numData)
       levels(dat$splitting) <<- c("search", "testing")
@@ -195,7 +195,7 @@ start <- function(dataSplit="none",           # "none" for all data, "search" an
 }
 
 # start(dataSplit="search", futureYears=10L, force=T)
-# start(dataSplit="none",   futureYears=15L, lastMonthSP500=2067.56, riskAsCost=0, force=T)
+# start(dataSplit="all",    futureYears=15L, lastMonthSP500=2067.56, riskAsCost=0, force=T)
 # start(dataSplit="testing",futureYears=10L, lastMonthSP500=2067.56, riskAsCost=1.5/100, force=T)
 # plotAllReturnsVsFour()
 # checkXlsFileIsUpToDate()

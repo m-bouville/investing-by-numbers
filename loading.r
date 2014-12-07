@@ -26,21 +26,21 @@ setDefaultValues <- function(dataSplit, futureYears, removeDepression,
    }
    else if(dataSplit=="testing") 
       rangeName <- "\'TESTING\' phase"
-   else if(dataSplit=="none") 
-      rangeName <- "\'NONE\' phase"
-   else stop("dataSplit can only be one of 'none', 'search' or 'testing', not ", dataSplit)
+   else if(dataSplit=="all") 
+      rangeName <- "\'ALL\' phase"
+   else stop("dataSplit can only be one of 'all', 'search' or 'testing', not ", dataSplit)
    message("Time range: ", rangeName, " (futureYears = ", def$futureYears, " years)")
    
    
-   # default values for the various types of costs
-   def$tradingCost   <<- tradingCost
 
-   if ( round((tradingCost+riskAsCost)*100,2) %in% c(0, 0.5, 1, 2, 3, 4, 6, 8, 10) ) 
-      def$riskAsCost    <<- riskAsCost 
-   else stop("The sum of tradingCost and riskAsCost can only be one of 0.5%, 1%, 2%, 3% or 4%, 6%, 8% or 10% -- not ", 
+   if ( ! round((tradingCost+riskAsCost)*100,2) %in% c(0, 0.5, 1, 2, 3, 4, 6, 8, 10) ) 
+      stop("The sum of tradingCost and riskAsCost can only be one of 0.5%, 1%, 2%, 3% or 4%, 6%, 8% or 10% -- not ", 
              (tradingCost+riskAsCost)*100, "%." )
    
-   def$riskAsCostTechnical <<-def$riskAsCost # a different value is no longer justified
+   # default values for the various types of costs
+   def$tradingCost         <<- tradingCost
+   def$riskAsCost          <<- riskAsCost 
+   def$riskAsCostTechnical <<- def$riskAsCost # a different value is no longer justified
    
    message("default costs: (tradingCost, riskAsCost, riskAsCostTechnical) = (", 
            def$tradingCost*100, "%, ", def$riskAsCost*100, "%, ", def$riskAsCostTechnical*100, "%)")
@@ -156,6 +156,7 @@ createParametersDF <- function() {
 
 splitData <- function(dataSplit, removeDepression, force) {
    if (dataSplit == "search" && removeDepression) {
+      oldNumData <- numData
       numData <<- 12*(1926-1870)  # data range will go up to the end of 1926
       dat <<- dat[1:numData, ] 
       def$plotStartYear <<- 1881
@@ -173,11 +174,12 @@ splitData <- function(dataSplit, removeDepression, force) {
       # DD <<- DD[1:20, ]; DD <<- DD[-19, ]     # last drawdown is in 1929 
       numDD <<- dim(DD)[[1]]
       
-      if (!force)
+      if (oldNumData!=numData && !force)
          warning("When switching to \'search\' from a complete data set or from \'testing\', 
               it is recommended to run \'start\' with \'force=T\'.", immediate.=T)
    } 
    else if (dataSplit == "search" && !removeDepression) {
+      oldNumData <- numData
       numData <<- numData %/% 2  # we keep only the first half
       dat <<- dat[1:numData, ] 
       def$plotEndYear <<- round( (numData-1)/12 + def$dataStartYear )
@@ -193,14 +195,15 @@ splitData <- function(dataSplit, removeDepression, force) {
       DD <<- DD[1:26, ]
       numDD <<- dim(DD)[[1]]
       
-      if (!force)
+      if (oldNumData!=numData && !force)
          warning("When switching to \'search\' from a complete data set or from \'testing\', 
               it is recommended to run \'start\' with \'force=T\'.", immediate.=T)
    }
    else if (dataSplit == "testing") {
+      oldNumData <- numData
       ## we subtract 10 years to start in 1932, so that the first strategies can be got around 1942
       startIndex <- ( numData %/% 24 - 10) * 12 + 1 
-      dat <<- dat[startIndex:numData, ] # we keep only the second half
+      dat <<- dat[startIndex:numData, ] # we keep only the second half (+ 10 years)
       numData <<- numData - startIndex + 1
       def$dataStartYear  <<- (startIndex-1)/12 + def$dataStartYear 
       def$plotStartYear  <<- 1942
@@ -217,11 +220,12 @@ splitData <- function(dataSplit, removeDepression, force) {
       DD <<- DD[28:numDD, ]
       numDD <<- dim(DD)[[1]]
       
-      if (!force)
+      if (oldNumData!=numData && !force)
          warning("When switching to \'testing\' from a complete data set or from \'search\', 
               it is recommended to run \'start\' with \'force=T\'.")
-   } else if (dataSplit != "none") 
-      warning(dataSplit, " is not a valid value for \'dataSplit\': choose one of \'none\', \'search\' or \'testing\'.")
+   } else if (dataSplit != "all") 
+      warning(dataSplit, " is not a valid value for \'dataSplit\':", "
+              choose one of \'none\', \'search\' or \'testing\'.")
 }
 
 addFutureReturnsToDat <- function(force=F) {
@@ -383,160 +387,133 @@ createTypicalStrategies <- function(extrapolateDividends=T, costs=def$tradingCos
    ## Technical strategies
    createBollStrategy(inputDF=def$BollInputDF, inputName=def$BollInputName, avgOver=def$BollAvgOver1, 
                       bearish=def$BollBearish1, bullish=def$BollBullish1, 
-                      signalMin=def$signalMin, signalMax=def$signalMax,
-                      futureYears=def$futureYears, costs=costs, 
-                      coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
+                      costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
    createBollStrategy(inputDF=def$BollInputDF, inputName=def$BollInputName, avgOver=def$BollAvgOver2, 
                       bearish=def$BollBearish2, bullish=def$BollBullish2, 
-                      signalMin=def$signalMin, signalMax=def$signalMax,
-                      futureYears=def$futureYears, costs=costs, 
-                      coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)   
+                      costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)   
    
    createSMAstrategy(inputDF=def$SMAinputDF, inputName=def$SMAinputName, SMA1=def$SMA1_1, SMA2=def$SMA2_1, 
                      bearish=def$SMAbearish1, bullish=def$SMAbullish1, 
-                     signalMin=def$signalMin, signalMax=def$signalMax,
-                     futureYears=def$futureYears, costs=costs, 
-                     coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+                     costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    createSMAstrategy(inputDF=def$SMAinputDF, inputName=def$SMAinputName, SMA1=def$SMA1_2, SMA2=def$SMA2_2, 
                      bearish=def$SMAbearish2, bullish=def$SMAbullish2, 
-                     signalMin=def$signalMin, signalMax=def$signalMax,
-                     futureYears=def$futureYears, costs=costs, 
-                     coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+                     costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    
    createReversalStrategy(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
                           avgOver=def$reversalAvgOver1, returnToMean=def$reversalReturnToMean1, 
                           bearish=def$reversalBearish1, bullish=def$reversalBullish1, 
-                          signalMin=def$signalMin, signalMax=def$signalMax,
-                          futureYears=def$futureYears, costs=costs, 
-                          coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
+                          costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
 #       createReversalStrategy(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
 #                              avgOver=def$reversalAvgOver2, returnToMean=def$reversalReturnToMean2, 
 #                              bearish=def$reversalBearish2, bullish=def$reversalBullish2, 
-#                              signalMin=def$signalMin, signalMax=def$signalMax,
-#                              futureYears=def$futureYears, costs=costs, 
-#                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
+#                              costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
 
    
    ## Value strategies
    createCAPEstrategy(years=def$CAPEyears_hy1, cheat=def$CAPEcheat_hy1, avgOver=def$CAPEavgOver_hy1, 
                       hysteresis=T, hystLoopWidthMidpoint=def$hystLoopWidthMidpoint1,
                       hystLoopWidth=def$hystLoopWidth1, slope=def$slope1,
-                      signalMin=def$signalMin, signalMax=def$signalMax,
-                      futureYears=def$futureYears, costs=costs, 
-                      coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+                      costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    createCAPEstrategy(years=def$CAPEyears_hy2, cheat=def$CAPEcheat_hy2, avgOver=def$CAPEavgOver_hy2, 
                       hysteresis=T, hystLoopWidthMidpoint=def$hystLoopWidthMidpoint2,
                       hystLoopWidth=def$hystLoopWidth2, slope=def$slope2,
-                      signalMin=def$signalMin, signalMax=def$signalMax,
-                      futureYears=def$futureYears, costs=costs, 
-                      coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+                      costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    createCAPEstrategy(years=def$CAPEyears_NH, cheat=def$CAPEcheat_NH, avgOver=def$CAPEavgOver_NH, 
                       hysteresis=F, bearish=def$CAPEbearish, bullish=def$CAPEbullish, 
-                      signalMin=def$signalMin, signalMax=def$signalMax,
-                      futureYears=def$futureYears, costs=costs, 
-                      coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)  
+                      costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)  
    
-   createDetrendedStrategy(inputDF=def$detrendedInputDF, inputName=def$detrendedInputName, 
-                           avgOver=def$detrendedAvgOver1, 
-                           bearish=def$detrendedBearish1, bullish=def$detrendedBullish1, 
-                           signalMin=def$signalMin, signalMax=def$signalMax,
-                           futureYears=def$futureYears, costs=costs, 
-                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-#    createDetrendedStrategy(inputDF=def$detrendedInputDF, inputName=def$detrendedInputName, 
+#    createDetrendedStrategy(inputDF=def$detrendedInputDF,  inputName=def$detrendedInputName, 
+#                            years=def$detrendedYears1,     cheat=def$detrendedCheat1,
+#                            avgOver=def$detrendedAvgOver1, 
+#                            bearish=def$detrendedBearish1, bullish=def$detrendedBullish1, 
+#                            costs=costs, coeffTR=coeffTR,  coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+#    createDetrendedStrategy(inputDF=def$detrendedInputDF,  inputName=def$detrendedInputName, 
+#                            years=def$detrendedYears2,     cheat=def$detrendedCheat2,
 #                            avgOver=def$detrendedAvgOver2, 
 #                            bearish=def$detrendedBearish2, bullish=def$detrendedBullish2, 
-#                            signalMin=def$signalMin, signalMax=def$signalMax,
-#                            futureYears=def$futureYears, costs=costs, 
-#                            coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+#                            costs=costs, coeffTR=coeffTR,  coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    
    ## Hybrid strategies
+   # Boll(CAPE)
    if (!(def$Boll_CAPEinputName1 %in% colnames(dat))) 
       calcCAPE(years=def$Boll_CAPEyears1, cheat=def$Boll_CAPEcheat1)
    createBollStrategy(inputDF=def$Boll_CAPEinputDF, inputName=def$Boll_CAPEinputName1, avgOver=def$Boll_CAPEavgOver1,
                       bearish=def$Boll_CAPEbearish1, bullish=def$Boll_CAPEbullish1, strategyName="",
-                      signalMin=def$signalMin, signalMax=def$signalMax,
-                      futureYears=def$futureYears, costs=costs, 
-                      coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+                      costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
 
    if (!(def$Boll_CAPEinputName2 %in% colnames(dat))) 
       calcCAPE(years=def$Boll_CAPEyears2, cheat=def$Boll_CAPEcheat2)
    createBollStrategy(inputDF=def$Boll_CAPEinputDF, inputName=def$Boll_CAPEinputName2, avgOver=def$Boll_CAPEavgOver2,
                       bearish=def$Boll_CAPEbearish2, bullish=def$Boll_CAPEbullish2, strategyName="",
-                      signalMin=def$signalMin, signalMax=def$signalMax,
-                      futureYears=def$futureYears, costs=costs, 
-                      coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
+                      costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
 
-   if (!(def$Boll_detrendedInputName %in% colnames(dat))) 
-      calcDetrended(def$Boll_detrendedInputDF, "TR")
-   createBollStrategy(inputDF=def$Boll_detrendedInputDF, inputName=def$Boll_detrendedInputName, 
-                      avgOver=def$Boll_detrendedAvgOver1, bearish=def$Boll_detrendedBearish1, 
-                      bullish=def$Boll_detrendedBullish1, strategyName="",
-                      signalMin=def$signalMin, signalMax=def$signalMax,
-                      futureYears=def$futureYears, costs=costs, 
-                      coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)   
-
+   # Boll(detrended)
+   #    if (!(def$Boll_detrendedInputName %in% colnames(dat))) 
+   #       calcDetrended(def$Boll_detrendedInputDF, "TR")
+   #    createBollStrategy(inputDF=def$Boll_detrendedInputDF, inputName=def$Boll_detrendedInputName, 
+   #                       avgOver=def$Boll_detrendedAvgOver1, bearish=def$Boll_detrendedBearish1, 
+   #                       bullish=def$Boll_detrendedBullish1, strategyName="",
+   #                       costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+   # SMA(CAPE)
    if (!(def$SMA_CAPEinputName1 %in% colnames(dat))) calcCAPE(years=def$SMA_CAPEyears1, cheat=def$SMA_CAPEcheat1)
    createSMAstrategy(inputDF=def$SMA_CAPEinputDF, inputName=def$SMA_CAPEinputName1, SMA1=def$SMA_CAPE_SMA1_1, 
                      SMA2=def$SMA_CAPE_SMA2_1, bearish=def$SMA_CAPEbearish1, bullish=def$SMA_CAPEbullish1, 
-                     signalMin=def$signalMin, signalMax=def$signalMax,
-                     futureYears=def$futureYears, costs=costs, 
-                     coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+                     costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    if (!(def$SMA_CAPEinputName2 %in% colnames(dat))) calcCAPE(years=def$SMA_CAPEyears2, cheat=def$SMA_CAPEcheat2)
    createSMAstrategy(inputDF=def$SMA_CAPEinputDF, inputName=def$SMA_CAPEinputName2, SMA1=def$SMA_CAPE_SMA1_2, 
                      SMA2=def$SMA_CAPE_SMA2_2, bearish=def$SMA_CAPEbearish2, bullish=def$SMA_CAPEbullish2, 
-                     signalMin=def$signalMin, signalMax=def$signalMax,
-                     futureYears=def$futureYears, costs=costs, 
-                     coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+                     costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
 
-   if (!(def$reversal_CAPEinputName1 %in% colnames(dat))) 
-      calcCAPE(years=def$reversal_CAPEyears1, cheat=def$reversal_CAPEcheat1)
-   createReversalStrategy(inputDF=def$reversal_CAPEinputDF,  inputName=def$reversal_CAPEinputName1, 
-                          avgOver=def$reversal_CAPEavgOver1, returnToMean=def$reversal_CAPEreturnToMean1, 
-                          bearish=def$reversal_CAPEbearish1, bullish=def$reversal_CAPEbullish1, 
-                          signalMin=def$signalMin, signalMax=def$signalMax,
-                          strategyName=def$typicalReversal_CAPE1, futureYears=def$futureYears, costs=costs, 
-                          coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
-   if (!(def$reversal_CAPEinputName2 %in% colnames(dat))) 
-      calcCAPE(years=def$reversal_CAPEyears2, cheat=def$reversal_CAPEcheat2)
-   createReversalStrategy(inputDF=def$reversal_CAPEinputDF, inputName=def$reversal_CAPEinputName2, 
-                          avgOver=def$reversal_CAPEavgOver2, returnToMean=def$reversal_CAPEreturnToMean2, 
-                          bearish=def$reversal_CAPEbearish2, bullish=def$reversal_CAPEbullish2, 
-                          signalMin=def$signalMin, signalMax=def$signalMax,
-                          strategyName=def$typicalReversal_CAPE2, futureYears=def$futureYears, costs=costs, 
-                          coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
+   # reversal(CAPE)
+   #    if (!(def$reversal_CAPEinputName1 %in% colnames(dat))) 
+   #       calcCAPE(years=def$reversal_CAPEyears1, cheat=def$reversal_CAPEcheat1)
+   #    createReversalStrategy(inputDF=def$reversal_CAPEinputDF,  inputName=def$reversal_CAPEinputName1, 
+   #                           avgOver=def$reversal_CAPEavgOver1, returnToMean=def$reversal_CAPEreturnToMean1, 
+   #                           bearish=def$reversal_CAPEbearish1, bullish=def$reversal_CAPEbullish1, 
+   #                           costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+   #    if (!(def$reversal_CAPEinputName2 %in% colnames(dat))) 
+   #       calcCAPE(years=def$reversal_CAPEyears2, cheat=def$reversal_CAPEcheat2)
+   #    createReversalStrategy(inputDF=def$reversal_CAPEinputDF, inputName=def$reversal_CAPEinputName2, 
+   #                           avgOver=def$reversal_CAPEavgOver2, returnToMean=def$reversal_CAPEreturnToMean2, 
+   #                           bearish=def$reversal_CAPEbearish2, bullish=def$reversal_CAPEbullish2, 
+   #                           costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    
+   # Boll(Boll)
    createBollStrategy(inputDF="dat", inputName="TR", avgOver=def$Boll_BollAvgOver1_1, bearish=def$Boll_BollBearish1_1, 
                       bullish=def$Boll_BollBullish1_1, futureYears=def$futureYears, force=force)
    createBollStrategy(inputDF=def$Boll_BollInputDF, inputName=def$Boll_BollInputName1, 
                       avgOver=def$Boll_BollAvgOver2_1, bearish=def$Boll_BollBearish2_1, 
-                      bullish=def$Boll_BollBullish2_1, costs=costs, 
+                      bullish=def$Boll_BollBullish2_1, allocSource=def$Boll_BollAllocSource1, costs=costs, 
                       coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)   
 
    createBollStrategy(inputDF="dat", inputName="TR", avgOver=def$Boll_BollAvgOver1_2, bearish=def$Boll_BollBearish1_2, 
                       bullish=def$Boll_BollBullish1_2, futureYears=def$futureYears, force=force)
    createBollStrategy(inputDF=def$Boll_BollInputDF, inputName=def$Boll_BollInputName2, 
                       avgOver=def$Boll_BollAvgOver2_2, bearish=def$Boll_BollBearish2_2, 
-                      bullish=def$Boll_BollBullish2_2, costs=costs, 
+                      bullish=def$Boll_BollBullish2_2, allocSource=def$Boll_BollAllocSource2, costs=costs, 
                       coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)   
    
    ## Combined strategies
    combineStrategies(inputStrategyName=def$technicalStrategies, score=def$technicalScores, subtype="technical", 
                      minScore=def$minScoreTechnical,
                      costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-
    combineStrategies(inputStrategyName=def$valueStrategies, score=def$valueScores, subtype="value", 
                      minScore=def$minScoreValue, 
-                     costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-   
+                     costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)   
    combineStrategies(inputStrategyName=def$hybridStrategies, score=def$hybridScores, subtype="hybrid", 
                      minScore=def$minScoreHybrid,
-                     costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-   
+                     costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)   
    combineStrategies(inputStrategyName=def$balancedStrategies, score=def$balancedScores, subtype="balanced", 
                      minScore=def$minScoreBalanced, 
-                     costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
-   
-   def$startIndex    <<- max(parameters$startIndex)
+                     costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)    
+   createBollStrategy(inputDF=def$Boll_BollInputDF, inputName=def$typicalBalanced, allocSource=def$typicalBalanced,
+                      avgOver=30, bearish=-190, bullish=-190, costs=costs, strategyName="Boll_balanced",
+                      coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)   
+#    createBollStrategy(inputDF=def$Boll_BollInputDF, inputName=def$typicalValue, 
+#                       avgOver=19, bearish=8, bullish=10, costs=costs, strategyName="Boll_19_8_10__value",
+#                       coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)   
+
+def$startIndex    <<- max(parameters$startIndex)
    
 
 #    combineStrategies(inputStrategyName=c(def$technicalStrategies, def$valueStrategies, def$hybridStrategies), 

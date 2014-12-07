@@ -86,8 +86,8 @@ setHybridDefaultValues <- function() {
    
    ## reversal(CAPE)
    {
-      # reversal(CAPE) 1
       def$reversal_CAPEinputDF      <<- "dat"
+      # reversal(CAPE) 1
       def$reversal_CAPEyears1       <<- 10
       def$reversal_CAPEcheat1       <<- def$CAPEcheat
       def$reversal_CAPEinputName1   <<- paste0("CAPE", def$reversal_CAPEyears1)
@@ -118,32 +118,33 @@ setHybridDefaultValues <- function() {
 
    ## Boll(Boll)
    {
-      def$Boll_BollInputDF    <<- "TR"
+      def$Boll_BollInputDF      <<- "TR"
       # Boll(Boll) 1
-      def$Boll_BollAvgOver1_1  <<-   25L
-      def$Boll_BollBearish1_1  <<- -145
-      def$Boll_BollBullish1_1  <<- -145
-      def$Boll_BollInputName1  <<- paste0("Boll_", def$Boll_BollAvgOver1_1, "_", 
-                                          def$Boll_BollBearish1_1, "_", def$Boll_BollBullish1_1) 
-      
-      def$Boll_BollAvgOver2_1  <<-   16L
-      def$Boll_BollBearish2_1  <<-  -32
-      def$Boll_BollBullish2_1  <<-  -32
-      def$typicalBoll_Boll1    <<- paste0("Boll_", def$Boll_BollAvgOver2_1, "_",
-                                         def$Boll_BollBearish2_1, "_", def$Boll_BollBullish2_1,
-                                         "__", def$Boll_BollInputName1)
+      def$Boll_BollAllocSource1 <<- "stocks"
+      def$Boll_BollAvgOver1_1   <<-   25L
+      def$Boll_BollBearish1_1   <<- -145
+      def$Boll_BollBullish1_1   <<- -145
+      def$Boll_BollInputName1   <<- paste0("Boll_", def$Boll_BollAvgOver1_1, "_", 
+                                          def$Boll_BollBearish1_1, "_", def$Boll_BollBullish1_1)      
+      def$Boll_BollAvgOver2_1   <<-   16L
+      def$Boll_BollBearish2_1   <<-  -32
+      def$Boll_BollBullish2_1   <<-  -32
+      def$typicalBoll_Boll1     <<- paste0("Boll_", def$Boll_BollAvgOver2_1, "_",
+                                           def$Boll_BollBearish2_1, "_", def$Boll_BollBullish2_1,
+                                           "__", def$Boll_BollInputName1)
 
       # Boll(Boll) 2
-      def$Boll_BollAvgOver1_2  <<-   13L
-      def$Boll_BollBearish1_2  <<- -105
-      def$Boll_BollBullish1_2  <<- -105
-      def$Boll_BollInputName2  <<- paste0("Boll_", def$Boll_BollAvgOver1_2, "_", 
+      def$Boll_BollAllocSource2 <<- "stocks"
+      def$Boll_BollAvgOver1_2   <<-   13L
+      def$Boll_BollBearish1_2   <<- -105
+      def$Boll_BollBullish1_2   <<- -105
+      def$Boll_BollInputName2   <<- paste0("Boll_", def$Boll_BollAvgOver1_2, "_", 
                                           def$Boll_BollBearish1_2, "_", def$Boll_BollBullish1_2) 
       
-      def$Boll_BollAvgOver2_2  <<-   15L
-      def$Boll_BollBearish2_2  <<-  -25
-      def$Boll_BollBullish2_2  <<-  -24
-      def$typicalBoll_Boll2    <<- paste0("Boll_", def$Boll_BollAvgOver2_2, "_",
+      def$Boll_BollAvgOver2_2   <<-   15L
+      def$Boll_BollBearish2_2   <<-  -25
+      def$Boll_BollBullish2_2   <<-  -24
+      def$typicalBoll_Boll2     <<- paste0("Boll_", def$Boll_BollAvgOver2_2, "_",
                                          def$Boll_BollBearish2_2, "_", def$Boll_BollBullish2_2,
                                          "__", def$Boll_BollInputName2)
    }
@@ -167,6 +168,8 @@ searchForOptimalBoll_CAPE <- function(
    
    if (dataSplit != "search") 
       warning("Doing a search for parameters in '", dataSplit, "' mode.", immediate.=T)
+   if (costs < 1/100) 
+      warning("costs = ", costs*100, "%.", immediate.=T)
    
    cleanUpStrategies()
    
@@ -267,6 +270,8 @@ searchForOptimalSMA_CAPE <- function(
    
    if (dataSplit != "search") 
       warning("Doing a search for parameters in '", dataSplit, "' mode.", immediate.=T)
+   if (costs < 1/100) 
+      warning("costs = ", costs*100, "%.", immediate.=T)
    
    cleanUpStrategies()
    
@@ -320,20 +325,20 @@ searchForOptimalReversal_CAPE <- function(
       inputDF="dat", cheat=def$CAPEcheat,
       minCAPEyears=6L, maxCAPEyears= 6L, byCAPEyears=1L, 
       minAvgOver= 11L, maxAvgOver=  13L, byAvgOver=  1L,
-      minRTM=     21,  maxRTM=      22,  byRTM=      0.5,
+      minRTM=     21,  maxRTM=      23,  byRTM=      0.5,
       minBear=     4,  maxBear=      6,  byBear=     0.5,
       minDelta=    0,  maxDelta=     1,  byDelta=    0.5, 
       futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
-      minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.7, minScore=13,
-      xMinVol=12, xMaxVol=15, xMinDD2=4, xMaxDD2=6,
-      col=F, plotType="symbols", nameLength=28, plotEvery=def$plotEvery, 
+      minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.7, minScore=14.5,
+      xMinVol=12, xMaxVol=15, xMinDD2=3.5, xMaxDD2=6,
+      col=F, plotType="symbols", nameLength=30, plotEvery=def$plotEvery, 
       referenceStrategies=c(def$typicalReversal_CAPE1,def$typicalReversal_CAPE2), force=F) {
 
    if (dataSplit != "search") 
       warning("Doing a search for parameters in '", dataSplit, "' mode.", immediate.=T)
-   
-   cleanUpStrategies()
-   
+   if (costs < 1/100) 
+      warning("costs = ", costs*100, "%.", immediate.=T)
+      
    for (CAPEyears in seq(minCAPEyears, maxCAPEyears, by=byCAPEyears)) {
       CAPEname <- paste0("CAPE",CAPEyears)
       print( paste0("Starting the search for an optimal reversal(", CAPEname, ")..." ) )
@@ -369,6 +374,8 @@ searchForOptimalBoll_Boll <- function(
    
    if (dataSplit != "search") 
       warning("Doing a search for parameters in '", dataSplit, "' mode.", immediate.=T)
+   if (costs < 1/100) 
+      warning("costs = ", costs*100, "%.", immediate.=T)
    
    cleanUpStrategies()
 
@@ -441,7 +448,6 @@ searchForOptimalBoll_Boll <- function(
 
 searchForTwoOptimalBoll_Boll <- function(minScore1=16, minScore2=15.4, do1=T, do2=T,
                                          plotType="symbols", countOnly=F, force=F) {
-   cleanUpStrategies()
    if(do1) {
       print("*** Boll(Boll) 1...")
       searchForOptimalBoll_Boll( minAvgOver2=  16L, maxAvgOver2= 16L, byAvgOver2= 1L,
@@ -456,7 +462,7 @@ searchForTwoOptimalBoll_Boll <- function(minScore1=16, minScore2=15.4, do1=T, do
    }
    if(do1 && do2) { # needed only if we do both
       print("")
-      print("*********************************************************************")
+      print("*******************************************************************************************")
       print("")
    }
    if(do2) {
