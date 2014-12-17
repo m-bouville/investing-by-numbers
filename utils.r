@@ -645,7 +645,7 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost+def
    showSummaryForStrategy("stocks", displayName="stocks", futureYears=futureYears, costs=costs, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    if(detailed) {
-      showSummaryForStrategy("constantAlloc80_20", displayName="80% stock 20% bond", futureYears=futureYears, costs=costs, 
+      showSummaryForStrategy("constantAlloc60_40", displayName="60% stock 40% bond", futureYears=futureYears, costs=costs, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
 
       print(dashes)

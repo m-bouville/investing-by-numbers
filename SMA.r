@@ -115,24 +115,24 @@ createSMAstrategy <- function(inputDF="dat", inputName="TR", SMA1=def$SMA1, SMA2
       
       parameters$strategy[index] <<- strategyName
       if(inputName=="TR")
-         if (type=="search") {
-            parameters$type[index]    <<- "search"
+         if (type=="training") {
+            parameters$type[index]    <<- "training"
             parameters$subtype[index] <<- "SMA"        
          } else {
             parameters$type[index]    <<- "SMA"
             parameters$subtype[index] <<- inputName
          }
       else if(substr(inputName, 1, 4)=="CAPE")
-         if (type=="search") {
-            parameters$type[index]    <<- "search"
+         if (type=="training") {
+            parameters$type[index]    <<- "training"
             parameters$subtype[index] <<- paste0("SMA_CAPE")
          } else {
             parameters$type[index]    <<- paste0("SMA_CAPE")
             parameters$subtype[index] <<- inputName
          } 
       else if(substr(inputName, 1, 9)=="detrended")
-         if (type=="search") {
-            parameters$type[index]    <<- "search"
+         if (type=="training") {
+            parameters$type[index]    <<- "training"
             parameters$subtype[index] <<- paste0("SMA_detrended")
          } else {
             parameters$type[index]    <<- paste0("SMA_detrended")
@@ -201,7 +201,7 @@ calcOptimalSMA <- function(inputDF, inputName=CAPEname, minSMA1, maxSMA1, bySMA1
             }
             if ( !countOnly && (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { 
                # we replot only if it's been a while
-               plotAllReturnsVsTwo(col=col, searchPlotType=plotType,
+               plotAllReturnsVsTwo(col=col, trainingPlotType=plotType,
                                    xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2)
                lastTimePlotted <- proc.time()
             }
@@ -219,12 +219,12 @@ searchForOptimalSMA <- function(inputDF="dat", inputName="TR",
                                 futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
                                 minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.7, minScore=13, 
                                 xMinVol=14., xMaxVol=18., xMinDD2=6, xMaxDD2=10,
-                                type="search", col=F, plotType="symbols", 
-                                nameLength=22, plotEvery=def$plotEvery, 
+                                type="training", col=F, plotType="symbols", 
+                                nameLength=22, plotEvery=def$plotEvery, countOnly=F,
                                 referenceStrategies=c(def$typicalSMA1, def$typicalSMA), force=F) {
    
-   if (dataSplit != "search") 
-      warning("Doing a search for parameters in '", dataSplit, "' mode.", immediate.=T)
+   if (dataSplit != "training") 
+      warning("Doing training in '", dataSplit, "' mode.", immediate.=T)
    
    cleanUpStrategies()
    
@@ -232,8 +232,8 @@ searchForOptimalSMA <- function(inputDF="dat", inputName="TR",
    calcOptimalSMA(inputDF, inputName, minSMA1, maxSMA1, bySMA1, minSMA2, maxSMA2, bySMA2, 
                   minBear, maxBear, byBear,  minDelta, maxDelta, byDelta, 
                   futureYears, costs, minTR, maxVol, maxDD2, minTO, minScore, 
-                  xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2, countOnly=T,
-                  type, col, plotType, nameLength, plotEvery, 
+                  xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2, 
+                  type, col, plotType, nameLength, plotEvery, countOnly=T, 
                   referenceStrategies=referenceStrategies, force)
    
    dashes <- displaySummaryHeader(futureYears=futureYears, nameLength=nameLength)
@@ -242,14 +242,14 @@ searchForOptimalSMA <- function(inputDF="dat", inputName="TR",
    calcOptimalSMA(inputDF, inputName, minSMA1, maxSMA1, bySMA1, minSMA2, maxSMA2, bySMA2, 
                   minBear, maxBear, byBear,  minDelta, maxDelta, byDelta, 
                   futureYears, costs, minTR, maxVol, maxDD2, minTO, minScore, 
-                  xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2, countOnly=F,
-                  type, col, plotType, nameLength, plotEvery, 
+                  xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2, 
+                  type, col, plotType, nameLength, plotEvery, countOnly=F,
                   referenceStrategies=referenceStrategies, force)
       
    print(dashes)
    for ( i in 1:length(referenceStrategies) )
       showSummaryForStrategy(referenceStrategies[i], nameLength=nameLength, costs=costs)
-   plotAllReturnsVsTwo(col=col, costs=costs, searchPlotType=plotType,
+   plotAllReturnsVsTwo(col=col, costs=costs, trainingPlotType=plotType,
                        xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2)
 }
 

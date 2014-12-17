@@ -154,24 +154,24 @@ createReversalStrategy <- function(inputDF=def$reversalInputDF, inputName=def$re
       
       parameters$strategy[index]    <<- strategyName
       if(inputName=="TR")
-         if (type=="search") {
-            parameters$type[index]    <<- "search"
+         if (type=="training") {
+            parameters$type[index]    <<- "training"
             parameters$subtype[index] <<- "reversal"        
          } else {
             parameters$type[index]    <<- "reversal"
             parameters$subtype[index] <<- inputName
          }
       else if(substr(inputName, 1, 4)=="CAPE")
-         if (type=="search") {
-            parameters$type[index]    <<- "search"
+         if (type=="training") {
+            parameters$type[index]    <<- "training"
             parameters$subtype[index] <<- "reversal_CAPE"
          } else {
             parameters$type[index]    <<- "reversal_CAPE"
             parameters$subtype[index] <<- inputName
          }      
       else if(substr(inputName, 1, 9)=="detrended")
-         if (type=="search") {
-            parameters$type[index]    <<- "search"
+         if (type=="training") {
+            parameters$type[index]    <<- "training"
             parameters$subtype[index] <<- "reversal_detrended"
          } else {
             parameters$type[index]    <<- "reversal_detrended"
@@ -238,7 +238,7 @@ calcOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$rever
             }
             if ( !countOnly && (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { 
                # we replot only if it's been a while
-               plotAllReturnsVsTwo(col=col, searchPlotType=plotType, 
+               plotAllReturnsVsTwo(col=col, trainingPlotType=plotType, 
                                    xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2)
                lastTimePlotted <- proc.time()
             }
@@ -259,8 +259,8 @@ searchForOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$
                                     col=F, plotType="symbols", nameLength=30, plotEvery=def$plotEvery, 
                                     referenceStrategies=c(def$typicalReversal1, def$typicalReversal2), force=F) {
 
-   if (dataSplit != "search") 
-      warning("Doing a search for parameters in '", dataSplit, "' mode.", immediate.=T)
+   if (dataSplit != "training") 
+      warning("Doing training in '", dataSplit, "' mode.", immediate.=T)
    if (costs < 1/100) 
       warning("costs = ", costs*100, "%.", immediate.=T)
    
@@ -283,7 +283,7 @@ searchForOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$
    print(dashes)
    for ( i in 1:length(referenceStrategies) )
       showSummaryForStrategy(referenceStrategies[i], nameLength=nameLength, costs=costs)
-   plotAllReturnsVsTwo(col=col, searchPlotType=plotType,
+   plotAllReturnsVsTwo(col=col, trainingPlotType=plotType,
                        xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2)
 }
 

@@ -17,7 +17,7 @@ showToDoList <- function() {
    print(" - Improve value strategy results (the parametrization is controlled by the Depression:")
    print("       the strategy getting this absolutely right will make a killing,")
    print("       which results in strategies hyperspecialized in handling 1929-32 and little else.")
-   print(" - Exclude Depression from 'search' data set -> 1871-1925 ??")
+   print(" - Exclude Depression from 'training' data set -> 1871-1925 ??")
    print(" - Fix or discard reversal.")
    print(" - Combine strategies more actively. Right now I use constant weights, ")
    print("       but I'd like to tell (how?) when a strategy is likely to do well to increase its weight.")
@@ -66,12 +66,12 @@ showForNewcomer <- function() {
 }
 
 # Loading and preparing data
-start <- function(dataSplit="all",           # "all" for all data, "search" and "testing" for half the data
+start <- function(dataSplit="all",           # "all" for all data, "training" and "testing" for half the data
                   futureYears=10L,            # to calculate the return over the next so many years
                   tradingCost=0.5/100,        # cost of turning the portfolio entirely 
                   riskAsCost= 1.5/100,
                   lastMonthSP500="",          # to enter by hand the value of the S&P 500 at the end of last month
-                  removeDepression=F,         # stops the 'search' time range before the Depression.
+                  removeDepression=F,         # stops the 'training' time range before the Depression.
                   extrapolateDividends=T,     # whether to extrapolate missing recent dividends (or remove incomplete months)
                   smoothConstantAlloc=F,      # calculates more constant-allocation portfolios, for smoother curves in plots
                   downloadAndCheckAllFiles=F, # force downloading data files to check whether they are up to date
@@ -106,13 +106,13 @@ start <- function(dataSplit="all",           # "all" for all data, "search" and 
                     tradingCost=tradingCost, riskAsCost=riskAsCost, 
                     riskAsCostTechnical=riskAsCostTechnical, force=force)
    if(!file.exists("./data")) dir.create("./data")
-   if (dataSplit=="search" && lastMonthSP500!="") { # 'lastMonthSP500' makes no sense looking at 1871-1942
+   if (dataSplit=="training" && lastMonthSP500!="") { # 'lastMonthSP500' makes no sense looking at 1871-1942
       lastMonthSP500="" # ignore 'lastMonthSP500'
-      message("lastMonthSP500 value will not be used for 'search'.")
+      message("lastMonthSP500 value will not be used for 'training'.")
    }
-   if (dataSplit!="search" && removeDepression)
+   if (dataSplit!="training" && removeDepression)
       message("Depression will not be removed.") # we ignore 'removeDepression'
-   if (dataSplit=="search" && removeDepression) {
+   if (dataSplit=="training" && removeDepression) {
       #message("Depression will be removed (data will stop at the end of 1929).") # we ignore 'removeDepression'
       removeDepression <<- T   # set a global variable
    }
@@ -130,8 +130,8 @@ start <- function(dataSplit="all",           # "all" for all data, "search" and 
    if (dataSplit != "all") splitData(dataSplit=dataSplit, removeDepression=removeDepression, force=force)
    else {
       dat$splitting <<- factor(numData)
-      levels(dat$splitting) <<- c("search", "testing")
-      dat$splitting[ 1: (numData %/% 2) ] <<- "search"
+      levels(dat$splitting) <<- c("training", "testing")
+      dat$splitting[ 1: (numData %/% 2) ] <<- "training"
       dat$splitting[ (numData %/% 2+1):numData ] <<- "testing"
    }
    
@@ -163,10 +163,10 @@ start <- function(dataSplit="all",           # "all" for all data, "search" and 
    showSummaries()
 
    if(otherAssetClasses) 
-      if (dat$numericDate[numData] < 1968) # if there are no data after 1968 in 'dat' (search mode) 
+      if (dat$numericDate[numData] < 1968) # if there are no data after 1968 in 'dat' (training mode) 
                                            #    then other asset classes are not available
          warning("Other asset classes not created: Since 'dat' ends before 1968",
-                 " (probably due to search mode) gold and UK property are not available.")
+                 " (probably due to training mode) gold and UK property are not available.")
       else {
          source("otherAssetClasses.r")# gold and UK housing
          
@@ -194,9 +194,9 @@ start <- function(dataSplit="all",           # "all" for all data, "search" and 
 #    else message( "This took ", round(summary(proc.time())[[3]] - totTime[[3]] , 0), " s.")
 }
 
-# start(dataSplit="search", futureYears=10L, force=T)
-# start(dataSplit="all",    futureYears=15L, lastMonthSP500=2067.56, riskAsCost=0, force=T)
-# start(dataSplit="testing",futureYears=10L, lastMonthSP500=2067.56, riskAsCost=1.5/100, force=T)
+# start(dataSplit="training",futureYears=10L, force=T)
+# start(dataSplit="all",     futureYears=15L, lastMonthSP500=2067.56, riskAsCost=0, force=T)
+# start(dataSplit="testing", futureYears=10L, lastMonthSP500=2067.56, riskAsCost=1.5/100, force=T)
 # plotAllReturnsVsFour()
 # checkXlsFileIsUpToDate()
 

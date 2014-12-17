@@ -153,8 +153,8 @@ createCAPEstrategy <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver
       index <- which(parameters$strategy == strategyName)
       
       parameters$strategy[index]   <<- strategyName
-      if (type=="search") {
-         parameters$type[index]    <<- "search"
+      if (type=="training") {
+         parameters$type[index]    <<- "training"
          parameters$subtype[index] <<- "CAPE"        
       } else {
          parameters$type[index]    <<- "CAPE"
@@ -217,7 +217,7 @@ calcOptimalCAPEwithoutHysteresis <- function
                } else {
                   createCAPEstrategy(years=years, cheat=cheat, avgOver=avgOver, strategyName=strategyName, 
                                      bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
-                                     hysteresis=F, type="search", futureYears=futureYears, force=force)
+                                     hysteresis=F, type="training", futureYears=futureYears, force=force)
                   showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
                                          minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, 
                                          minScore=minScore, coeffTR=coeffTR, coeffMed=coeffMed, coeffFive=coeffFive, 
@@ -226,7 +226,7 @@ calcOptimalCAPEwithoutHysteresis <- function
                }
                if ( !countOnly && (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { 
                   # we replot only if it's been a while
-                  plotAllReturnsVsTwo(col=col, searchPlotType=plotType, 
+                  plotAllReturnsVsTwo(col=col, trainingPlotType=plotType, 
                                       xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2)
                   lastTimePlotted <- proc.time()
                }
@@ -250,8 +250,8 @@ searchForOptimalCAPEwithoutHysteresis <-function(cheat=def$CAPEcheat_NH,
          CPUnumber=def$CPUnumber, col=F, plotType="symbols", nameLength=24, plotEvery=def$plotEvery, 
          referenceStrategies=def$typicalCAPE_NH, force=F) {
    
-   if (dataSplit != "search") 
-      warning("Doing a search for parameters in '", dataSplit, "' mode.", immediate.=T)
+   if (dataSplit != "training") 
+      warning("Doing training in '", dataSplit, "' mode.", immediate.=T)
    if (costs < 1/100) 
       warning("costs = ", costs*100, "%.", immediate.=T)
    message("Parametrization will take place over ", 
@@ -280,7 +280,7 @@ searchForOptimalCAPEwithoutHysteresis <-function(cheat=def$CAPEcheat_NH,
    if( length(referenceStrategies) > 0 )
       for ( i in 1:length(referenceStrategies) )
          showSummaryForStrategy(referenceStrategies[i], nameLength=nameLength, costs=costs) 
-   plotAllReturnsVsTwo(col=col, costs=costs, searchPlotType=plotType,
+   plotAllReturnsVsTwo(col=col, costs=costs, trainingPlotType=plotType,
                        xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2)
 }
 
@@ -377,7 +377,7 @@ calcOptimalCAPEwithHysteresis <- function(minYears, maxYears, byYears, cheat,
                      createCAPEstrategy(years=years, cheat=cheat, avgOver=avgOver, strategyName=strategyName, 
                                      hystLoopWidthMidpoint=mid, hystLoopWidth=width, slope=slope,
                                      signalMin=def$signalMin, signalMax=def$signalMax,
-                                     hysteresis=T, type="search", futureYears=futureYears, force=force)
+                                     hysteresis=T, type="training", futureYears=futureYears, force=force)
                      showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
                                          minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
                                          coeffTR=coeffTR, coeffMed=coeffMed, coeffFive=coeffFive, 
@@ -387,7 +387,7 @@ calcOptimalCAPEwithHysteresis <- function(minYears, maxYears, byYears, cheat,
                
                   if ( !countOnly && (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { 
                      # we replot only if it's been a while
-                     plotAllReturnsVsTwo(col=col, searchPlotType=plotType,
+                     plotAllReturnsVsTwo(col=col, trainingPlotType=plotType,
                                          xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2)
                      lastTimePlotted <- proc.time()
                   }
@@ -415,8 +415,8 @@ searchForOptimalCAPEwithHysteresis <-function(
          nameLength=28, plotEvery=def$plotEvery, 
          referenceStrategies=c(def$typicalCAPE_hy1, def$typicalCAPE_hy2), force=F) {
    
-   if (dataSplit != "search") 
-      warning("Doing a search for parameters in '", dataSplit, "' mode.", immediate.=T)
+   if (dataSplit != "training") 
+      warning("Doing training in '", dataSplit, "' mode.", immediate.=T)
    if (costs < 1/100) 
       warning("costs = ", costs*100, "%.", immediate.=T)
    message("Parametrization will take place over ", 
@@ -449,7 +449,7 @@ searchForOptimalCAPEwithHysteresis <-function(
       showSummaryForStrategy(referenceStrategies[i], nameLength=nameLength, 
                              coeffTR=coeffTR, coeffMed=coeffMed, coeffFive=coeffFive, 
                              coeffVol=coeffVol, coeffDD2=coeffDD2, costs=costs)
-   plotAllReturnsVsTwo(col=col, searchPlotType=plotType, costs=costs,
+   plotAllReturnsVsTwo(col=col, trainingPlotType=plotType, costs=costs,
                        xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2)
 }
 

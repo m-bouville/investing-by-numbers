@@ -19,16 +19,16 @@ setDefaultValues <- function(dataSplit, futureYears, removeDepression,
    
    def$futureYears   <<- futureYears    # default value for the number of years over which future returns are calculated
    
-   if(dataSplit=="search") {
+   if(dataSplit=="training") {
       if (removeDepression) 
-         rangeName <- "\'SEARCH\' phase with Depression removed"
-      else rangeName <- "\'SEARCH\' phase"
+         rangeName <- "\'TRAINING\' phase with Depression removed"
+      else rangeName <- "\'TRAINING\' phase"
    }
    else if(dataSplit=="testing") 
       rangeName <- "\'TESTING\' phase"
    else if(dataSplit=="all") 
       rangeName <- "\'ALL\' phase"
-   else stop("dataSplit can only be one of 'all', 'search' or 'testing', not ", dataSplit)
+   else stop("dataSplit can only be one of 'all', 'training' or 'testing', not ", dataSplit)
    message("Time range: ", rangeName, " (futureYears = ", def$futureYears, " years)")
    
    
@@ -51,7 +51,7 @@ setDefaultValues <- function(dataSplit, futureYears, removeDepression,
    def$plotStartYear <<- 1882   
    
    def$CPUnumber     <<-  1 # Parallelization does not work
-   def$plotEvery     <<- 20 # replot every n seconds when searchnig for parameters
+   def$plotEvery     <<- 20 # replot every n seconds when searching for parameters
    def$nameLength    <<- 20 # width of strategy name in summaries
    
    ## So-called DD2 is the sum over drawdowns DD_i of (DD_i)^DDpower 
@@ -155,7 +155,7 @@ createParametersDF <- function() {
 
 
 splitData <- function(dataSplit, removeDepression, force) {
-   if (dataSplit == "search" && removeDepression) {
+   if (dataSplit == "training" && removeDepression) {
       oldNumData <- numData
       numData <<- 12*(1926-1870)  # data range will go up to the end of 1926
       dat <<- dat[1:numData, ] 
@@ -175,10 +175,10 @@ splitData <- function(dataSplit, removeDepression, force) {
       numDD <<- dim(DD)[[1]]
       
       if (oldNumData!=numData && !force)
-         warning("When switching to \'search\' from a complete data set or from \'testing\', 
+         warning("When switching to \'training\' from a complete data set or from \'testing\', 
               it is recommended to run \'start\' with \'force=T\'.", immediate.=T)
    } 
-   else if (dataSplit == "search" && !removeDepression) {
+   else if (dataSplit == "training" && !removeDepression) {
       oldNumData <- numData
       numData <<- numData %/% 2  # we keep only the first half
       dat <<- dat[1:numData, ] 
@@ -196,7 +196,7 @@ splitData <- function(dataSplit, removeDepression, force) {
       numDD <<- dim(DD)[[1]]
       
       if (oldNumData!=numData && !force)
-         warning("When switching to \'search\' from a complete data set or from \'testing\', 
+         warning("When switching to \'training\' from a complete data set or from \'testing\', 
               it is recommended to run \'start\' with \'force=T\'.", immediate.=T)
    }
    else if (dataSplit == "testing") {
@@ -221,11 +221,11 @@ splitData <- function(dataSplit, removeDepression, force) {
       numDD <<- dim(DD)[[1]]
       
       if (oldNumData!=numData && !force)
-         warning("When switching to \'testing\' from a complete data set or from \'search\', 
+         warning("When switching to \'testing\' from a complete data set or from \'training\', 
               it is recommended to run \'start\' with \'force=T\'.")
    } else if (dataSplit != "all") 
       warning(dataSplit, " is not a valid value for \'dataSplit\':", "
-              choose one of \'none\', \'search\' or \'testing\'.")
+              choose one of \'all\', \'training\' or \'testing\'.")
 }
 
 addFutureReturnsToDat <- function(force=F) {
@@ -276,7 +276,7 @@ loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=T, lastMon
       rawDat <- rawDat[-numData, ]  # removing the current month, since it is not data for the end of month
       numData <<- numData-1
    }
-   else if (dataSplit != "search") { # if last-month S&P 500 is provided and of relevance
+   else if (dataSplit != "training") { # if last-month S&P 500 is provided and of relevance
       rawDat$P[numData] <- lastMonthSP500 # replacing with end-of-month value
       if (rawDat$P[numData-1] == lastMonthSP500)
          warning( "The value of lastMonthSP500 (", lastMonthSP500, ") is equal to the S&P 500 value for ", 
@@ -326,7 +326,7 @@ loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=T, lastMon
    
    dat$bonds <<- read.csv("./data/bonds.csv", header=T)[1:numData, 1]
    # message("Real bond prices were imported from an Excel calculation.")
-   if (lastMonthSP500!="" && dataSplit!="search" ) {
+   if (lastMonthSP500!="" && dataSplit!="training" ) {
       dat$bonds[numData] <<- dat$bonds[numData-1]
       message( "dat$bonds[", numData, "] set to the value of dat$bonds[", numData-1, "], i.e. ", dat$bonds[numData-1] )
    }
@@ -361,7 +361,7 @@ makeStringsFactors <- function() {
                  "Boll_CAPE", "Boll_detrended", "Boll_Boll", 
                  "SMA_CAPE", "SMA_detrended", "reversal_CAPE", "reversal_detrended" )
    allSubtypes <- c(allTypes, "balanced", "technical", "value", "hybrid", "TR")
-   allTypes <- c(allTypes, "search") # "search" can only be a type, not a subtype
+   allTypes <- c(allTypes, "training") # "training" can only be a type, not a subtype
    
    parameters$type    <<- factor(parameters$type, levels=allTypes) 
    parameters$subtype <<- factor(parameters$subtype, levels=allSubtypes)
@@ -372,9 +372,9 @@ makeStringsFactors <- function() {
    stats$type         <<- factor(stats$type, levels=allTypes) 
    stats$subtype      <<- factor(stats$subtype, levels=allSubtypes)
    
-   ## To handle searches:
+   ## To handle training:
 #    levels(parameters$subtype) <<- c(levels(parameters$type), levels(parameters$subtype))
-#    levels(parameters$type) <<- c(levels(parameters$type), "search")   
+#    levels(parameters$type) <<- c(levels(parameters$type), "training")   
 #    levels(stats$type)      <<- c(levels(stats$type), levels(parameters$type))
 #    levels(stats$subtype)   <<- c(levels(stats$subtype), levels(parameters$subtype))
 }
@@ -386,10 +386,10 @@ createTypicalStrategies <- function(extrapolateDividends=T, costs=def$tradingCos
    
    ## Technical strategies
    createBollStrategy(inputDF=def$BollInputDF, inputName=def$BollInputName, avgOver=def$BollAvgOver1, 
-                      bearish=def$BollBearish1, bullish=def$BollBullish1, 
+                      bearish=def$BollBearish1, bullish=def$BollBullish1, allocSource="stocks",
                       costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
    createBollStrategy(inputDF=def$BollInputDF, inputName=def$BollInputName, avgOver=def$BollAvgOver2, 
-                      bearish=def$BollBearish2, bullish=def$BollBullish2, 
+                      bearish=def$BollBearish2, bullish=def$BollBullish2, allocSource="stocks",
                       costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)   
    
    createSMAstrategy(inputDF=def$SMAinputDF, inputName=def$SMAinputName, SMA1=def$SMA1_1, SMA2=def$SMA2_1, 
@@ -438,13 +438,15 @@ createTypicalStrategies <- function(extrapolateDividends=T, costs=def$tradingCos
    if (!(def$Boll_CAPEinputName1 %in% colnames(dat))) 
       calcCAPE(years=def$Boll_CAPEyears1, cheat=def$Boll_CAPEcheat1)
    createBollStrategy(inputDF=def$Boll_CAPEinputDF, inputName=def$Boll_CAPEinputName1, avgOver=def$Boll_CAPEavgOver1,
-                      bearish=def$Boll_CAPEbearish1, bullish=def$Boll_CAPEbullish1, strategyName="",
+                      bearish=def$Boll_CAPEbearish1, bullish=def$Boll_CAPEbullish1, 
+                      strategyName=def$typicalBoll_CAPE1, allocSource="stocks",
                       costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
 
    if (!(def$Boll_CAPEinputName2 %in% colnames(dat))) 
       calcCAPE(years=def$Boll_CAPEyears2, cheat=def$Boll_CAPEcheat2)
    createBollStrategy(inputDF=def$Boll_CAPEinputDF, inputName=def$Boll_CAPEinputName2, avgOver=def$Boll_CAPEavgOver2,
-                      bearish=def$Boll_CAPEbearish2, bullish=def$Boll_CAPEbullish2, strategyName="",
+                      bearish=def$Boll_CAPEbearish2, bullish=def$Boll_CAPEbullish2, 
+                      strategyName=def$typicalBoll_CAPE2, allocSource="stocks",
                       costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
 
    # Boll(detrended)

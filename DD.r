@@ -26,7 +26,7 @@ loadDDlist <- function(otherAssetClasses=T, force=F) {
          DD <<- DD[-39, ]
          DD <<- DD[-40, ] 
          DD <<- DD[-41, ] 
-         DD <<- DD[-50, ] 
+         #DD <<- DD[-50, ] turns out to be a bond DD as well
       }         
       
       numDD <<- dim(DD)[[1]]
@@ -76,7 +76,8 @@ CalcAllDrawdowns <- function(strategyName, force=F) {
    for ( i in 1:length(is.na(DD[strategyName])) )
       if ( is.na(DD[i, strategyName]) ) {         # If first drawdowns cannot be computed b/c it is too early
          DD[i, strategyName] <<- DD[i, "stocks"]  #    we assume the worst, i.e. the drawdown of stocks
-         warning("A drawdown for '", strategyName, "' had to be approximated.")
+         if (strategyName!="gold" && strategyName!="UKhousePrice") # no drawdown can be calculated before the data begin
+            warning("A drawdown for '", strategyName, "' had to be approximated.")
       }
 }
 

@@ -54,7 +54,8 @@ calcBollSignal <- function(inputDF=def$BollInputDF, inputName=def$BollInputName,
          # print(paste0("Using alloc[, '", inputName, "'] when in market.") )
       } else {
          allocSource <- "stocks"
-         warning("Using stocks when in market (didn't know what else to do with inputDF=", inputDF, ").")
+         warning("Using stocks when in market (didn't know what else to do with inputDF=", 
+                 inputDF, " and inputName=", inputName, ").")
       }
    } else if (allocSource != "stocks")
       allocSource <- alloc[, allocSource]    
@@ -121,32 +122,32 @@ createBollStrategy <- function(inputDF=def$BollInputDF, inputName=def$BollInputN
       index <- which(parameters$strategy == strategyName)
       
       if(inputName=="TR")
-         if (type=="search") {
-            parameters$type[index]    <<- "search"
+         if (type=="training") {
+            parameters$type[index]    <<- "training"
             parameters$subtype[index] <<- "Bollinger"        
          } else {
             parameters$type[index]    <<- "Bollinger"
             parameters$subtype[index] <<- inputName
          }
       else if(substr(inputName, 1, 4)=="CAPE")
-         if (type=="search") {
-            parameters$type[index]    <<- "search"
+         if (type=="training") {
+            parameters$type[index]    <<- "training"
             parameters$subtype[index] <<- paste0("Boll_CAPE")
          } else {
             parameters$type[index]    <<- paste0("Boll_CAPE")
             parameters$subtype[index] <<- inputName
          }      
       else if(substr(inputName, 1, 9)=="detrended")
-         if (type=="search") {
-            parameters$type[index]    <<- "search"
+         if (type=="training") {
+            parameters$type[index]    <<- "training"
             parameters$subtype[index] <<- paste0("Boll_detrended")
          } else {
             parameters$type[index]    <<- paste0("Boll_detrended")
             parameters$subtype[index] <<- inputName
          }
       else if(substr(inputName, 1, 4)=="Boll")
-         if (type=="search") {
-            parameters$type[index]    <<- "search"
+         if (type=="training") {
+            parameters$type[index]    <<- "training"
             parameters$subtype[index] <<- paste0("Boll_Boll")
          } else {
             parameters$type[index]    <<- paste0("Boll_Boll")
@@ -205,7 +206,7 @@ calcOptimalBoll <- function(inputDF, inputName, allocSource, minAvgOver, maxAvgO
             }
             if ( !countOnly && (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { 
                # we replot only if it's been a while
-               plotAllReturnsVsTwo(col=col, searchPlotType=plotType, 
+               plotAllReturnsVsTwo(col=col, trainingPlotType=plotType, 
                                    xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2)
                lastTimePlotted <- proc.time()
             }
@@ -215,7 +216,7 @@ calcOptimalBoll <- function(inputDF, inputName, allocSource, minAvgOver, maxAvgO
 }
 
 
-searchForOptimalBoll <- function(inputDF="dat",   inputName="TR", allocSource="",
+searchForOptimalBoll <- function(inputDF="dat",   inputName="TR",  allocSource="",
                                  minAvgOver=  4L, maxAvgOver= 40L, byAvgOver= 2L, 
                                  minBear=  -150,  maxBear=    40,  byBear=    5, 
                                  minDelta=    0,  maxDelta=    0,  byDelta=   5,
@@ -223,12 +224,12 @@ searchForOptimalBoll <- function(inputDF="dat",   inputName="TR", allocSource=""
                                  minTR=-Inf, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.7, minScore=7.3,
                                  coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
                                  xMinVol=12.5, xMaxVol=16.5, xMinDD2=3, xMaxDD2=11,
-                                 type="search", col=F, plotType="symbols", 
+                                 type="training", col=F, plotType="symbols", 
                                  nameLength=20, plotEvery=def$plotEvery, countOnly=F, showHeading=T,
                                  referenceStrategies=c(def$typicalBoll1, def$typicalBoll2), force=F) {
  
-   if (dataSplit != "search") 
-      warning("Doing a search for parameters in '", dataSplit, "' mode.", immediate.=T)
+   if (dataSplit != "training") 
+      warning("Doing training in '", dataSplit, "' mode.", immediate.=T)
    if (costs < 1/100) 
       warning("costs = ", costs*100, "%.", immediate.=T)
    
@@ -259,7 +260,7 @@ searchForOptimalBoll <- function(inputDF="dat",   inputName="TR", allocSource=""
          if( length(referenceStrategies) > 0 )
             for ( i in 1:length(referenceStrategies) )
                showSummaryForStrategy(referenceStrategies[i], nameLength=nameLength, costs=costs)
-         plotAllReturnsVsTwo(col=col, searchPlotType=plotType,
+         plotAllReturnsVsTwo(col=col, trainingPlotType=plotType,
                              xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2)
       }
    } else return (count)

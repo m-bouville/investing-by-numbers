@@ -154,7 +154,7 @@ setHybridDefaultValues <- function() {
 searchForOptimalBoll_CAPE <- function(
       inputDF="dat", cheat=def$CAPEcheat,
       minCAPEyears=  14L, maxCAPEyears=  16L,  byCAPEyears=   1L,
-      minCAPEavgOver= 0L, maxCAPEavgOver= 0L,  byCAPEavgOver= 0L,
+      minCAPEavgOver= 0L, maxCAPEavgOver= 0L,  byCAPEavgOver= 1L,
       minAvgOver=    14L, maxAvgOver=    22L,  byAvgOver=     2L,
       minBear=     -170,  maxBear=     -130,   byBear=        5, 
       minDelta=       0,  maxDelta=       0,   byDelta=       1,
@@ -162,12 +162,12 @@ searchForOptimalBoll_CAPE <- function(
       minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.6, minScore=14.8,
       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
       xMinVol=15, xMaxVol=19.5, xMinDD2=7, xMaxDD2=11.5,
-      type="search", col=F, plotType="symbols", 
-      nameLength=30, plotEvery=def$plotEvery, countOnly=F,
+      type="training", col=F, plotType="symbols", 
+      nameLength=30, plotEvery=def$plotEvery, countOnly=F, 
       referenceStrategies=c(def$typicalBoll_CAPE1, def$typicalBoll_CAPE2), force=F) {
    
-   if (dataSplit != "search") 
-      warning("Doing a search for parameters in '", dataSplit, "' mode.", immediate.=T)
+   if (dataSplit != "training") 
+      warning("Doing training in '", dataSplit, "' mode.", immediate.=T)
    if (costs < 1/100) 
       warning("costs = ", costs*100, "%.", immediate.=T)
    
@@ -196,24 +196,24 @@ searchForOptimalBoll_CAPE <- function(
  
          if (countOnly) {
             count <- searchForOptimalBoll(
-                     inputDF, inputName=CAPEname,
+                     inputDF, inputName=CAPEname, allocSource="stocks",
                      minAvgOver, maxAvgOver, byAvgOver, minBear,  maxBear,  byBear, 
                      minDelta,  maxDelta,  byDelta, futureYears, costs, 
                      minTR, maxVol, maxDD2, minTO, minScore,
                      coeffTR, coeffVol, coeffDD2, 
-                     xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly=T,
+                     xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly=T, showHeading=F,
                      type, col, plotType, nameLength, plotEvery, 
                      referenceStrategies, force) 
             counterTot <- counterTot + count[1]; counterNew <- counterNew + count[2]
          } else {
             print( paste0("Starting the search for an optimal Boll(", CAPEname, ")..." ) )
             searchForOptimalBoll(
-                     inputDF, inputName=CAPEname,
+                     inputDF, inputName=CAPEname, allocSource="stocks",
                      minAvgOver, maxAvgOver, byAvgOver, minBear,  maxBear,  byBear, 
                      minDelta,  maxDelta,  byDelta, futureYears, costs, 
                      minTR, maxVol, maxDD2, minTO, minScore,
                      coeffTR, coeffVol, coeffDD2, 
-                     xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly=F,
+                     xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly=F, showHeading=T,
                      type, col, plotType, nameLength, plotEvery, 
                      referenceStrategies, force) 
             print("")            
@@ -265,11 +265,11 @@ searchForOptimalSMA_CAPE <- function(
          futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
          minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.7, minScore=13.6, 
          xMinVol=14, xMaxVol=18, xMinDD2=5.5, xMaxDD2=9.5, countOnly=F,
-         type="search", col=F, plotType="symbols", nameLength=25, plotEvery=def$plotEvery, 
+         type="training", col=F, plotType="symbols", nameLength=25, plotEvery=def$plotEvery, 
          referenceStrategies=c(def$typicalSMA_CAPE1,def$typicalSMA_CAPE2), force=F) {
    
-   if (dataSplit != "search") 
-      warning("Doing a search for parameters in '", dataSplit, "' mode.", immediate.=T)
+   if (dataSplit != "training") 
+      warning("Doing training in '", dataSplit, "' mode.", immediate.=T)
    if (costs < 1/100) 
       warning("costs = ", costs*100, "%.", immediate.=T)
    
@@ -334,8 +334,8 @@ searchForOptimalReversal_CAPE <- function(
       col=F, plotType="symbols", nameLength=30, plotEvery=def$plotEvery, 
       referenceStrategies=c(def$typicalReversal_CAPE1,def$typicalReversal_CAPE2), force=F) {
 
-   if (dataSplit != "search") 
-      warning("Doing a search for parameters in '", dataSplit, "' mode.", immediate.=T)
+   if (dataSplit != "training") 
+      warning("Doing training in '", dataSplit, "' mode.", immediate.=T)
    if (costs < 1/100) 
       warning("costs = ", costs*100, "%.", immediate.=T)
       
@@ -368,12 +368,12 @@ searchForOptimalBoll_Boll <- function(
          minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.6, minScore=12.5,
          coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
          xMinVol=14.5, xMaxVol=17.5, xMinDD2=5.5, xMaxDD2=9.,
-         type="search", col=F, plotType="symbols", 
+         type="training", col=F, plotType="symbols", 
          referenceStrategies=c(def$typicalBoll_Boll), 
          nameLength=37, plotEvery=def$plotEvery, countOnly=F, force=F) {
    
-   if (dataSplit != "search") 
-      warning("Doing a search for parameters in '", dataSplit, "' mode.", immediate.=T)
+   if (dataSplit != "training") 
+      warning("Doing training in '", dataSplit, "' mode.", immediate.=T)
    if (costs < 1/100) 
       warning("costs = ", costs*100, "%.", immediate.=T)
    
@@ -381,8 +381,9 @@ searchForOptimalBoll_Boll <- function(
 
    if (!countOnly)
       searchForOptimalBoll_Boll(minAvgOver2, maxAvgOver2, byAvgOver2, minBear2, maxBear2, byBear2, 
-                                minDelta2,  maxDelta2,  byDelta2, minAvgOver1, maxAvgOver1, byAvgOver1, minBear1, maxBear1, byBear1, 
-                                minDelta1,  maxDelta1,  byDelta1, countOnly=T )   
+                                minDelta2,   maxDelta2,   byDelta2, 
+                                minAvgOver1, maxAvgOver1, byAvgOver1, minBear1, maxBear1, byBear1, 
+                                minDelta1,   maxDelta1,   byDelta1, countOnly=T )   
    
    if (minAvgOver1==maxAvgOver1) numAvgOver1 <- 1
       else numAvgOver1 <- (maxAvgOver1-minAvgOver1)%/%byAvgOver1 + 1
@@ -408,7 +409,7 @@ searchForOptimalBoll_Boll <- function(
             inputName <- paste0("Boll_", avgOver1, "_", bear1, "_", bull1) 
             # print(inputName)
             if (countOnly) {
-               count <- searchForOptimalBoll(inputDF="TR", inputName=inputName,
+               count <- searchForOptimalBoll(inputDF="TR", inputName=inputName, allocSource="stocks",
                                              minAvgOver2, maxAvgOver2, byAvgOver2, minBear2, maxBear2, byBear2, 
                                              minDelta2,  maxDelta2,  byDelta2, futureYears, costs, 
                                              minTR, maxVol, maxDD2, minTO, minScore,
@@ -425,7 +426,7 @@ searchForOptimalBoll_Boll <- function(
                                      bearish=bear1, bullish=bull1, signalMin=def$signalMin, signalMax=def$signalMax,
                                      strategyName=inputName, futureYears=futureYears, force=force)
                
-               searchForOptimalBoll(inputDF="TR", inputName=inputName,
+               searchForOptimalBoll(inputDF="TR", inputName=inputName, allocSource="stocks",
                                     minAvgOver2, maxAvgOver2, byAvgOver2, minBear2, maxBear2, byBear2, 
                                     minDelta2,  maxDelta2, byDelta2, futureYears, costs, 
                                     minTR, maxVol, maxDD2, minTO, minScore,

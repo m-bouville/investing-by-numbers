@@ -243,8 +243,8 @@ createInflationStrategy <- function(avgOver=def$inflationAvgOver,
       index <- which(parameters$strategy == strategyName)
       
       parameters$strategy[index]   <<- strategyName
-      if (type=="search") {
-         parameters$type[index]     <<- "search"
+      if (type=="training") {
+         parameters$type[index]     <<- "training"
          parameters$subtype[index]  <<- "inflation" 
          
       } else parameters$type[index] <<- "inflation" 
@@ -290,14 +290,14 @@ searchForOptimalInflation <- function(minAvgOver=5, maxAvgOver=15, byAvgOver=5,
             
             createInflationStrategy(avgOver=avgOver, strategyName=strategyName, 
                                     bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
-                                    type="search", futureYears=futureYears, force=force)
+                                    type="training", futureYears=futureYears, force=force)
             
             showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
                                    minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, 
                                    minScore=minScore, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=F)            
          }
          if ( (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > 10 ) { # we replot only if it's been a while
-            plotAllReturnsVsTwo(col=col, searchPlotType=plotType)
+            plotAllReturnsVsTwo(col=col, trainingPlotType=plotType)
             lastTimePlotted <- proc.time()
          }
       }
@@ -305,7 +305,7 @@ searchForOptimalInflation <- function(minAvgOver=5, maxAvgOver=15, byAvgOver=5,
    
    print("")
    showSummaryForStrategy(def$typicalInflation, costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2)
-   plotAllReturnsVsTwo(col=col, costs=costs, searchPlotType=plotType)
+   plotAllReturnsVsTwo(col=col, costs=costs, trainingPlotType=plotType)
 }
 
 
