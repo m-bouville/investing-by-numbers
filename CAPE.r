@@ -110,7 +110,7 @@ createCAPEstrategy <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver
                                hystLoopWidthMidpoint=def$hystLoopWidthMidpoint2, 
                                hystLoopWidth=def$hystLoopWidth2, slope=def$slope2,
                                signalMin=def$signalMin, signalMax=def$signalMax,
-                               strategyName="", type="CAPE", 
+                               strategyName="", type="", 
                                futureYears=def$futureYears, costs=def$tradingCost, 
                                coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
 
@@ -152,13 +152,17 @@ createCAPEstrategy <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver
       }
       index <- which(parameters$strategy == strategyName)
       
+      if (type=="") {
+         if (hysteresis) type <- "CAPE_hy"
+         else type <- "CAPE_NH"
+      }
+     
       parameters$strategy[index]   <<- strategyName
       if (type=="training") {
          parameters$type[index]    <<- "training"
-         parameters$subtype[index] <<- "CAPE"        
-      } else {
-         parameters$type[index]    <<- "CAPE"
-      }
+         parameters$subtype[index] <<- type
+      } else
+         parameters$type[index]    <<- type
       parameters$startIndex[index] <<- startIndex
       parameters$avgOver[index]    <<- avgOver
       if (hysteresis) {
@@ -169,14 +173,15 @@ createCAPEstrategy <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver
          parameters$name3[index]   <<- "slope"
          parameters$value3[index]  <<-  slope
       } else {
-         parameters$bearish[index]    <<- bearish
-         parameters$bullish[index]    <<- bullish
+         parameters$bearish[index] <<- bearish
+         parameters$bullish[index] <<- bullish
       }      
    }
    calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, costs=costs,
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-   stats$type[which(stats$strategy == strategyName)] <<- parameters$type[which(parameters$strategy == strategyName)]
-   stats$subtype[which(stats$strategy == strategyName)] <<- parameters$subtype[which(parameters$strategy == strategyName)]
+   statsIndex      <- which(stats$strategy == strategyName)
+   stats$type[statsIndex] <<- parameters$type[index]
+   stats$subtype[statsIndex] <<- parameters$subtype[index]
 }
 
 

@@ -13,27 +13,12 @@
 
 
 
-#default values of plotting parameters
-setPlottingDefaultValues <- function() {
-   def$yTRmin    <<-   7.5
-   def$yTRmax    <<-   9.8
-   
-   def$pngWidth  <<-1024
-   def$pngHeight <<- 768
-   
-   def$minVol    <<-  11.5
-   def$maxVol    <<-  17.5
-   def$minDD2    <<-   3
-   def$maxDD2    <<-  10
-   def$maxTO     <<- 160
-   
-   def$plotEndYear <<- 2015.
-   def$maxTR     <<- 150000
-         
+#default values of colors for plotting
+setPlottingDefaultColors <- function() {
    # Colors consistently used for the various strategies
    def$colCAPE_NH   <<- "cyan4"
    def$colCAPE_hy   <<- "cyan"
-   def$colDetrended <<- "skyblue"
+   #def$colDetrended <<- "skyblue"
    def$colSMA       <<- "pink"
    def$colBollinger <<- "magenta"   
    def$colReversal  <<- "orange"
@@ -53,7 +38,7 @@ setPlottingDefaultValues <- function() {
    def$pch          <<- 16L
    def$Mpch         <<- 15L
    
-   def$colConstantAlloc  <<- "chocolate"
+   def$colConstantAlloc <<- "chocolate"
    def$colBonds     <<- "gray"
    
    # plotAllReturnsVsX()
@@ -69,14 +54,18 @@ setPlottingDefaultValues <- function() {
    def$col3  <<- def$colReversal
    def$pch3  <<- def$pch
    
-   def$type4 <<- "CAPE"
+   def$type4 <<- "CAPE_hy"
    def$col4  <<- def$colCAPE_hy
    def$pch4  <<- def$pch
    
-   def$type5 <<- "detrended"
-   def$col5  <<- def$colDetrended
+   def$type5 <<- "CAPE_NH"
+   def$col5  <<- def$colCAPE_NH
    def$pch5  <<- def$pch
-
+   
+   #    def$type5 <<- "detrended"
+   #    def$col5  <<- def$colDetrended
+   #    def$pch5  <<- def$pch
+  
    def$type6 <<- "Boll_CAPE"
    def$col6  <<- def$colBoll_CAPE
    def$pch6  <<- def$pch
@@ -84,7 +73,7 @@ setPlottingDefaultValues <- function() {
    def$type7 <<- "Boll_detrended"
    def$col7  <<- def$colBoll_detrended
    def$pch7  <<- def$pch
-
+   
    def$type8 <<- "Boll_Boll"
    def$col8  <<- def$colBoll_Boll
    def$pch8  <<- def$pch
@@ -97,7 +86,7 @@ setPlottingDefaultValues <- function() {
    def$col10 <<- def$colInflation
    def$pch10 <<- def$pch
    
-
+   
    # plotAllReturnsVsX(): combined strategies
    def$Msubtype1 <<- "value"
    def$Mcol1     <<- def$colValue
@@ -122,6 +111,27 @@ setPlottingDefaultValues <- function() {
    def$SpchM    <<- def$Mpch # empty square for combined strategies
    
    def$lineCol  <<- def$colConstantAlloc
+}
+
+   
+#default values of other plotting parameters
+setPlottingDefaultValues <- function() {
+   def$yTRmin    <<-   7.5
+   def$yTRmax    <<-   9.8
+   
+   def$pngWidth  <<-1024
+   def$pngHeight <<- 768
+   
+   def$minVol    <<-  11.5
+   def$maxVol    <<-  17.5
+   def$minDD2    <<-   3
+   def$maxDD2    <<-  10
+   def$maxTO     <<- 130
+   
+   def$plotEndYear <<- 2015.
+   def$maxTR     <<- 150000
+       
+   setPlottingDefaultColors()
 }
 
 
@@ -319,8 +329,8 @@ plotReturnAndAllocTechnical <- function(
 
 plotReturnAndAllocValue <- function(
          stratName1=def$typicalCAPE_hy1, stratName2=def$typicalCAPE_hy2, 
-         stratName3=def$typicalCAPE_NH,  stratName4=def$typicalDetrended1,
-         col1=def$colCAPE_hy, col2=def$colCAPE_hy, col3=def$colCAPE_NH, col4=def$colDetrended, 
+         stratName3=def$typicalCAPE_NH,  stratName4=def$typicalValue,
+         col1=def$colCAPE_hy, col2=def$colCAPE_hy, col3=def$colCAPE_NH, col4=def$colValue, 
          lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=1.5,
          startYear=def$plotStartYear, endYear=def$plotEndYear, 
          yLabel="", net=T, detrendBy=0, minTR=0.8, maxTR=def$maxTR, costs=def$tradingCost,
@@ -335,9 +345,9 @@ plotReturnAndAllocValue <- function(
 }
 
 plotReturnAndAllocHybrid <- function(
-         stratName1=def$typicalBoll_CAPE1, stratName2=def$typicalBoll_detrended, 
-         stratName3=def$typicalSMA_CAPE1,  stratName4=def$typicalBoll_Boll1,
-         col1=def$colBoll_CAPE, col2=def$colBoll_detrended, col3=def$colSMA_CAPE, col4=def$colBoll_Boll, 
+         stratName1=def$typicalBoll_CAPE1, stratName2=def$typicalSMA_CAPE1,  
+         stratName3=def$typicalBoll_Boll1, stratName4=def$typicalBoll_balanced1,
+         col1=def$colBoll_CAPE, col2=def$colSMA_CAPE, col3=def$colBoll_Boll, col4=def$colBalanced, 
          lwd1=1.5, lwd2=1.5, lwd3=2, lwd4=2,
          startYear=def$plotStartYear, endYear=def$plotEndYear, 
          yLabel="", net=T, detrendBy=0, minTR=0.8, maxTR=def$maxTR, costs=def$tradingCost,

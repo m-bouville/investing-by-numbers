@@ -14,11 +14,12 @@
 
 showToDoList <- function() {
    print("What's still left TO DO:")
-   print(" - Improve value strategy results (the parametrization is controlled by the Depression:")
-   print("       the strategy getting this absolutely right will make a killing,")
-   print("       which results in strategies hyperspecialized in handling 1929-32 and little else.")
-   print(" - Exclude Depression from 'training' data set -> 1871-1925 ??")
-   print(" - Fix or discard reversal.")
+   #print(" - Improve value strategy results (the parametrization is controlled by the Depression:")
+   #print("       the strategy getting this absolutely right will make a killing,")
+   #print("       which results in strategies hyperspecialized in handling 1929-32 and little else.")
+   #print(" - Exclude Depression from 'training' data set -> 1871-1925 ??")
+   print(" - Improve (or discard) reversal.")
+   print(" - Fix detrended.")
    print(" - Combine strategies more actively. Right now I use constant weights, ")
    print("       but I'd like to tell (how?) when a strategy is likely to do well to increase its weight.")
    print(" - Automate parameter searches (conjugate gradient?).")
@@ -33,31 +34,33 @@ showUsefulFunctions <- function() {
    print("## Plotting:")
    print("plotAllReturnsVsFour()")
    print("    # Zoomed-out version of the above plot:")
-   print("plotAllReturnsVsFour(xMinVol=10, xMaxVol=20, xMinDD=0, xMaxDD=4.5, xMinAlloc=40, xMaxAlloc=100, xMinTO=0, xMaxTO=100, yMin=5)")
+   print("plotAllReturnsVsFour(xMinVol=10, xMaxVol=18, xMinDD=0, xMaxDD=18, xMinAlloc=40, xMaxAlloc=100, xMinTO=0, xMaxTO=200, yMin=5)")
    print("plotAllReturnsVsTwo(col=T), # 'col' switches between the two plots on a row or column")
-   print("plotReturnAndAlloc()")
-   print("plotAssetClassesReturn()")
+   print("plotReturnAndAlloc() # value and balanced strategies along with stocks and bonds")
+   print("plotReturnAndAllocSubstrategies() # technical, value, hybrid and balanced strategies")
+   print("plotAssetClassesReturn() # requires otherAssetClasses=T in start()")
    print("showPlotLegend()")
-   print("createStrategiesAndSavePlots()")
+   print("createStrategiesAndSavePlots() # creates and saves to the disks a bunch of plots (takes a bit of time)")
    print("## Searching the parameter space:")
-   print("searchForOptimalBalanced() # for instance.")
+   print("searchForOptimalBoll() # for instance.")
    print("")
 }
 
 showForNewcomer <- function() {
    
-   print(paste("Read https://github.com/m-bouville/investing-by-numbers/blob/master/README.md\n",
-         "for a description of the cose and of the strategies.") )
+   print("Read https://github.com/m-bouville/investing-by-numbers/blob/master/README.md")
+   print("for a description of what this is about (with links to info on the code and the strategies).")
    print("")         
    
    showUsefulFunctions()   
    
    print("Legend for plots:")
-   print("Warm colors correspond to technical strategies (turning their holding every 1-2 year).")
-   print("Cold colors correspond to valuation strategies (turning their holding every 10-15 years).")
-   print("The diamonds are individual strategies, whereas the squares are linear combinations thereof (\'multiStrategies\').")
+   print("Red hues correspond to technical strategies (turning their holding every 1-2 year).")
+   print("Blue hues correspond to value strategies (turning their holding every 10-15 years).")
+   print("Green hues correspond to hybrid strategies (a technical strategy applied to something other than stock price).")
+   print("The diamonds are individual strategies, whereas the squares are linear combinations thereof (\'combiened strategies\').")
    print("The black square is a linear combination of the linear combinations (the most \'balanced\' strategy.")
-   print("The green line corresponds to constant stock-bond allocations.")
+   print("The brown line corresponds to constant stock-bond allocations.")
    print("More specifically:")
    
    showPlotLegend()
@@ -67,9 +70,9 @@ showForNewcomer <- function() {
 
 # Loading and preparing data
 start <- function(dataSplit="all",           # "all" for all data, "training" and "testing" for half the data
-                  futureYears=10L,            # to calculate the return over the next so many years
+                  futureYears=15L,            # to calculate the return over the next so many years
                   tradingCost=0.5/100,        # cost of turning the portfolio entirely 
-                  riskAsCost= 1.5/100,
+                  riskAsCost= 0  /100,
                   lastMonthSP500="",          # to enter by hand the value of the S&P 500 at the end of last month
                   removeDepression=F,         # stops the 'training' time range before the Depression.
                   extrapolateDividends=T,     # whether to extrapolate missing recent dividends (or remove incomplete months)
@@ -194,9 +197,33 @@ start <- function(dataSplit="all",           # "all" for all data, "training" an
 #    else message( "This took ", round(summary(proc.time())[[3]] - totTime[[3]] , 0), " s.")
 }
 
-# start(dataSplit="training",futureYears=10L, force=T)
-# start(dataSplit="all",     futureYears=15L, lastMonthSP500=2067.56, riskAsCost=0, force=T)
-# start(dataSplit="testing", futureYears=10L, lastMonthSP500=2067.56, riskAsCost=1.5/100, force=T)
+# Loading and preparing data for TRAINING
+startTraining <- function(futureYears=10L, tradingCost=0.5/100, riskAsCost=3.5/100,
+                          removeDepression=F, smoothConstantAlloc=F, newcomer=F, force=T) {
+   if ( tradingCost+riskAsCost < 1/100 ) 
+      warning("costs = ", (tradingCost+riskAsCost)*100, "%.", immediate.=T)
+   
+   start(dataSplit="training", futureYears=futureYears, tradingCost=tradingCost, riskAsCost=riskAsCost, 
+         smoothConstantAlloc=smoothConstantAlloc, removeDepression=removeDepression, 
+         lastMonthSP500="", extrapolateDividends=F, downloadAndCheckAllFiles=F, otherAssetClasses=F, # irrelevant to the training data range
+         newcomer=newcomer, force=force)
+   plotAllReturnsVsFour()
+}
+
+# Loading and preparing data for TESTING
+startTesting <- function(futureYears=10L, tradingCost=0.5/100, riskAsCost=3.5/100,
+                         lastMonthSP500="", extrapolateDividends=T, smoothConstantAlloc=F,   
+                         downloadAndCheckAllFiles=F, otherAssetClasses=F, newcomer=F, force=T) {
+   start(dataSplit="testing", futureYears=futureYears, tradingCost=tradingCost, riskAsCost=riskAsCost, 
+         lastMonthSP500=lastMonthSP500, extrapolateDividends=extrapolateDividends, 
+         removeDepression=F, # irrelevant to the testing data range
+         smoothConstantAlloc=smoothConstantAlloc, downloadAndCheckAllFiles=downloadAndCheckAllFiles, 
+         otherAssetClasses=otherAssetClasses, newcomer=newcomer, force=force)
+   plotAllReturnsVsFour()
+}
+# lastMonthSP500=2067.56 for end of November 2014
+
+
 # plotAllReturnsVsFour()
 # checkXlsFileIsUpToDate()
 

@@ -84,11 +84,10 @@ calcBollSignal <- function(inputDF=def$BollInputDF, inputName=def$BollInputName,
    }
 }
 
-
 createBollStrategy <- function(inputDF=def$BollInputDF, inputName=def$BollInputName, allocSource="",
                                avgOver=def$BollAvgOver, bearish=def$BollBearish, bullish=def$BollBullish, 
                                signalMin=def$signalMin, signalMax=def$signalMax, 
-                               strategyName="", type="", futureYears=def$futureYears, costs=def$tradingCost, 
+                               strategyName="", type="", subtype="", futureYears=def$futureYears, costs=def$tradingCost, 
                                coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
    if(strategyName=="") {
       if (inputName=="TR")
@@ -152,7 +151,10 @@ createBollStrategy <- function(inputDF=def$BollInputDF, inputName=def$BollInputN
          } else {
             parameters$type[index]    <<- paste0("Boll_Boll")
             parameters$subtype[index] <<- inputName
-         }      
+         }
+      if    (type != "") parameters$type[index]    <<- type
+      if (subtype != "") parameters$subtype[index] <<- subtype
+      
       parameters$startIndex[index] <<- startIndex
       parameters$inputDF[index]    <<- inputDF
       parameters$inputName[index]  <<- inputName
@@ -165,7 +167,6 @@ createBollStrategy <- function(inputDF=def$BollInputDF, inputName=def$BollInputN
    stats$type[which(stats$strategy == strategyName)] <<- parameters$type[which(parameters$strategy == strategyName)]
    stats$subtype[which(stats$strategy == strategyName)] <<- parameters$subtype[which(parameters$strategy == strategyName)]
 }
-
 
 calcOptimalBoll <- function(inputDF, inputName, allocSource, minAvgOver, maxAvgOver, byAvgOver, 
                             minBear, maxBear, byBear, minDelta, maxDelta, byDelta,  
@@ -215,13 +216,12 @@ calcOptimalBoll <- function(inputDF, inputName, allocSource, minAvgOver, maxAvgO
       return( c(counterTot, counterNew) )
 }
 
-
 searchForOptimalBoll <- function(inputDF="dat",   inputName="TR",  allocSource="",
                                  minAvgOver=  4L, maxAvgOver= 40L, byAvgOver= 2L, 
                                  minBear=  -150,  maxBear=    40,  byBear=    5, 
                                  minDelta=    0,  maxDelta=    0,  byDelta=   5,
                                  futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
-                                 minTR=-Inf, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.7, minScore=7.3,
+                                 minTR=-Inf, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.7, minScore=8,
                                  coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
                                  xMinVol=12.5, xMaxVol=16.5, xMinDD2=3, xMaxDD2=11,
                                  type="training", col=F, plotType="symbols", 
@@ -276,15 +276,22 @@ searchForOptimalBoll <- function(inputDF="dat",   inputName="TR",  allocSource="
 ##   An artificially high value of costs penalizes high turnovers.
 ## Too high a value of costs and the new optimum will be in a neighboring valley.
 ## Of course, the minScores will have to change with costs.
-searchForTwoOptimalBoll <- function(minScore1=10.5, minScore2=6, do1=T, do2=T,
-                                    costs=def$tradingCost+def$riskAsCostTechnical,
-                                    plotType="symbols", force=F) {
+searchForTwoOptimalBoll <- function( minScore1=12.5, minScore2=10, do1=T, do2=T,
+         minAvgOver1= 13L, maxAvgOver1= 17L, byAvgOver1= 1L, 
+         minBear1   =-44,  maxBear1   =-30,  byBear1   = 1, 
+         minDelta1  =  0,  maxDelta1  =  2,  byDelta1  = 1, 
+         
+         minAvgOver2= 10L, maxAvgOver2= 12L, byAvgOver2= 1L,
+         minBear2   = 44,  maxBear2   = 60,  byBear2   = 1,
+         minDelta2  =  0,  maxDelta2  =  3,  byDelta2  = 1,
+         costs=def$tradingCost+def$riskAsCostTechnical,
+         plotType="symbols", force=F) {
    message("costs = ", costs*100, "%")
    if(do1) {   
       print("Bollinger 1...")
-      searchForOptimalBoll(minAvgOver= 13L, maxAvgOver =17L, byAvgOver=1L, 
-                           minBear   =-36,  maxBear   =-30,  byBear  = 0.5, 
-                           minDelta  =  0,  maxDelta  =  2,  byDelta = 0.5, 
+      searchForOptimalBoll(minAvgOver= minAvgOver1, maxAvgOver= maxAvgOver1, byAvgOver= byAvgOver1,
+                           minBear   = minBear1,    maxBear   = maxBear1,    byBear   = byBear1,
+                           minDelta  = minDelta1,   maxDelta  = maxDelta1,   byDelta  = byDelta1,
                            referenceStrategies=def$typicalBoll1, costs=costs, 
                            minScore=minScore1, force=force)
    }
@@ -295,9 +302,9 @@ searchForTwoOptimalBoll <- function(minScore1=10.5, minScore2=6, do1=T, do2=T,
    }
    if(do2) {
       print("Bollinger 2...")
-      searchForOptimalBoll(minAvgOver= 10L, maxAvgOver= 12L, byAvgOver=1L,
-                           minBear   = 54,  maxBear   = 60,  byBear  = 0.5,
-                           minDelta  =  0,  maxDelta  =  2,  byDelta = 0.5,
+      searchForOptimalBoll(minAvgOver= minAvgOver2, maxAvgOver= maxAvgOver2, byAvgOver= byAvgOver2,
+                           minBear   = minBear2,    maxBear   = maxBear2,    byBear   = byBear2,
+                           minDelta  = minDelta2,   maxDelta  = maxDelta2,   byDelta  = byDelta2,
                            referenceStrategies=def$typicalBoll2, costs=costs, 
                            minScore=minScore2, force=force)
    }

@@ -18,10 +18,10 @@ setSMAdefaultValues <- function() {
    def$SMAinputDF    <<- "dat"
    def$SMAinputName  <<- "TR"
 
-   def$SMA1_1       <<- 14L    # optimized with costs = 2%
-   def$SMA2_1       <<-  1L
-   def$SMAbearish1  <<- 12
-   def$SMAbullish1  <<- 12
+   def$SMA1_1       <<- 15L   # 14L # (optimized with costs = 2%)
+   def$SMA2_1       <<-  2L   #  1L
+   def$SMAbearish1  <<- 12.5  # 12
+   def$SMAbullish1  <<- 12.5  # 12
    def$typicalSMA1  <<- paste0("SMA_", def$SMA1_1, "_", def$SMA2_1, "_", def$SMAbearish1, "_", def$SMAbullish1)
 
    def$SMA1_2       <<- 10L    # optimized with costs = 2%
@@ -260,7 +260,7 @@ searchForTwoOptimalSMA <-function(minScore1=13.5, minScore2=14.55, do1=T, do2=T,
    if(do1) {
       print("SMA1")
       searchForOptimalSMA(minSMA1= 13L, maxSMA1= 16L, bySMA1= 1L,
-                          minSMA2=  1L, maxSMA2=  2L, bySMA2= 1L, 
+                          minSMA2=  1L, maxSMA2=  3L, bySMA2= 1L, 
                           minBear= 11,  maxBear= 14,  byBear= 0.5, 
                           minDelta= 0,  maxDelta= 2,  byDelta=0.5, 
                           referenceStrategies=def$typicalSMA1, minScore=minScore1)

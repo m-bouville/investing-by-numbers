@@ -507,13 +507,14 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
    }
 
    stats$score[index] <<- 250 * (  coeffTR  * ( stats$TR[index] - 9/100 )
-                                 + coeffMed * ( stats[index, medianName] - 9/100 )
-                                 + coeffFive* ( stats[index, fiveName]   - 3/100 )
+                                 + coeffMed * ( stats[index, medianName]-  9/100 )
+                                 + coeffFive* ( stats[index, fiveName]  -  3/100 )
                                  - coeffVol * ( stats$volatility[index] - 14/100 )
                                  - coeffDD2 * ( stats$DD2[index] - 6/100 )
                                  - costs * ( stats$invTurnover[index] - 1/1.2 ) ) + 15
    ## 1. The coefficients coeffVol and coeffDD2 make it possible to 'convert' vol and DD2 into return equivalents.
    ## 2. I subtract off constants to reduce the variation of the score when coefficients are changed
+   ## 3. TR, median and five are gross of costs (drawdowns too); turnover cost is subtracted of through invTurnover
 }
 
 displaySummaryHeader <- function(futureYears=def$futureYears, nameLength=def$nameLength) {
@@ -652,8 +653,8 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost+def
       ## Technical strategies
       showSummaryForStrategy(def$typicalBoll1,      displayName="Bollinger 1", futureYears=futureYears, costs=costsTechnical, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-      showSummaryForStrategy(def$typicalBoll2,      displayName="Bollinger 2", futureYears=futureYears, costs=costsTechnical, 
-                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+      #       showSummaryForStrategy(def$typicalBoll2,      displayName="Bollinger 2", futureYears=futureYears, costs=costsTechnical, 
+      #                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
       showSummaryForStrategy(def$typicalSMA1,       displayName="SMA 1", futureYears=futureYears, costs=costsTechnical, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)   
       showSummaryForStrategy(def$typicalSMA2,       displayName="SMA 2", futureYears=futureYears, costs=costsTechnical, 
@@ -680,8 +681,8 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost+def
       ## Hybrid strategies
       showSummaryForStrategy(def$typicalBoll_CAPE1, displayName="Boll(CAPE) 1", futureYears=futureYears, costs=costsTechnical, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-      showSummaryForStrategy(def$typicalBoll_CAPE2, displayName="Boll(CAPE) 2", futureYears=futureYears, costs=costsTechnical, 
-                             coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+   #       showSummaryForStrategy(def$typicalBoll_CAPE2, displayName="Boll(CAPE) 2", futureYears=futureYears, costs=costsTechnical, 
+   #                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    #       showSummaryForStrategy(def$typicalBoll_detrended1, displayName="Boll(detrended)", futureYears=futureYears, costs=costsTechnical, 
    #                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
       showSummaryForStrategy(def$typicalSMA_CAPE1, displayName="SMA(CAPE) 1", futureYears=futureYears, costs=costsTechnical, 
@@ -698,7 +699,7 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost+def
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    showSummaryForStrategy(def$typicalBoll_Boll2, displayName="Boll(Boll) 2", futureYears=futureYears, costs=costsTechnical, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-   showSummaryForStrategy("Boll_balanced", displayName="Boll(balanced) **", futureYears=futureYears, costs=costsTechnical, 
+   showSummaryForStrategy(def$typicalBoll_balanced1, displayName="Boll(balanced) **", futureYears=futureYears, costs=costsTechnical, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
 print(dashes)
    }

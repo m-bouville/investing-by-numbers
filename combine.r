@@ -14,20 +14,20 @@
 setCombinedDefaultValues <- function() {
    def$minScore             <<- 10
    
-   def$technicalStrategies  <<- c(def$typicalBoll1, def$typicalBoll2, 
+   def$technicalStrategies  <<- c(def$typicalBoll1, #def$typicalBoll2, 
                                   def$typicalSMA1, def$typicalSMA2, 
                                   def$typicalReversal1)
-   def$technicalScores      <<- c(13.57, 12.08, 13.73, 11.17, 12.59)  # 'testing', riskAsCost=1.5%
+   def$technicalScores      <<- c(13.57, 13.73, 11.17, 12.59)  # 'testing', riskAsCost=1.5%
    def$minScoreTechnical    <<- def$minScore 
    
    def$valueStrategies      <<- c(def$typicalCAPE_hy1, def$typicalCAPE_hy2, def$typicalCAPE_NH)
    def$valueScores          <<- c(12.69, 12.73, 10.62)  # 'testing', riskAsCost=1.5%
    def$minScoreValue        <<- def$minScore 
    
-   def$hybridStrategies     <<- c(def$typicalBoll_CAPE1, def$typicalBoll_CAPE2, 
+   def$hybridStrategies     <<- c(def$typicalBoll_CAPE1, #def$typicalBoll_CAPE2, 
                                   def$typicalSMA_CAPE1,  def$typicalSMA_CAPE2, 
                                   def$typicalBoll_Boll1, def$typicalBoll_Boll2)
-   def$hybridScores         <<- c(14.90, 10.78, 12.07, 11.72, 15.30, 11.88)  # 'testing', riskAsCost=1.5%
+   def$hybridScores         <<- c(14.90, 12.07, 11.72, 15.30, 11.88)  # 'testing', riskAsCost=1.5%
    def$minScoreHybrid       <<- def$minScore 
    
    def$balancedStrategies   <<- c(def$typicalTechnical, def$typicalValue, def$typicalHybrid)
