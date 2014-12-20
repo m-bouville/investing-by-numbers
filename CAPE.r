@@ -28,7 +28,7 @@ setCAPEdefaultValues <- function() {
    def$hystLoopWidthMidpoint1 <<- 19.
    def$hystLoopWidth1  <<- 7.            # 6.4
    def$slope1          <<- 2.
-   def$typicalCAPE_hy1 <<- paste0("CAPE", def$CAPEyears_hy1, "avg", def$CAPEavgOver_hy1, "_hy_", 
+   typical$CAPE_hy1    <<- paste0("CAPE", def$CAPEyears_hy1, "avg", def$CAPEavgOver_hy1, "_hy_", 
                                   def$hystLoopWidthMidpoint1, "_", def$hystLoopWidth1, "_", def$slope1)
 
    ## CAPE strategy with hysteresis 2
@@ -38,7 +38,7 @@ setCAPEdefaultValues <- function() {
    def$hystLoopWidthMidpoint2 <<- 16.
    def$hystLoopWidth2  <<- 16
    def$slope2          <<-  3.
-   def$typicalCAPE_hy2 <<- paste0("CAPE", def$CAPEyears_hy2, "avg", def$CAPEavgOver_hy2, "_hy_", 
+   typical$CAPE_hy2    <<- paste0("CAPE", def$CAPEyears_hy2, "avg", def$CAPEavgOver_hy2, "_hy_", 
                                   def$hystLoopWidthMidpoint2, "_", def$hystLoopWidth2, "_", def$slope2)
 
    ## CAPE strategy without hysteresis
@@ -47,7 +47,7 @@ setCAPEdefaultValues <- function() {
    def$CAPEavgOver_NH <<- 36L
    def$CAPEbearish    <<- 15L
    def$CAPEbullish    <<- 15L
-   def$typicalCAPE_NH <<- paste0("CAPE", def$CAPEyears_NH, "avg", def$CAPEavgOver_NH, "_NH_", 
+   typical$CAPE_NH <<- paste0("CAPE", def$CAPEyears_NH, "avg", def$CAPEavgOver_NH, "_NH_", 
                                 def$CAPEbearish, "_", def$CAPEbullish)
 
 #    def$CAPEyears_NH   <<- 10L
@@ -60,7 +60,7 @@ setCAPEdefaultValues <- function() {
    
    def$initialOffset  <<- max( (def$CAPEyears_hy1-def$CAPEcheat)*12 + def$CAPEavgOver_hy1, 
                                (def$CAPEyears_NH -def$CAPEcheat)*12 + def$CAPEavgOver_NH)
-   def$CAPEstrategies <<- c(def$typicalCAPE_hy1, def$typicalCAPE_NH, def$typicalCAPE_NH, def$typicalCAPE_NH)
+   def$CAPEstrategies <<- c(typical$CAPE_hy1, typical$CAPE_NH, typical$CAPE_NH, typical$CAPE_NH)
 }
 
 
@@ -253,7 +253,7 @@ searchForOptimalCAPEwithoutHysteresis <-function(cheat=def$CAPEcheat_NH,
          coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
          xMinVol=13.5, xMaxVol=18, xMinDD2=5, xMaxDD2=9.,       
          CPUnumber=def$CPUnumber, col=F, plotType="symbols", nameLength=24, plotEvery=def$plotEvery, 
-         referenceStrategies=def$typicalCAPE_NH, force=F) {
+         referenceStrategies=typical$CAPE_NH, force=F) {
    
    if (dataSplit != "training") 
       warning("Doing training in '", dataSplit, "' mode.", immediate.=T)
@@ -418,7 +418,7 @@ searchForOptimalCAPEwithHysteresis <-function(
          xMinVol=11.5, xMaxVol=18.5, xMinDD2=7, xMaxDD2=10.5,
          CPUnumber=def$CPUnumber, col=F, plotType="symbols", 
          nameLength=28, plotEvery=def$plotEvery, 
-         referenceStrategies=c(def$typicalCAPE_hy1, def$typicalCAPE_hy2), force=F) {
+         referenceStrategies=c(typical$CAPE_hy1, typical$CAPE_hy2), force=F) {
    
    if (dataSplit != "training") 
       warning("Doing training in '", dataSplit, "' mode.", immediate.=T)

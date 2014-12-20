@@ -19,26 +19,30 @@
 setHybridDefaultValues <- function() {
    ## Boll(CAPE)
    {
-      def$Boll_CAPEinputDF    <<- "dat"
-      def$Boll_CAPEyears1     <<-   15
-      def$Boll_CAPEcheat1     <<-    8   # given how big 'years' is, we need a bigger 'cheat' than usual
-      def$Boll_CAPEavgOver1   <<-   18L
-      def$Boll_CAPEbearish1   <<- -148
-      def$Boll_CAPEbullish1   <<- -148
-      def$Boll_CAPEinputName1 <<- paste0("CAPE", def$Boll_CAPEyears1)
-      def$typicalBoll_CAPE1   <<- paste0("Boll_", def$Boll_CAPEavgOver1, "_",
-                                         def$Boll_CAPEbearish1, "_", def$Boll_CAPEbullish1,
-                                         "__", def$Boll_CAPEinputName1)
+      def$Boll_CAPEinputDF     <<- "dat"
+      def$Boll_CAPEyears1      <<-   15
+      def$Boll_CAPEcheat1      <<-    8   # given how big 'years' is, we need a bigger 'cheat' than usual
+      def$Boll_CAPEavgOver1    <<-   18L
+      def$Boll_CAPEbearish1    <<- -148
+      def$Boll_CAPEbullish1    <<- -148
+      def$Boll_CAPEyoyoOffset1 <<-   1L   # optimization with yoyo prevention enabled did not do better
+      def$Boll_CAPEyoyoPenalty1<<-   0 
+      def$Boll_CAPEinputName1  <<- paste0("CAPE", def$Boll_CAPEyears1)
+      typical$Boll_CAPE1       <<- nameBollStrategy(def$Boll_CAPEinputName1,  def$Boll_CAPEavgOver1,
+                                                    def$Boll_CAPEbearish1,    def$Boll_CAPEbullish1,  
+                                                    def$Boll_CAPEyoyoOffset1, def$Boll_CAPEyoyoPenalty1)      
       
-      def$Boll_CAPEyears2     <<-   5 
-      def$Boll_CAPEcheat2     <<-   0    # given how small 'years' is, we need no 'cheat' at all
-      def$Boll_CAPEavgOver2   <<-  23L
-      def$Boll_CAPEbearish2   <<- -85
-      def$Boll_CAPEbullish2   <<- -85
-      def$Boll_CAPEinputName2 <<- paste0("CAPE", def$Boll_CAPEyears2)
-      def$typicalBoll_CAPE2   <<- paste0("Boll_", def$Boll_CAPEavgOver2, "_",
-                                         def$Boll_CAPEbearish2, "_", def$Boll_CAPEbullish2,
-                                         "__", def$Boll_CAPEinputName2)
+      def$Boll_CAPEyears2      <<-   5 
+      def$Boll_CAPEcheat2      <<-   0    # given how small 'years' is, we need no 'cheat' at all
+      def$Boll_CAPEavgOver2    <<-  23L
+      def$Boll_CAPEbearish2    <<- -85
+      def$Boll_CAPEbullish2    <<- -85
+      def$Boll_CAPEyoyoOffset2 <<-   1L   # optimization with yoyo prevention enabled did not do better
+      def$Boll_CAPEyoyoPenalty2<<-   0
+      def$Boll_CAPEinputName2  <<- paste0("CAPE", def$Boll_CAPEyears2)
+      typical$Boll_CAPE2       <<- nameBollStrategy(def$Boll_CAPEinputName2,  def$Boll_CAPEavgOver2,
+                                                    def$Boll_CAPEbearish2,    def$Boll_CAPEbullish2,  
+                                                    def$Boll_CAPEyoyoOffset2, def$Boll_CAPEyoyoPenalty2)      
    }
    
    ## Boll(detrended)
@@ -48,7 +52,7 @@ setHybridDefaultValues <- function() {
       def$Boll_detrendedAvgOver1   <<-   19L
       def$Boll_detrendedBearish1   <<- -143
       def$Boll_detrendedBullish1   <<- -143
-      def$typicalBoll_detrended1   <<- paste0("Boll_", def$Boll_detrendedAvgOver1, "_",
+      typical$Boll_detrended1   <<- paste0("Boll_", def$Boll_detrendedAvgOver1, "_",
                                               def$Boll_detrendedBearish1, "_", def$Boll_detrendedBullish1,
                                               "__", def$Boll_detrendedInputName)
    }
@@ -65,7 +69,7 @@ setHybridDefaultValues <- function() {
       def$SMA_CAPE_SMA2_1    <<-  5L
       def$SMA_CAPEbearish1   <<- 42
       def$SMA_CAPEbullish1   <<- 41
-      def$typicalSMA_CAPE1   <<- paste0("SMA_", def$SMA_CAPE_SMA1_1, "_", def$SMA_CAPE_SMA2_1, "_", 
+      typical$SMA_CAPE1   <<- paste0("SMA_", def$SMA_CAPE_SMA1_1, "_", def$SMA_CAPE_SMA2_1, "_", 
                                         def$SMA_CAPEbearish1, "_", def$SMA_CAPEbullish1,
                                         "__", def$SMA_CAPEinputName1)
       
@@ -78,7 +82,7 @@ setHybridDefaultValues <- function() {
       def$SMA_CAPE_SMA2_2    <<-  3L
       def$SMA_CAPEbearish2   <<- 64
       def$SMA_CAPEbullish2   <<- 64
-      def$typicalSMA_CAPE2   <<- paste0("SMA_", def$SMA_CAPE_SMA1_2, "_", def$SMA_CAPE_SMA2_2, "_", 
+      typical$SMA_CAPE2   <<- paste0("SMA_", def$SMA_CAPE_SMA1_2, "_", def$SMA_CAPE_SMA2_2, "_", 
                                         def$SMA_CAPEbearish2, "_", def$SMA_CAPEbullish2,
                                         "__", def$SMA_CAPEinputName2)
       
@@ -92,7 +96,7 @@ setHybridDefaultValues <- function() {
       #       def$SMA_CAPE_SMA2_2    <<-    5L
       #       def$SMA_CAPEbearish2   <<-  89
       #       def$SMA_CAPEbullish2   <<-  89
-      #       def$typicalSMA_CAPE2   <<- paste0("SMA_", def$SMA_CAPE_SMA1_2, "_", def$SMA_CAPE_SMA2_2, "_", 
+      #       typical$SMA_CAPE2   <<- paste0("SMA_", def$SMA_CAPE_SMA1_2, "_", def$SMA_CAPE_SMA2_2, "_", 
       #                                         def$SMA_CAPEbearish2, "_", def$SMA_CAPEbullish2,
       #                                         "__", def$SMA_CAPEinputName2)
       
@@ -110,7 +114,7 @@ setHybridDefaultValues <- function() {
       def$reversal_CAPEreturnToMean1<<- 44
       def$reversal_CAPEbearish1     <<-  9
       def$reversal_CAPEbullish1     <<-  9 
-      def$typicalReversal_CAPE1     <<- paste0(
+      typical$reversal_CAPE1     <<- paste0(
          "reversal_", def$reversal_CAPEavgOver1, "_", 
          def$reversal_CAPEreturnToMean1, "_", def$reversal_CAPEbearish1, "_", def$reversal_CAPEbullish1,
          "__", def$reversal_CAPEinputName1)
@@ -124,7 +128,7 @@ setHybridDefaultValues <- function() {
       def$reversal_CAPEreturnToMean2<<- 21.5
       def$reversal_CAPEbearish2     <<-  5
       def$reversal_CAPEbullish2     <<-  5 
-      def$typicalReversal_CAPE2     <<- paste0(
+      typical$reversal_CAPE2     <<- paste0(
          "reversal_", def$reversal_CAPEavgOver2, "_", 
          def$reversal_CAPEreturnToMean2, "_", def$reversal_CAPEbearish2, "_", def$reversal_CAPEbullish2,
          "__", def$reversal_CAPEinputName2)
@@ -143,33 +147,44 @@ setHybridDefaultValues <- function() {
       def$Boll_BollAvgOver2_1   <<-   16L
       def$Boll_BollBearish2_1   <<-  -32
       def$Boll_BollBullish2_1   <<-  -32
-      def$typicalBoll_Boll1     <<- paste0("Boll_", def$Boll_BollAvgOver2_1, "_",
-                                           def$Boll_BollBearish2_1, "_", def$Boll_BollBullish2_1,
-                                           "__", def$Boll_BollInputName1)
+      def$Boll_BollYoyoOffset1  <<-   1L  # optimization with yoyo prevention enabled did not do better
+      def$Boll_BollYoyoPenalty1 <<-   0
+      typical$Boll_Boll1        <<- nameBollStrategy(def$Boll_BollInputName1,  def$Boll_BollAvgOver2_1,
+                                                     def$Boll_BollBearish2_1,  def$Boll_BollBullish2_1,
+                                                     def$Boll_BollYoyoOffset1, def$Boll_BollYoyoPenalty1)
 
       # Boll(Boll) 2
       def$Boll_BollAllocSource2 <<- "stocks"
-      def$Boll_BollAvgOver1_2   <<-   13L
-      def$Boll_BollBearish1_2   <<- -105
-      def$Boll_BollBullish1_2   <<- -105
+      def$Boll_BollAvgOver1_2   <<-   13L   #   13L
+      def$Boll_BollBearish1_2   <<- -105    # -105
+      def$Boll_BollBullish1_2   <<- -105    # -105
       def$Boll_BollInputName2   <<- paste0("Boll_", def$Boll_BollAvgOver1_2, "_", 
                                           def$Boll_BollBearish1_2, "_", def$Boll_BollBullish1_2) 
       
-      def$Boll_BollAvgOver2_2   <<-   15L
-      def$Boll_BollBearish2_2   <<-  -25
-      def$Boll_BollBullish2_2   <<-  -24
-      def$typicalBoll_Boll2     <<- paste0("Boll_", def$Boll_BollAvgOver2_2, "_",
-                                         def$Boll_BollBearish2_2, "_", def$Boll_BollBullish2_2,
-                                         "__", def$Boll_BollInputName2)
+      def$Boll_BollAvgOver2_2   <<-   15L   #   15L
+      def$Boll_BollBearish2_2   <<-  -24    #  -25
+      def$Boll_BollBullish2_2   <<-  -24    #  -24
+      def$Boll_BollYoyoOffset2  <<-    3L   #    1L
+      def$Boll_BollYoyoPenalty2 <<-    1    #    0
+      typical$Boll_Boll2        <<- nameBollStrategy(def$Boll_BollInputName2,  def$Boll_BollAvgOver2_2,
+                                                     def$Boll_BollBearish2_2,  def$Boll_BollBullish2_2,
+                                                     def$Boll_BollYoyoOffset2, def$Boll_BollYoyoPenalty2)
    }
 
    ## Boll(balanced)
    {
-      def$Boll_balancedInputDF     <<- "TR"   
-      def$Boll_balancedAvgOver1    <<-   30L
-      def$Boll_balancedBearish1    <<- -190
-      def$Boll_balancedBullish1    <<- -190   
-      # def$typicalBoll_balanced1  is defined after balanced is created
+      def$Boll_balancedInputDF      <<- "TR"   
+      #       def$Boll_balancedInputName    <<- typical$balanced
+      def$Boll_balancedAvgOver1     <<-   30L  #   30L
+      def$Boll_balancedBearish1     <<- -200   # -190
+      def$Boll_balancedBullish1     <<- -200   # -190  
+      def$Boll_balancedYoyoOffset1  <<-    2L  #    1L
+      def$Boll_balancedYoyoPenalty1 <<-    1   #    0
+      #       typical$Boll_balanced1        <<- nameBollStrategy(def$Boll_balancedInputName,  def$Boll_balancedAvgOver1,
+      #                                                      def$Boll_balancedBearish1,  def$Boll_balancedBullish1,
+      #                                                      def$Boll_balancedYoyoOffset1, def$Boll_balancedYoyoPenalty1)
+      
+      # typical$Boll_balanced1  is defined after balanced is created
    }
    
 }
@@ -178,17 +193,19 @@ setHybridDefaultValues <- function() {
 searchForOptimalBoll_CAPE <- function(
       inputDF="dat", cheat=def$CAPEcheat,
       minCAPEyears=  14L, maxCAPEyears=  16L,  byCAPEyears=   1L,
-      minCAPEavgOver= 0L, maxCAPEavgOver= 0L,  byCAPEavgOver= 1L,
+      minCAPEavgOver= 0L, maxCAPEavgOver= 0L,  byCAPEavgOver= 1L,  # 0 generally works best
       minAvgOver=    14L, maxAvgOver=    22L,  byAvgOver=     2L,
       minBear=     -170,  maxBear=     -130,   byBear=        5, 
-      minDelta=       0,  maxDelta=       0,   byDelta=       1,
+      minYoyoOffset=  1L, maxYoyoOffset=  5L,  byYoyoOffset=  2L, 
+      minYoyoPenalty= 1,  maxYoyoPenalty= 1,   byYoyoPenalty= 0.4, # 1 generally works best
+      minDelta=       0,  maxDelta=       0,   byDelta=       1,   # 0 is generally close to the optimum
       futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
       minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.6, minScore=14.8,
       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
-      xMinVol=15, xMaxVol=19.5, xMinDD2=7, xMaxDD2=11.5,
+      xMinVol=14, xMaxVol=18., xMinDD2=6, xMaxDD2=10.5,
       type="training", col=F, plotType="symbols", 
-      nameLength=30, plotEvery=def$plotEvery, countOnly=F, 
-      referenceStrategies=c(def$typicalBoll_CAPE1, def$typicalBoll_CAPE2), force=F) {
+      nameLength=34, plotEvery=def$plotEvery, countOnly=F, 
+      referenceStrategies=c(typical$Boll_CAPE1, typical$Boll_CAPE2), force=F) {
    
    if (dataSplit != "training") 
       warning("Doing training in '", dataSplit, "' mode.", immediate.=T)
@@ -222,7 +239,9 @@ searchForOptimalBoll_CAPE <- function(
             count <- searchForOptimalBoll(
                      inputDF, inputName=CAPEname, allocSource="stocks",
                      minAvgOver, maxAvgOver, byAvgOver, minBear,  maxBear,  byBear, 
-                     minDelta,  maxDelta,  byDelta, futureYears, costs, 
+                     minDelta,  maxDelta,  byDelta, 
+                     minYoyoOffset, maxYoyoOffset, byYoyoOffset, minYoyoPenalty, maxYoyoPenalty, byYoyoPenalty,
+                     futureYears, costs, 
                      minTR, maxVol, maxDD2, minTO, minScore,
                      coeffTR, coeffVol, coeffDD2, 
                      xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly=T, showHeading=F,
@@ -234,7 +253,9 @@ searchForOptimalBoll_CAPE <- function(
             searchForOptimalBoll(
                      inputDF, inputName=CAPEname, allocSource="stocks",
                      minAvgOver, maxAvgOver, byAvgOver, minBear,  maxBear,  byBear, 
-                     minDelta,  maxDelta,  byDelta, futureYears, costs, 
+                     minDelta,  maxDelta,  byDelta, 
+                     minYoyoOffset, maxYoyoOffset, byYoyoOffset, minYoyoPenalty, maxYoyoPenalty, byYoyoPenalty,
+                     futureYears, costs, 
                      minTR, maxVol, maxDD2, minTO, minScore,
                      coeffTR, coeffVol, coeffDD2, 
                      xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly=F, showHeading=T,
@@ -249,32 +270,44 @@ searchForOptimalBoll_CAPE <- function(
 }
 
 
-searchForTwoOptimalBoll_CAPE <- function(minScore1=15.8, minScore2=14.1, do1=T, do2=T,
-         minCAPEyears1=  13L, maxCAPEyears1= 16L, byCAPEyears1=  1L,
-         minCAPEavgOver1= 0L, maxCAPEavgOver1=6L, byCAPEavgOver1=6L,
-         minAvgOver1=    16L, maxAvgOver1=   19L, byAvgOver1=    1L,
-         minBear1=     -156,  maxBear1=    -140,  byBear1=       1, 
-         minDelta1=       0,  maxDelta1=      1,  byDelta1=      1,
+searchForTwoOptimalBoll_CAPE <- function(minScore1=15.7, minScore2=15.7, do1=T, do2=T,
+         minCAPEyears1=  14L, maxCAPEyears1= 16L, byCAPEyears1=  1L,
+         minCAPEavgOver1= 0L, maxCAPEavgOver1=0L, byCAPEavgOver1=6L,  # 0 generally works best
+         minAvgOver1=    17L, maxAvgOver1=   19L, byAvgOver1=    1L,
+         minBear1=     -150,  maxBear1=    -146,  byBear1=       1, 
+         minYoyoOffset1=  1L, maxYoyoOffset1= 5L, byYoyoOffset1= 1L, 
+         minYoyoPenalty1= 1,  maxYoyoPenalty1=1,  byYoyoPenalty1=0.2, # 1 generally works best
+         minDelta1=       0,  maxDelta1=      0,  byDelta1=      1,   # 0 is generally close to the optimum
          
-         minCAPEyears2=  3L, maxCAPEyears2=   8L, byCAPEyears2=  1L, 
-         minCAPEavgOver2=0L, maxCAPEavgOver2= 6L, byCAPEavgOver2=6L,
-         minAvgOver2=   20L, maxAvgOver2=    25L, byAvgOver2=    1L,
-         minBear2=    -100,  maxBear2=      -75,  byBear2=       4, 
-         minDelta2=      0,  maxDelta2=       1,  byDelta2=      1, 
+         minCAPEyears2=  4L, maxCAPEyears2=   6L, byCAPEyears2=  1L, 
+         minCAPEavgOver2=0L, maxCAPEavgOver2= 0L, byCAPEavgOver2=6L,  # 0 generally works best
+         minAvgOver2=   21L, maxAvgOver2=    25L, byAvgOver2=    1L,
+         minBear2=     -90,  maxBear2=      -80,  byBear2=       2, 
+         minYoyoOffset2= 1L, maxYoyoOffset2=  5L, byYoyoOffset2= 1L, 
+         minYoyoPenalty2=1,  maxYoyoPenalty2= 1,  byYoyoPenalty2=0.4, # 1 generally works best
+         minDelta2=      0,  maxDelta2=       0,  byDelta2=      1,   # 0 is generally close to the optimum
          plotType="symbols", countOnly=F, force=F) {
    if(do1) {
       print("*** Boll(CAPE) 1...")
-      if ((def$typicalBoll_CAPE1 %in% colnames(TR))) 
-         referenceStrategies1 = def$typicalBoll_CAPE1
-      else referenceStrategies1=list()  
+      if ((typical$Boll_CAPE1 %in% colnames(TR))) {
+         calcCAPE(years=def$Boll_CAPEyears1, cheat=def$Boll_CAPEcheat1)
+         createBollStrategy(inputDF=def$Boll_CAPEinputDF, inputName=def$Boll_CAPEinputName1, 
+                            avgOver=def$Boll_CAPEavgOver1,
+                            bearish=def$Boll_CAPEbearish1, bullish=def$Boll_CAPEbullish1, 
+                            yoyoOffset=def$Boll_CAPEyoyoOffset1, yoyoPenalty=def$Boll_CAPEyoyoPenalty1,
+                            strategyName=typical$Boll_CAPE1, allocSource="stocks", force=force)
+      }   
+   
       searchForOptimalBoll_CAPE( cheat=def$Boll_CAPEcheat1,
             minCAPEyears=  minCAPEyears1,   maxCAPEyears=  maxCAPEyears1,   byCAPEyears=  byCAPEyears1,
             minCAPEavgOver=minCAPEavgOver1, maxCAPEavgOver=maxCAPEavgOver1, byCAPEavgOver=byCAPEavgOver1,
             minAvgOver=    minAvgOver1,     maxAvgOver=    maxAvgOver1,     byAvgOver=    byAvgOver1,
             minBear   =    minBear1,        maxBear   =    maxBear1,        byBear   =    byBear1,
+            minYoyoOffset= minYoyoOffset1,  maxYoyoOffset= maxYoyoOffset1,  byYoyoOffset= byYoyoOffset1, 
+            minYoyoPenalty=minYoyoPenalty1, maxYoyoPenalty=maxYoyoPenalty1, byYoyoPenalty=byYoyoPenalty1,
             minDelta  =    minDelta1,       maxDelta  =    maxDelta1,       byDelta  =    byDelta1,
             plotType=plotType, force=force, countOnly=countOnly, 
-            referenceStrategies=referenceStrategies1, maxVol=17.5, minScore=minScore1)
+            referenceStrategies=typical$Boll_CAPE1, maxVol=17.5, minScore=minScore1)
    }
    if(do1 && do2) { # needed only if we do both
       print("")
@@ -283,18 +316,26 @@ searchForTwoOptimalBoll_CAPE <- function(minScore1=15.8, minScore2=14.1, do1=T, 
    }
    if(do2) {
       print("*** Boll(CAPE) 2...")
-      if ((def$typicalBoll_CAPE2 %in% colnames(TR))) 
-         referenceStrategies2 = def$typicalBoll_CAPE2
-      else referenceStrategies2=list()
+
+      if ((typical$Boll_CAPE1 %in% colnames(TR))) {
+         calcCAPE(years=def$Boll_CAPEyears2, cheat=def$Boll_CAPEcheat2)
+         createBollStrategy(inputDF=def$Boll_CAPEinputDF,  inputName=def$Boll_CAPEinputName2, avgOver=def$Boll_CAPEavgOver2,
+                            bearish=def$Boll_CAPEbearish2, bullish=def$Boll_CAPEbullish2, 
+                            yoyoOffset=def$Boll_CAPEyoyoOffset2, yoyoPenalty=def$Boll_CAPEyoyoPenalty2,
+                            strategyName=typical$Boll_CAPE2, allocSource="stocks", force=force)
+      }
+      
       searchForOptimalBoll_CAPE( cheat=def$Boll_CAPEcheat2,
             minCAPEyears=  minCAPEyears2,   maxCAPEyears=  maxCAPEyears2,   byCAPEyears=  byCAPEyears2,
             minCAPEavgOver=minCAPEavgOver2, maxCAPEavgOver=maxCAPEavgOver2, byCAPEavgOver=byCAPEavgOver2,
             minAvgOver=    minAvgOver2,     maxAvgOver=    maxAvgOver2,     byAvgOver=    byAvgOver2,
             minBear   =    minBear2,        maxBear   =    maxBear2,        byBear   =    byBear2,
+            minYoyoOffset= minYoyoOffset2,  maxYoyoOffset= maxYoyoOffset2,  byYoyoOffset= byYoyoOffset2, 
+            minYoyoPenalty=minYoyoPenalty2, maxYoyoPenalty=maxYoyoPenalty2, byYoyoPenalty=byYoyoPenalty2,
             minDelta  =    minDelta2,       maxDelta  =    maxDelta2,       byDelta  =    byDelta2,
             plotType=plotType, force=force, countOnly=countOnly, 
             maxVol=15.5, maxDD2=6.5, minScore=minScore2,
-            referenceStrategies=referenceStrategies2)
+            referenceStrategies=typical$Boll_CAPE2)
    }
 }
 
@@ -306,12 +347,12 @@ searchForOptimalSMA_CAPE <- function(
          minSMA1=       12L, maxSMA1=       20L, bySMA1=        2L,
          minSMA2=        4L, maxSMA2=        8L, bySMA2=        2L, 
          minBear=       36,  maxBear=       96,  byBear=        4, 
-         minDelta=       0,  maxDelta=       0,  byDelta=       1, 
+         minDelta=       0,  maxDelta=       0,  byDelta=       1,  # 0 generally works best
          futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
          minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.7, minScore=13.6, 
          xMinVol=15, xMaxVol=18, xMinDD2=7.5, xMaxDD2=10.5, countOnly=F,
          type="training", col=F, plotType="symbols", nameLength=25, plotEvery=def$plotEvery, 
-         referenceStrategies=c(def$typicalSMA_CAPE1,def$typicalSMA_CAPE2), force=F) {
+         referenceStrategies=c(typical$SMA_CAPE1,typical$SMA_CAPE2), force=F) {
    
    if (dataSplit != "training") 
       warning("Doing training in '", dataSplit, "' mode.", immediate.=T)
@@ -372,12 +413,12 @@ searchForOptimalReversal_CAPE <- function(
          minAvgOver= 11L, maxAvgOver=  13L, byAvgOver=  1L,
          minRTM=     21,  maxRTM=      23,  byRTM=      0.5,
          minBear=     4,  maxBear=      6,  byBear=     0.5,
-         minDelta=    0,  maxDelta=     1,  byDelta=    0.5, 
+         minDelta=    0,  maxDelta=     0,  byDelta=    0.5,  # 0 generally works best
          futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
          minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.7, minScore=14.5,
          xMinVol=12, xMaxVol=15, xMinDD2=3.5, xMaxDD2=6,
          col=F, plotType="symbols", nameLength=30, plotEvery=def$plotEvery, 
-         referenceStrategies=c(def$typicalReversal_CAPE1,def$typicalReversal_CAPE2), force=F) {
+         referenceStrategies=c(typical$reversal_CAPE1,typical$reversal_CAPE2), force=F) {
 
    if (dataSplit != "training") 
       warning("Doing training in '", dataSplit, "' mode.", immediate.=T)
@@ -403,19 +444,21 @@ searchForOptimalReversal_CAPE <- function(
 
 ## Bollinger (with parameters 2) is applied to a Bollinger strategy (with parameters 1): Boll2(Boll1)
 searchForOptimalBoll_Boll <- function(
-         minAvgOver2=  16L, maxAvgOver2= 20L, byAvgOver2= 4L,
-         minBear2=    -64,  maxBear2=   -32,  byBear2=   32, 
-         minDelta2=     0,  maxDelta2=    0,  byDelta2=   1,
-         minAvgOver1=  12L, maxAvgOver1= 28L, byAvgOver1= 4L,
-         minBear1=   -224,  maxBear1=   -80,  byBear1=   32,
-         minDelta1=     0,  maxDelta1=    0,  byDelta1=   1,
+         minAvgOver2=   16L,maxAvgOver2=   20L, byAvgOver2=    4L,
+         minBear2=     -64, maxBear2=     -32,  byBear2=      32, 
+         minYoyoOffset2= 1L,maxYoyoOffset2= 5L, byYoyoOffset2= 2L, 
+         minYoyoPenalty2=1, maxYoyoPenalty2=1,  byYoyoPenalty2=0.4, # 1 generally works best
+         minDelta2=      0, maxDelta2=      0,  byDelta2=      1,   # 0 is generally close to the optimum
+         minAvgOver1=   12L,maxAvgOver1=   28L, byAvgOver1=    4L,
+         minBear1=    -224, maxBear1=     -80,  byBear1=      32,
+         minDelta1=      0, maxDelta1=      0,  byDelta1=      1,   # 0 is generally close to the optimum
          futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
          minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.6, minScore=12.5,
          coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
-         xMinVol=14.5, xMaxVol=17.5, xMinDD2=5.5, xMaxDD2=9.,
+         xMinVol=14, xMaxVol=16.5, xMinDD2=6., xMaxDD2=8.,
          type="training", col=F, plotType="symbols", 
-         referenceStrategies=c(def$typicalBoll_Boll), 
-         nameLength=37, plotEvery=def$plotEvery, countOnly=F, force=F) {
+         referenceStrategies=c(typical$Boll_Boll), 
+         nameLength=42, plotEvery=def$plotEvery, countOnly=F, force=F) {
    
    if (dataSplit != "training") 
       warning("Doing training in '", dataSplit, "' mode.", immediate.=T)
@@ -425,13 +468,16 @@ searchForOptimalBoll_Boll <- function(
    cleanUpStrategies()
 
    if (!countOnly)
-      searchForOptimalBoll_Boll(minAvgOver2= minAvgOver2, maxAvgOver2= maxAvgOver2, byAvgOver2= byAvgOver2,
-                                minBear2   = minBear2,    maxBear2   = maxBear2,    byBear2   = byBear2,
-                                minDelta2  = minDelta2,   maxDelta2  = maxDelta2,   byDelta2  = byDelta2,
-                                minAvgOver1= minAvgOver1, maxAvgOver1= maxAvgOver1, byAvgOver1= byAvgOver1,
-                                minBear1   = minBear1,    maxBear1   = maxBear1,    byBear1   = byBear1,
-                                minDelta1  = minDelta1,   maxDelta1  = maxDelta1,   byDelta1  = byDelta1,
-                                countOnly=T )   
+      searchForOptimalBoll_Boll(
+            minAvgOver2=    minAvgOver2,    maxAvgOver2=    maxAvgOver2,    byAvgOver2=    byAvgOver2,
+            minBear2   =    minBear2,       maxBear2   =    maxBear2,       byBear2   =    byBear2,
+            minDelta2  =    minDelta2,      maxDelta2  =    maxDelta2,      byDelta2  =    byDelta2,
+            minYoyoOffset2= minYoyoOffset2, maxYoyoOffset2= maxYoyoOffset2, byYoyoOffset2= byYoyoOffset2, 
+            minYoyoPenalty2=minYoyoPenalty2,maxYoyoPenalty2=maxYoyoPenalty2,byYoyoPenalty2=byYoyoPenalty2,
+            minAvgOver1=    minAvgOver1,    maxAvgOver1=    maxAvgOver1,    byAvgOver1=    byAvgOver1,
+            minBear1   =    minBear1,       maxBear1   =    maxBear1,       byBear1   =    byBear1,
+            minDelta1  =    minDelta1,      maxDelta1  =    maxDelta1,      byDelta1  =    byDelta1,
+            countOnly=T )   
    
    if (minAvgOver1==maxAvgOver1) numAvgOver1 <- 1
       else numAvgOver1 <- (maxAvgOver1-minAvgOver1)%/%byAvgOver1 + 1
@@ -458,15 +504,17 @@ searchForOptimalBoll_Boll <- function(
             # print(inputName)
             if (countOnly) {
                count <- searchForOptimalBoll(inputDF="TR", inputName=inputName, allocSource="stocks",
-                                             minAvgOver= minAvgOver2, maxAvgOver= maxAvgOver2, byAvgOver= byAvgOver2,
-                                             minBear   = minBear2,    maxBear   = maxBear2,    byBear   = byBear2,
-                                             minDelta  = minDelta2,   maxDelta  = maxDelta2,   byDelta  = byDelta2,
-                                             futureYears=futureYears, costs=costs, 
-                                             minTR, maxVol, maxDD2, minTO, minScore,
-                                             coeffTR, coeffVol, coeffDD2, 
-                                             xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly=T, showHeading=F,
-                                             type, col, plotType, nameLength, plotEvery, 
-                                             referenceStrategies, force) 
+                     minAvgOver=    minAvgOver2,    maxAvgOver=    maxAvgOver2,    byAvgOver=    byAvgOver2,
+                     minBear   =    minBear2,       maxBear   =    maxBear2,       byBear   =    byBear2,
+                     minDelta  =    minDelta2,      maxDelta  =    maxDelta2,      byDelta  =    byDelta2,
+                     minYoyoOffset= minYoyoOffset2, maxYoyoOffset= maxYoyoOffset2, byYoyoOffset= byYoyoOffset2, 
+                     minYoyoPenalty=minYoyoPenalty2,maxYoyoPenalty=maxYoyoPenalty2,byYoyoPenalty=byYoyoPenalty2,
+                     futureYears=futureYears, costs=costs, 
+                     minTR, maxVol, maxDD2, minTO, minScore,
+                     coeffTR, coeffVol, coeffDD2, 
+                     xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly=T, showHeading=F,
+                     type, col, plotType, nameLength, plotEvery, 
+                     referenceStrategies, force) 
                counterTot <- counterTot + count[1]; counterNew <- counterNew + count[2]
             } else {
                # print( paste0("Starting the search for an optimal Boll(", inputName, ")..." ) )
@@ -477,15 +525,17 @@ searchForOptimalBoll_Boll <- function(
                                      strategyName=inputName, futureYears=futureYears, force=force)
                
                searchForOptimalBoll(inputDF="TR", inputName=inputName, allocSource="stocks",
-                                    minAvgOver= minAvgOver2, maxAvgOver= maxAvgOver2, byAvgOver= byAvgOver2,
-                                    minBear   = minBear2,    maxBear   = maxBear2,    byBear   = byBear2,
-                                    minDelta  = minDelta2,   maxDelta  = maxDelta2,   byDelta  = byDelta2,
-                                    futureYears=futureYears, costs=costs, 
-                                    minTR, maxVol, maxDD2, minTO, minScore,
-                                    coeffTR, coeffVol, coeffDD2, 
-                                    xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly=F, showHeading=F,
-                                    type, col, plotType, nameLength, plotEvery, 
-                                    referenceStrategies, force) 
+                     minAvgOver=    minAvgOver2,    maxAvgOver=    maxAvgOver2,    byAvgOver=    byAvgOver2,
+                     minBear   =    minBear2,       maxBear   =    maxBear2,       byBear   =    byBear2,
+                     minDelta  =    minDelta2,      maxDelta  =    maxDelta2,      byDelta  =    byDelta2,
+                     minYoyoOffset= minYoyoOffset2, maxYoyoOffset= maxYoyoOffset2, byYoyoOffset= byYoyoOffset2, 
+                     minYoyoPenalty=minYoyoPenalty2,maxYoyoPenalty=maxYoyoPenalty2,byYoyoPenalty=byYoyoPenalty2,
+                     futureYears=futureYears, costs=costs, 
+                     minTR, maxVol, maxDD2, minTO, minScore,
+                     coeffTR, coeffVol, coeffDD2, 
+                     xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly=F, showHeading=F,
+                     type, col, plotType, nameLength, plotEvery, 
+                     referenceStrategies, force) 
                # print("")            
             }
          }
@@ -503,15 +553,18 @@ searchForTwoOptimalBoll_Boll <- function(minScore1=16, minScore2=15.4, do1=T, do
                                          plotType="symbols", countOnly=F, force=F) {
    if(do1) {
       print("*** Boll(Boll) 1...")
-      searchForOptimalBoll_Boll( minAvgOver2=  16L, maxAvgOver2= 19L, byAvgOver2= 1L,
-                                 minBear2=    -34,  maxBear2=   -31,  byBear2=    1, 
-                                 minDelta2=     0,  maxDelta2=    0,  byDelta2=   0.5,
-                                 minAvgOver1=  24L, maxAvgOver1= 26L, byAvgOver1= 1L,
-                                 minBear1=   -146,  maxBear1=  -144,  byBear1=    1,
-                                 minDelta1=     0,  maxDelta1=    0,  byDelta1=   0.5,
-                                 plotType=plotType, force=force, countOnly=countOnly, 
-                                 referenceStrategies=def$typicalBoll_Boll1,
-                                 maxVol=def$maxVol, minScore=minScore1)
+      searchForOptimalBoll_Boll( 
+            minAvgOver2=   15L, maxAvgOver2=   17L, byAvgOver2=    1L,
+            minBear2=     -33,  maxBear2=     -31,  byBear2=       1, 
+            minYoyoOffset2= 1L, maxYoyoOffset2= 5L, byYoyoOffset2= 2L, 
+            minYoyoPenalty2=1,  maxYoyoPenalty2=1,  byYoyoPenalty2=0.4, # 1 generally works best
+            minDelta2=      0,  maxDelta2=      0,  byDelta2=      0.5, # 0 is generally close to the optimum
+            minAvgOver1=   24L, maxAvgOver1=   26L, byAvgOver1=    1L,
+            minBear1=    -147,  maxBear1=    -142,  byBear1=       1,
+            minDelta1=      0,  maxDelta1=      0,  byDelta1=      0.5, # 0 is generally close to the optimum
+            plotType=plotType, force=force, countOnly=countOnly, 
+            referenceStrategies=typical$Boll_Boll1,
+            maxVol=def$maxVol, minScore=minScore1)
    }
    if(do1 && do2) { # needed only if we do both
       print("")
@@ -520,14 +573,17 @@ searchForTwoOptimalBoll_Boll <- function(minScore1=16, minScore2=15.4, do1=T, do
    }
    if(do2) {
       print("*** Boll(Boll) 2...")
-      searchForOptimalBoll_Boll( minAvgOver2=  15L, maxAvgOver2= 15L, byAvgOver2= 1L,
-                                 minBear2=    -28,  maxBear2=   -23,  byBear2=    1, 
-                                 minDelta2=     0,  maxDelta2=    3,  byDelta2=   1,
-                                 minAvgOver1=  13L, maxAvgOver1= 13L, byAvgOver1= 1L,
-                                 minBear1=   -106,  maxBear1=  -104,  byBear1=    1,
-                                 minDelta1=     0,  maxDelta1=    1,  byDelta1=   1,
-                                 plotType=plotType, force=force, countOnly=countOnly, 
-                                 maxVol=def$maxVol, maxDD2=7.1, minScore=minScore2,
-                                 referenceStrategies=def$typicalBoll_Boll2)
+      searchForOptimalBoll_Boll( 
+            minAvgOver2=   14L, maxAvgOver2=   16L, byAvgOver2=    1L,
+            minBear2=     -26,  maxBear2=     -23,  byBear2=       1, 
+            minYoyoOffset2= 2L, maxYoyoOffset2= 5L, byYoyoOffset2= 1L, 
+            minYoyoPenalty2=1,  maxYoyoPenalty2=1,  byYoyoPenalty2=0.4, # 1 generally works best
+            minDelta2=      0,  maxDelta2=      1,  byDelta2=      1,   # 0 is generally close to the optimum
+            minAvgOver1=   12L, maxAvgOver1=   14L, byAvgOver1=    1L,
+            minBear1=    -107,  maxBear1=    -104,  byBear1=       1,
+            minDelta1=      0,  maxDelta1=      1,  byDelta1=      1,   # 0 is generally close to the optimum
+            plotType=plotType, force=force, countOnly=countOnly, 
+            maxVol=def$maxVol, maxDD2=7.1, minScore=minScore2,
+            referenceStrategies=typical$Boll_Boll2)
    }
 }

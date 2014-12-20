@@ -14,16 +14,13 @@
 
 showToDoList <- function() {
    print("What's still left TO DO:")
-   #print(" - Improve value strategy results (the parametrization is controlled by the Depression:")
-   #print("       the strategy getting this absolutely right will make a killing,")
-   #print("       which results in strategies hyperspecialized in handling 1929-32 and little else.")
-   #print(" - Exclude Depression from 'training' data set -> 1871-1925 ??")
-   print(" - Improve (or discard) reversal.")
+   print(" - Prevent strategies (esp. technical and hybrid ones) from buying then selling then buying, etc. every month;")
+   print("       this serves no purpose and generates lots of trading.")
    print(" - Fix detrended.")
-   print(" - Combine strategies more actively. Right now I use constant weights, ")
+   print(" - Combine strategies more actively. Right now I use constant weights,")
    print("       but I'd like to tell (how?) when a strategy is likely to do well to increase its weight.")
    print(" - Automate parameter searches (conjugate gradient?).")
-   #print(" - Switch to ggplot2 for scatter plots? (Not a priority.)")
+   print(" - Switch to ggplot2 for scatter plots? (Not a priority.)")
    #print(" - Try to speed up code (especially parameter searches) through compiling and (or) parallelization.")
    #print(" - Store constant allocations in csv file.")
    print("")
@@ -114,7 +111,7 @@ start <- function(dataSplit="all",           # "all" for all data, "training" an
       message("lastMonthSP500 value will not be used for 'training'.")
    }
    if (dataSplit!="training" && removeDepression)
-      message("Depression will not be removed.") # we ignore 'removeDepression'
+      message("Depression cannot be removed in ", dataSplit, " mode.") # we ignore 'removeDepression'
    if (dataSplit=="training" && removeDepression) {
       #message("Depression will be removed (data will stop at the end of 1929).") # we ignore 'removeDepression'
       removeDepression <<- T   # set a global variable
@@ -161,6 +158,7 @@ start <- function(dataSplit="all",           # "all" for all data, "training" an
    
    if(newcomer) showForNewcomer()
    
+   selectTypicalStrategiesToCreate()
    createTypicalStrategies(force=force)
    
    showSummaries()
@@ -198,7 +196,7 @@ start <- function(dataSplit="all",           # "all" for all data, "training" an
 }
 
 # Loading and preparing data for TRAINING
-startTraining <- function(futureYears=10L, tradingCost=0.5/100, riskAsCost=3.5/100,
+startTraining <- function(futureYears=10L, tradingCost=0.5/100, riskAsCost=1.5/100,
                           removeDepression=F, smoothConstantAlloc=F, newcomer=F, force=T) {
    if ( tradingCost+riskAsCost < 1/100 ) 
       warning("costs = ", (tradingCost+riskAsCost)*100, "%.", immediate.=T)
@@ -211,7 +209,7 @@ startTraining <- function(futureYears=10L, tradingCost=0.5/100, riskAsCost=3.5/1
 }
 
 # Loading and preparing data for TESTING
-startTesting <- function(futureYears=10L, tradingCost=0.5/100, riskAsCost=3.5/100,
+startTesting <- function(futureYears=10L, tradingCost=0.5/100, riskAsCost=1.5/100,
                          lastMonthSP500="", extrapolateDividends=T, smoothConstantAlloc=F,   
                          downloadAndCheckAllFiles=F, otherAssetClasses=F, newcomer=F, force=T) {
    start(dataSplit="testing", futureYears=futureYears, tradingCost=tradingCost, riskAsCost=riskAsCost, 
@@ -221,7 +219,7 @@ startTesting <- function(futureYears=10L, tradingCost=0.5/100, riskAsCost=3.5/10
          otherAssetClasses=otherAssetClasses, newcomer=newcomer, force=force)
    plotAllReturnsVsFour()
 }
-# lastMonthSP500=2067.56 for end of November 2014
+# startTesting(lastMonthSP500=2067.56, riskAsCost=1.5/100)        # S&P500 value for end of November 2014
 
 
 # plotAllReturnsVsFour()

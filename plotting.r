@@ -197,10 +197,10 @@ plotSomeSortOfReturn <- function(returnDF1, returnDF2, returnDF3, returnDF4,
 
 ##Wrapper passing the proper vectors to plotSomeSortOfReturn()
 plotReturn <- function(
-         stratName1=def$typicalStratNames[1], stratName2=def$typicalStratNames[2], 
-         stratName3=def$typicalStratNames[3], stratName4=def$typicalStratNames[4],
-         col1=def$typicalStratCols[1], col2=def$typicalStratCols[2], 
-         col3=def$typicalStratCols[3], col4=def$typicalStratCols[4],
+         stratName1=typical$stratNames[1], stratName2=typical$stratNames[2], 
+         stratName3=typical$stratNames[3], stratName4=typical$stratNames[4],
+         col1=typical$stratCols[1], col2=typical$stratCols[2], 
+         col3=typical$stratCols[3], col4=typical$stratCols[4],
          lwd1=2.5, lwd2=1.5, lwd3=1.5, lwd4=2.5,
          xVect=TR$numericDate, startYear=def$plotStartYear, endYear=def$plotEndYear, 
          costs=def$tradingCost, detrendBy=0,
@@ -266,10 +266,10 @@ plotReturn <- function(
 
 
 plotAlloc <- function(
-         stratName1=def$typicalStratNamesSubstrategies[1], stratName2=def$typicalStratNamesSubstrategies[2], 
-         stratName3=def$typicalStratNamesSubstrategies[3], stratName4=def$typicalStratNamesSubstrategies[4],
-         col1=def$typicalStratColsSubstrategies[1], col2=def$typicalStratColsSubstrategies[2], 
-         col3=def$typicalStratColsSubstrategies[3], col4=def$typicalStratColsSubstrategies[4],
+         stratName1=typical$stratNamesSubstrategies[1], stratName2=typical$stratNamesSubstrategies[2], 
+         stratName3=typical$stratNamesSubstrategies[3], stratName4=typical$stratNamesSubstrategies[4],
+         col1=typical$stratColsSubstrategies[1], col2=typical$stratColsSubstrategies[2], 
+         col3=typical$stratColsSubstrategies[3], col4=typical$stratColsSubstrategies[4],
          lwd1=2.5, lwd2=1.5, lwd3=1.5, lwd4=2.5,
          startYear=def$plotStartYear, endYear=def$plotEndYear,
          pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
@@ -311,8 +311,8 @@ plotAlloc <- function(
 }
 
 plotReturnAndAllocTechnical <- function(
-         stratName1=def$typicalBoll1,     stratName2=def$typicalSMA1, 
-         stratName3=def$typicalReversal1, stratName4=def$typicalTechnical,
+         stratName1=typical$Boll1,     stratName2=typical$SMA1, 
+         stratName3=typical$reversal1, stratName4=typical$technical,
          col1=def$colBollinger, col2=def$colSMA, col3=def$colReversal, col4=def$colTechnical,
          lwd1=1.5, lwd2=1.5, lwd3=1.5, lwd4=2,
          startYear=def$plotStartYear, endYear=def$plotEndYear, 
@@ -328,8 +328,8 @@ plotReturnAndAllocTechnical <- function(
 }
 
 plotReturnAndAllocValue <- function(
-         stratName1=def$typicalCAPE_hy1, stratName2=def$typicalCAPE_hy2, 
-         stratName3=def$typicalCAPE_NH,  stratName4=def$typicalValue,
+         stratName1=typical$CAPE_hy1, stratName2=typical$CAPE_hy2, 
+         stratName3=typical$CAPE_NH,  stratName4=typical$value,
          col1=def$colCAPE_hy, col2=def$colCAPE_hy, col3=def$colCAPE_NH, col4=def$colValue, 
          lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=1.5,
          startYear=def$plotStartYear, endYear=def$plotEndYear, 
@@ -345,11 +345,13 @@ plotReturnAndAllocValue <- function(
 }
 
 plotReturnAndAllocHybrid <- function(
-         stratName1=def$typicalBoll_CAPE1, stratName2=def$typicalSMA_CAPE1,  
-         stratName3=def$typicalBoll_Boll1, stratName4=def$typicalBoll_balanced1,
+         stratName1=typical$Boll_CAPE1, stratName2=typical$SMA_CAPE2,
+         stratName3=typical$Boll_Boll1, stratName4=typical$Boll_balanced1,
          col1=def$colBoll_CAPE, col2=def$colSMA_CAPE, col3=def$colBoll_Boll, col4=def$colBalanced, 
          lwd1=1.5, lwd2=1.5, lwd3=2, lwd4=2,
-         startYear=def$plotStartYear, endYear=def$plotEndYear, 
+         startYear=def$plotStartYear+max(parameters$startIndex[which(parameters$strategy==typical$Boll_balanced1)]
+                                         -def$startIndex,0)/12, # to ensure that Boll(balanced) will be included
+         endYear=def$plotEndYear, 
          yLabel="", net=T, detrendBy=0, minTR=0.8, maxTR=def$maxTR, costs=def$tradingCost,
          pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
          pngName="figures/return_and_allocation-hybrid.png") {
@@ -363,10 +365,10 @@ plotReturnAndAllocHybrid <- function(
 
 ## same but with stocks, bonds and 80/20 alloc
 plotReturnAndAlloc <- function(
-         stratName1=def$typicalStratNames[1], stratName2=def$typicalStratNames[2], 
-         stratName3=def$typicalStratNames[3], stratName4=def$typicalStratNames[4],
-         col1=def$typicalStratCols[1], col2=def$typicalStratCols[2], 
-         col3=def$typicalStratCols[3], col4=def$typicalStratCols[4],
+         stratName1=typical$stratNames[1], stratName2=typical$stratNames[2], 
+         stratName3=typical$stratNames[3], stratName4=typical$stratNames[4],
+         col1=typical$stratCols[1], col2=typical$stratCols[2], 
+         col3=typical$stratCols[3], col4=typical$stratCols[4],
          lwd1=2.5, lwd2=1.5, lwd3=1.5, lwd4=2.5,
          startYear=def$plotStartYear, endYear=def$plotEndYear, costs=def$tradingCost, 
          detrendBy=0, minTR=.9, maxTR=def$maxTR, yLabelReturn="", 
@@ -397,10 +399,10 @@ plotReturnAndAlloc <- function(
 
 ## same but with substrategies (technical, value and hybrid)
 plotReturnAndAllocSubstrategies <- function(
-         stratName1=def$typicalStratNamesSubstrategies[1], stratName2=def$typicalStratNamesSubstrategies[2], 
-         stratName3=def$typicalStratNamesSubstrategies[3], stratName4=def$typicalStratNamesSubstrategies[4],
-         col1=def$typicalStratColsSubstrategies[1], col2=def$typicalStratColsSubstrategies[2], 
-         col3=def$typicalStratColsSubstrategies[3], col4=def$typicalStratColsSubstrategies[4],
+         stratName1=typical$stratNamesSubstrategies[1], stratName2=typical$stratNamesSubstrategies[2], 
+         stratName3=typical$stratNamesSubstrategies[3], stratName4=typical$stratNamesSubstrategies[4],
+         col1=typical$stratColsSubstrategies[1], col2=typical$stratColsSubstrategies[2], 
+         col3=typical$stratColsSubstrategies[3], col4=typical$stratColsSubstrategies[4],
          lwd1=2.5, lwd2=1.5, lwd3=1.5, lwd4=2.5,
          startYear=def$plotStartYear, endYear=def$plotEndYear, costs=def$tradingCost, 
          detrendBy=0, minTR=.9, maxTR=def$maxTR, yLabelReturn="", 
@@ -417,7 +419,7 @@ plotReturnAndAllocSubstrategies <- function(
 }
 
 
-plotReturnAndInflation <- function(stratName1=def$typicalBalanced, stratName2="stocks", stratName3="bonds", 
+plotReturnAndInflation <- function(stratName1=typical$balanced, stratName2="stocks", stratName3="bonds", 
                                col1=def$colBalanced,  col2=def$colConstantAlloc, col3=def$colBonds, 
                                lwd1=2, lwd2=3, lwd3=1.5, lwd4=1.5, 
                                startYear=def$plotStartYear, endYear=def$plotEndYear, 
@@ -451,7 +453,7 @@ plotReturnAndInflation <- function(stratName1=def$typicalBalanced, stratName2="s
 
 
 ## 15-year-long sideways markets
-plotReturnSideways <- function(stratName1=def$typicalBalanced, stratName2="stocks", stratName3="bonds", 
+plotReturnSideways <- function(stratName1=typical$balanced, stratName2="stocks", stratName3="bonds", 
                                col1=def$colBalanced,  col2=def$colConstantAlloc, col3=def$colBonds, 
                                lwd1=2, lwd2=3, lwd3=1.5, lwd4=2.5, 
                                inflationYears=7, derivativeYears=0, inflationCol=def$colInflation, 
@@ -558,10 +560,10 @@ parametrizeFutureReturnPlot <- function(costs, yLabel="", futureYears, minTR, ma
 
 ## future returns
 plotFutureReturn <- function(
-         stratName1=def$typicalStratNames[1], stratName2=def$typicalStratNames[2], 
-         stratName3=def$typicalStratNames[3], stratName4=def$typicalStratNames[4],
-         col1=def$typicalStratCols[1], col2=def$typicalStratCols[2], 
-         col3=def$typicalStratCols[3], col4=def$typicalStratCols[4],
+         stratName1=typical$stratNames[1], stratName2=typical$stratNames[2], 
+         stratName3=typical$stratNames[3], stratName4=typical$stratNames[4],
+         col1=typical$stratCols[1], col2=typical$stratCols[2], 
+         col3=typical$stratCols[3], col4=typical$stratCols[4],
          futureYears=def$futureYears, xVect=TR$numericDate, 
          lwd1=2.5, lwd2=1.5, lwd3=1.5, lwd4=2.5, 
          startYear=def$plotStartYear, endYear=def$plotEndYear, 
@@ -634,10 +636,10 @@ plotFutureReturn <- function(
 
 
 plotRelativeFutureReturn <- function(
-         stratName1=def$typicalStratNamesSubstrategies[1], stratName2=def$typicalStratNamesSubstrategies[2], 
-         stratName3=def$typicalStratNamesSubstrategies[3], stratName4=def$typicalStratNamesSubstrategies[4],
-         col1=def$typicalStratColsSubstrategies[1], col2=def$typicalStratColsSubstrategies[2], 
-         col3=def$typicalStratColsSubstrategies[3], col4=def$typicalStratColsSubstrategies[4],
+         stratName1=typical$stratNamesSubstrategies[1], stratName2=typical$stratNamesSubstrategies[2], 
+         stratName3=typical$stratNamesSubstrategies[3], stratName4=typical$stratNamesSubstrategies[4],
+         col1=typical$stratColsSubstrategies[1], col2=typical$stratColsSubstrategies[2], 
+         col3=typical$stratColsSubstrategies[3], col4=typical$stratColsSubstrategies[4],
          refStratName="stocks", futureYears=def$futureYears, xVect=TR$numericDate, 
          lwd1=1.5, lwd2=1.5, lwd3=1.5, lwd4=2.5,
          startYear=def$plotStartYear, endYear=def$plotEndYear, 
@@ -697,8 +699,8 @@ plotRelativeFutureReturn <- function(
 
 
 
-plotFutureReturnVsStocks <- function(stratName1=def$typicalBalanced, stratName2=def$typicalTechnical, 
-                                     stratName3=def$typicalValue, refStratName="stocks", 
+plotFutureReturnVsStocks <- function(stratName1=typical$balanced, stratName2=typical$technical, 
+                                     stratName3=typical$value, refStratName="stocks", 
                                      futureYears=def$futureYears, 
                                      col1=def$colBalanced, col2=def$colTechnical, col3=def$colValue,    
                                      pch1=1L, pch2=1L, pch3=1L,    
@@ -785,8 +787,8 @@ plotFutureReturnVsStocks <- function(stratName1=def$typicalBalanced, stratName2=
 }
 
 plotRelativeFutureReturnVsStocks <- function
-         (stratName1=def$typicalBalanced, stratName2=def$typicalTechnical, 
-          stratName3=def$typicalValue, refStratName="stocks", 
+         (stratName1=typical$balanced, stratName2=typical$technical, 
+          stratName3=typical$value, refStratName="stocks", 
           futureYears=def$futureYears, 
           col1=def$colBalanced, col2=def$colTechnical, col3=def$colValue,    
           pch1=1L, pch2=1L, pch3=1L,    
@@ -878,10 +880,10 @@ plotRelativeFutureReturnVsStocks <- function
 
 
 plotCumulativeFutureReturn <- function(
-         stratName1=def$typicalStratNames[1], stratName2=def$typicalStratNames[2], 
-         stratName3=def$typicalStratNames[3], stratName4=def$typicalStratNames[4],
-         col1=def$typicalStratCols[1], col2=def$typicalStratCols[2], 
-         col3=def$typicalStratCols[3], col4=def$typicalStratCols[4],
+         stratName1=typical$stratNames[1], stratName2=typical$stratNames[2], 
+         stratName3=typical$stratNames[3], stratName4=typical$stratNames[4],
+         col1=typical$stratCols[1], col2=typical$stratCols[2], 
+         col3=typical$stratCols[3], col4=typical$stratCols[4],
          xVect=TR$numericDate, 
          lwd1=2.5, lwd2=1.5, lwd3=1.5, lwd4=2.5,
          futureYears=def$futureYears, net=T, costs=def$tradingCost,

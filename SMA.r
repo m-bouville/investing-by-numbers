@@ -22,13 +22,13 @@ setSMAdefaultValues <- function() {
    def$SMA2_1       <<-  2L   #  1L
    def$SMAbearish1  <<- 12.5  # 12
    def$SMAbullish1  <<- 12.5  # 12
-   def$typicalSMA1  <<- paste0("SMA_", def$SMA1_1, "_", def$SMA2_1, "_", def$SMAbearish1, "_", def$SMAbullish1)
+   typical$SMA1     <<- paste0("SMA_", def$SMA1_1, "_", def$SMA2_1, "_", def$SMAbearish1, "_", def$SMAbullish1)
 
    def$SMA1_2       <<- 10L    # optimized with costs = 2%
    def$SMA2_2       <<-  5L
    def$SMAbearish2  <<- 19
    def$SMAbullish2  <<- 18.5
-   def$typicalSMA2  <<- paste0("SMA_", def$SMA1_2, "_", def$SMA2_2, "_", def$SMAbearish2, "_", def$SMAbullish2)
+   typical$SMA2     <<- paste0("SMA_", def$SMA1_2, "_", def$SMA2_2, "_", def$SMAbearish2, "_", def$SMAbullish2)
 }
 
 ## calculating simple moving average (SMA)
@@ -221,7 +221,7 @@ searchForOptimalSMA <- function(inputDF="dat", inputName="TR",
                                 xMinVol=14., xMaxVol=18., xMinDD2=6, xMaxDD2=10,
                                 type="training", col=F, plotType="symbols", 
                                 nameLength=22, plotEvery=def$plotEvery, countOnly=F,
-                                referenceStrategies=c(def$typicalSMA1, def$typicalSMA), force=F) {
+                                referenceStrategies=c(typical$SMA1, typical$SMA), force=F) {
    
    if (dataSplit != "training") 
       warning("Doing training in '", dataSplit, "' mode.", immediate.=T)
@@ -263,7 +263,7 @@ searchForTwoOptimalSMA <-function(minScore1=13.5, minScore2=14.55, do1=T, do2=T,
                           minSMA2=  1L, maxSMA2=  3L, bySMA2= 1L, 
                           minBear= 11,  maxBear= 14,  byBear= 0.5, 
                           minDelta= 0,  maxDelta= 2,  byDelta=0.5, 
-                          referenceStrategies=def$typicalSMA1, minScore=minScore1)
+                          referenceStrategies=typical$SMA1, minScore=minScore1)
    }
    if(do1 && do2) { # needed only if we do both
       print("")
@@ -276,7 +276,7 @@ searchForTwoOptimalSMA <-function(minScore1=13.5, minScore2=14.55, do1=T, do2=T,
                           minSMA2= 4L, maxSMA2= 6L, bySMA2= 1L, 
                           minBear=18,  maxBear=21,  byBear= 0.5, 
                           minDelta=0,  maxDelta=4,  byDelta=0.5, 
-                          referenceStrategies=def$typicalSMA2, minScore=minScore2)
+                          referenceStrategies=typical$SMA2, minScore=minScore2)
    }
 }
 

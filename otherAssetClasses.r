@@ -53,7 +53,7 @@ createGoldStrategy <- function(strategyName="", goldAllocation=15,
       for(i in (index1968+1):numData) 
          TR[i, strategyName] <<- TR[i-1, strategyName] * ( 
             goldAllocation * TR$gold[i] / TR$gold[i-1] + 
-               (1-goldAllocation) * TR[i, def$typicalBalanced] / TR[i-1, def$typicalBalanced] )
+               (1-goldAllocation) * TR[i, typical$balanced] / TR[i-1, typical$balanced] )
    }
    
    #    calcStatisticsForStrategy(strategyName, futureYears=futureYears, tradingCost=tradingCost, force=force)
@@ -61,7 +61,7 @@ createGoldStrategy <- function(strategyName="", goldAllocation=15,
    
    plotAssetClassesReturn(stratName1="stocks",            col1=def$colConstantAlloc, lwd1=3,
                           stratName2="gold",              col2="gold",               lwd2=2,
-                          stratName3=def$typicalBalanced, col3=def$colBalanced,      lwd3=2,
+                          stratName3=typical$balanced, col3=def$colBalanced,      lwd3=2,
                           stratName4=strategyName,        col4="darkorange",         lwd4=3, 
                           startYear=1968.25, endYear=2014, minTR=.58, maxTR=45, 
                           pngOutput=pngOutput, pngName="figures/return_strategy_with_gold.png")

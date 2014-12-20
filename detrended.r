@@ -25,7 +25,7 @@ setDetrendedDefaultValues <- function() {
    def$detrendedAvgOver1    <<- 69L 
    def$detrendedBearish1    <<- 10
    def$detrendedBullish1    <<- 10 
-   def$typicalDetrended1    <<- paste0("detrended_", def$detrendedYears1, "_", def$detrendedAvgOver1, "_", 
+   typical$detrended1    <<- paste0("detrended_", def$detrendedYears1, "_", def$detrendedAvgOver1, "_", 
                                        def$detrendedBearish1, "_", def$detrendedBullish1)
    
    def$detrendedYears2      <<- 13L    # optimized with costs = 2%
@@ -33,21 +33,21 @@ setDetrendedDefaultValues <- function() {
    def$detrendedAvgOver2    <<- 30L 
    def$detrendedBearish2    <<- -5
    def$detrendedBullish2    <<- -5
-   def$typicalDetrended2    <<- paste0("detrended_", def$detrendedYears2, "_", def$detrendedAvgOver2, "_", 
+   typical$detrended2    <<- paste0("detrended_", def$detrendedYears2, "_", def$detrendedAvgOver2, "_", 
                                        def$detrendedBearish2, "_", def$detrendedBullish2)
    
 #    ## detrended strategy with lower stock allocation (and vol and DD)
 #    def$detrendedAvgOver1    <<- 23L    # optimized with costs = 2%
 #    def$detrendedBearish1    <<- 22.6
 #    def$detrendedBullish1    <<- 22.4 
-#    def$typicalDetrended1    <<- paste0("detrended_", def$detrendedAvgOver1, "_", 
+#    typical$detrended1    <<- paste0("detrended_", def$detrendedAvgOver1, "_", 
 #                                        def$detrendedBearish1, "_", def$detrendedBullish1)
 #    
 #    ## detrended strategy in stocks 90% of the time, just dodging the worst bubbles
 #    def$detrendedAvgOver2    <<- 40L    # optimized with costs = 2%
 #    def$detrendedBearish2    <<- 29.4
 #    def$detrendedBullish2    <<- 29.4
-#    def$typicalDetrended2    <<- paste0("detrended_", def$detrendedAvgOver2, "_", 
+#    typical$detrended2    <<- paste0("detrended_", def$detrendedAvgOver2, "_", 
 #                                        def$detrendedBearish2, "_", def$detrendedBullish2)
 }
 
@@ -235,7 +235,7 @@ searchForOptimalDetrended <- function(inputDF=def$detrendedInputDF, inputName=de
          coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, col=F, 
          plotType="symbols", CPUnumber=def$CPUnumber, 
          xMinVol=16.5, xMaxVol=24.5, xMinDD2=3, xMaxDD2=11.5,
-         referenceStrategies=c(def$typicalDetrended1, def$typicalDetrended2), 
+         referenceStrategies=c(typical$detrended1, typical$detrended2), 
          nameLength=25, plotEvery=def$plotEvery, force=F) {
  
    if (dataSplit != "training") 
@@ -281,7 +281,7 @@ searchForTwoOptimalDetrended <-function(minScore1=15, minScore2=14.4, do1=T, do2
       searchForOptimalDetrended(minAvgOver=22L,  maxAvgOver=24L,  byAvgOver=1L, 
                                 minBear=   22.,  maxBear=   23.,  byBear=   0.2, 
                                 minDelta=   0,   maxDelta=  0.8,  byDelta=  0.2, 
-                                referenceStrategies=def$typicalDetrended1,
+                                referenceStrategies=typical$detrended1,
                                 minScore=   minScore1,      plotType=plotType, force=force)   
    }
    if(do1 && do2) { # needed only if we do both
@@ -294,7 +294,7 @@ searchForTwoOptimalDetrended <-function(minScore1=15, minScore2=14.4, do1=T, do2
       searchForOptimalDetrended(minAvgOver=39L,  maxAvgOver=41L,  byAvgOver=1L, 
                                 minBear=   29.0, maxBear=   30,   byBear=   0.2, 
                                 minDelta=   0,   maxDelta=   0.6, byDelta=  0.2, 
-                                referenceStrategies=def$typicalDetrended2,
+                                referenceStrategies=typical$detrended2,
                                 minScore=   minScore2,   plotType=plotType, force=force)
    }
 }
@@ -322,11 +322,11 @@ plotFutureReturnVsDetrended <- function(futureYears=def$futureYears) {
    } else {
       dumbDF <- data.frame(numericDate=dat$numericDate, 
                            detrended=dat$detrended_TR, 
-                           detrended1Alloc=100*alloc[, def$typicalDetrended1], 
-                           detrended2Alloc=100*alloc[, def$typicalDetrended2], 
+                           detrended1Alloc=100*alloc[, typical$detrended1], 
+                           detrended2Alloc=100*alloc[, typical$detrended2], 
                            CAPE10=dat$CAPE10, 
-                           CAPE1Alloc=100*alloc[, def$typicalCAPE1], 
-                           CAPE2Alloc=100*alloc[, def$typicalCAPE2],
+                           CAPE1Alloc=100*alloc[, typical$CAPE1], 
+                           CAPE2Alloc=100*alloc[, typical$CAPE2],
                            next10yrsStocks=100*next10yrs$stocks, 
                            next10yrsBonds=100*next10yrs$bonds, 
                            next10yrsDifference=100*(next10yrs$stocks-next10yrs$bonds))

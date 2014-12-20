@@ -23,22 +23,22 @@ setReversalDefaultValues <- function() {
    def$reversalReturnToMean1 <<-  13.5
    def$reversalBearish1      <<- -50
    def$reversalBullish1      <<- -50 
-   def$typicalReversal1      <<- paste0("reversal_", def$reversalAvgOver1, "_", def$reversalReturnToMean1, "_", 
-                                        def$reversalBearish1, "_", def$reversalBullish1)
+   typical$reversal1         <<- paste0("reversal_", def$reversalAvgOver1, "_", def$reversalReturnToMean1, "_", 
+                                     def$reversalBearish1, "_", def$reversalBullish1)
    
    def$reversalAvgOver2      <<- 11L     # optimized with costs = 2%  # 11L
    def$reversalReturnToMean2 <<- 21      # 17
    def$reversalBearish2      <<-  0      # 2
    def$reversalBullish2      <<-  0      # 2   
-   def$typicalReversal2      <<- paste0("reversal_", def$reversalAvgOver2, "_", def$reversalReturnToMean2, "_", 
-                                        def$reversalBearish2, "_", def$reversalBullish2)
-
-#    def$reversalAvgOver2      <<-  6L     # optimized with costs = 2%  # 6L
-#    def$reversalReturnToMean2 <<-  4.2    # 4.2
-#    def$reversalBearish2      <<-  3.4    # 3.6
-#    def$reversalBullish2      <<-  3.4    # 4   
-#    def$typicalReversal2      <<- paste0("reversal_", def$reversalAvgOver2, "_", def$reversalReturnToMean2, "_", 
-#                                         def$reversalBearish2, "_", def$reversalBullish2)
+   typical$reversal2         <<- paste0("reversal_", def$reversalAvgOver2, "_", def$reversalReturnToMean2, "_", 
+                                     def$reversalBearish2, "_", def$reversalBullish2)
+   
+   #    def$reversalAvgOver2      <<-  6L     # optimized with costs = 2%  # 6L
+   #    def$reversalReturnToMean2 <<-  4.2    # 4.2
+   #    def$reversalBearish2      <<-  3.4    # 3.6
+   #    def$reversalBullish2      <<-  3.4    # 4   
+   #    typical$reversal2      <<- paste0("reversal_", def$reversalAvgOver2, "_", def$reversalReturnToMean2, "_", 
+   #                                         def$reversalBearish2, "_", def$reversalBullish2)
 }
 
 
@@ -84,7 +84,7 @@ createReversalStrategy <- function(inputDF=def$reversalInputDF, inputName=def$re
                                    strategyName="", type="reversal", 
                                    futureYears=def$futureYears, costs, 
                                    coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
-
+   
    reversalName <- paste0("reversal_", inputName, "_", avgOver)
    if(strategyName=="") {
       if (inputName=="TR")
@@ -93,9 +93,9 @@ createReversalStrategy <- function(inputDF=def$reversalInputDF, inputName=def$re
          strategyName <- paste0("reversal_", avgOver, "_", returnToMean, "_", bearish, "_", bullish, 
                                 "__", inputName)
    }
-
+   
    if (bearish==bullish) bullish = bearish + 1e-3 # bear==bull creates problems
-
+   
    ## Calculating startIndex
    if (inputDF=="dat")             input <- dat[, inputName]
    else if (inputDF=="signal")     input <- signal[, inputName]
@@ -103,7 +103,7 @@ createReversalStrategy <- function(inputDF=def$reversalInputDF, inputName=def$re
    else if (inputDF=="TR")         input <- TR[, inputName]
    else if (inputDF=="next30yrs")  input <- next30yrs[, inputName]
    else stop("data frame ", inputDF, " not recognized")
-    startIndex <- sum(is.na(input)) + 2*avgOver + 2
+   startIndex <- sum(is.na(input)) + 2*avgOver + 2
    
    if (!(strategyName %in% colnames(TR)) | force) { # if data do not exist yet or we force recalculation:   
       if (!reversalName %in% colnames(dat)) 
@@ -124,14 +124,14 @@ createReversalStrategy <- function(inputDF=def$reversalInputDF, inputName=def$re
       ## 'rawSignal' is essentially an integral of dat[, reversalName]
       ## 'returnToMean' brings 'rawSignal' back towards 0 over time, to avoid a long-term drift.
       
-#       if (inputName=="TR")
-#          startIndex <- 2*avgOver+1 + 12 # padding to allow settling down
-#       else {
-#          i=1
-#          while ( is.na(dat[i, inputName]) )
-#             i <- i+1
-#          startIndex <- i + 2*avgOver + 12 + 100
-#       }
+      #       if (inputName=="TR")
+      #          startIndex <- 2*avgOver+1 + 12 # padding to allow settling down
+      #       else {
+      #          i=1
+      #          while ( is.na(dat[i, inputName]) )
+      #             i <- i+1
+      #          startIndex <- i + 2*avgOver + 12 + 100
+      #       }
       
       calcReversalSignal(rawSignal, bearish=bearish, bullish=bullish, 
                          signalMin=signalMin, signalMax=signalMax, 
@@ -202,10 +202,10 @@ calcOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$rever
                                 minTR=0, maxVol=20, maxDD2=5, minTO=0.7, minScore=14.8, countOnly,
                                 xMinVol, xMaxVol, xMinDD2, xMaxDD2,
                                 col=F, plotType="symbols", nameLength=25, plotEvery=def$plotEvery, force=F) {
-
+   
    counterTot <- 0; counterNew <- 0
    lastTimePlotted <- proc.time()  
-
+   
    # creating ranges that allow to sample the parameter space broadly initially
    rangeAvgOver <- createRange(minAvgOver, maxAvgOver, byAvgOver)
    rangeRTM     <- createRange(minRTM,     maxRTM,     byRTM)
@@ -249,16 +249,16 @@ calcOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$rever
 
 
 searchForOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
-                                    minAvgOver=8L, maxAvgOver=10L, byAvgOver=1L,
-                                    minRTM=   13,  maxRTM=    15,  byRTM=    1,
-                                    minBear= -52,  maxBear=  -48,  byBear=   1,
-                                    minDelta=  0,  maxDelta=   1,  byDelta=  0.2, 
-                                    futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
-                                    minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.7, minScore=7.2,
-                                    xMinVol=13, xMaxVol=16.5, xMinDD2=4, xMaxDD2=9,
-                                    col=F, plotType="symbols", nameLength=30, plotEvery=def$plotEvery, 
-                                    referenceStrategies=c(def$typicalReversal1, def$typicalReversal2), force=F) {
-
+                                     minAvgOver=8L, maxAvgOver=10L, byAvgOver=1L,
+                                     minRTM=   13,  maxRTM=    15,  byRTM=    1,
+                                     minBear= -52,  maxBear=  -48,  byBear=   1,
+                                     minDelta=  0,  maxDelta=   1,  byDelta=  0.2, 
+                                     futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
+                                     minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.7, minScore=7.2,
+                                     xMinVol=13, xMaxVol=16.5, xMinDD2=4, xMaxDD2=9,
+                                     col=F, plotType="symbols", nameLength=30, plotEvery=def$plotEvery, 
+                                     referenceStrategies=c(typical$reversal1, typical$reversal2), force=F) {
+   
    if (dataSplit != "training") 
       warning("Doing training in '", dataSplit, "' mode.", immediate.=T)
    if (costs < 1/100) 
@@ -296,7 +296,7 @@ searchForThreeOptimalReversal <-function(minScore1=14.7, minScore2=15.65, minSco
                                minRTM=   13,  maxRTM=    14,   byRTM=    0.5,
                                minBear= -52,  maxBear=  -49,   byBear=   0.5,
                                minDelta=  0,  maxDelta=   1.5, byDelta=  0.5, 
-                               referenceStrategies=def$typicalReversal1, minScore=minScore1 )
+                               referenceStrategies=typical$reversal1, minScore=minScore1 )
    }
    if( do1 && (do2||do3) ) { # needed only if there is something to seperate
       print("")
@@ -309,7 +309,7 @@ searchForThreeOptimalReversal <-function(minScore1=14.7, minScore2=15.65, minSco
                                minRTM=    19,  maxRTM=    22,  byRTM=    0.5,
                                minBear=   -2,  maxBear=    1,  byBear=   0.5,
                                minDelta=   0,  maxDelta=   1,  byDelta=  0.5, 
-                               referenceStrategies=def$typicalReversal2, minScore=minScore2 )
+                               referenceStrategies=typical$reversal2, minScore=minScore2 )
    }
    if( do3 && (do1||do2) ) { # needed only if there is something to seperate
       print("")
