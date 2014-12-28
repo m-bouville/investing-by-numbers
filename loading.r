@@ -20,17 +20,12 @@ setDefaultValues <- function(dataSplit, futureYears, removeDepression,
    if (!exists("doStrat") | force) doStrat <<- list()
    
    def$futureYears   <<- futureYears    # default value for the number of years over which future returns are calculated
-   
-   if(dataSplit=="training") {
-      if (removeDepression) 
-         rangeName <- "\'TRAINING\' phase with Depression removed"
-      else rangeName <- "\'TRAINING\' phase"
-   }
-   else if(dataSplit=="testing") 
-      rangeName <- "\'TESTING\' phase"
-   else if(dataSplit=="all") 
-      rangeName <- "\'ALL\' phase"
+
+   if (dataSplit %in% c("training", "testing", "all") )
+      rangeName <- paste0("\'", toupper(dataSplit), "\' phase")
    else stop("dataSplit can only be one of 'all', 'training' or 'testing', not ", dataSplit)
+   if(dataSplit=="training" && removeDepression) 
+      rangeName <- paste(rangeName, "with Depression removed")
    message("Time range: ", rangeName, " (futureYears = ", def$futureYears, " years)")
 
    if (tradingCost+riskAsCost > 0.2)
@@ -219,7 +214,8 @@ splitData <- function(dataSplit, removeDepression, force) {
       if (oldNumData!=numData && !force)
          warning("When switching to \'testing\' from a complete data set or from \'training\', 
               it is recommended to run \'start\' with \'force=T\'.")
-   } else if (dataSplit != "all") 
+   } 
+   else if (dataSplit != "all") 
       warning(dataSplit, " is not a valid value for \'dataSplit\':", "
               choose one of \'all\', \'training\' or \'testing\'.")
    
@@ -261,7 +257,7 @@ loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=T, lastMon
    if(!file.exists("./data/ie_data.xls")) # download file if not already locally available
       download.file("http://www.econ.yale.edu/~shiller/./data/ie_data.xls", "./data/ie_data.xls", mode = "wb")
    else if(downloadAndCheckAllFiles) # We force checking whether the local file is up to date
-      checkXlsFileIsUpToDate()
+      checkXlsFileIsUpToDate(verbose=F)
    
    suppressMessages( library(XLConnect) ) # to handle xls file
    wk <- loadWorkbook("./data/ie_data.xls") 
@@ -283,8 +279,8 @@ loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=T, lastMon
                   rawDat$Date[numData-1], immediate.=T )
       else message("Most recent S&P 500 value (for ", round( 100*(rawDat$Date[numData]%%1) ), "/", 
                    rawDat$Date[numData]%/%1, ") set to ", lastMonthSP500, ".")
+      message(ShillerMessage2)
    }
-   message(ShillerMessage2)
       
    # if the latest dividends are missing (if it is too early for the data to be available), 
    # ... either we extrapolate them or we remove the rows
@@ -304,8 +300,7 @@ loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=T, lastMon
          }   
    
    # data are for the last (business) day of each month, 28th is close enough
-   dat <<- data.frame(date       = ISOdate( floor(rawDat$Date), 
-                                            round((rawDat$Date%%1)*100,0)+1, 1, hour=0, min=0, sec=0 ) - 1,
+   dat <<- data.frame(date       = ISOdate( floor(rawDat$Date), round((rawDat$Date%%1)*100,0), 15 ), # monthly averages
                       numericDate= as.numeric(rawDat$Fraction),
                       CPI        = as.numeric(rawDat$CPI), # reference for inflation
                       dividend   = as.numeric(rawDat$D), # loads nominal dividend (real ones to be calculated below)
@@ -315,7 +310,6 @@ loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=T, lastMon
                       bonds      = numeric(numData)
    )
    
-   dat$numericDate <<- dat$numericDate+0.49/12 # data are actually for end of month, not middle
    refCPI          <<- dat$CPI[numData] # reference for inflation
    dat$price       <<- dat$price    / dat$CPI * refCPI # calculating real price
    dat$dividend    <<- dat$dividend / dat$CPI * refCPI # calculating real dividend
@@ -340,17 +334,27 @@ loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=T, lastMon
    # message("Shiller's xls file has *nominal* values, the \'dat\' data frame has *real* values.")
 }
 
-checkXlsFileIsUpToDate <- function(fileName="./data/ie_data.xls") {
+checkXlsFileIsUpToDate <- function(fileName="./data/ie_data.xls", verbose=T, force=F) {
    if(!file.exists(fileName)) 
       stop(fileName, " is not on the local disk.")
    
    download.file("http://www.econ.yale.edu/~shiller/data/ie_data.xls", "ie_data-remote.xls", mode = "wb")
    
-   if ( file.info(fileName)$size == file.info("ie_data-remote.xls")$size ) 
-      print(paste("The file", fileName, "is up to date.") )
-   else { # The size of the local file is different from Shiller's file 
+   if ( file.info(fileName)$size != file.info("ie_data-remote.xls")$size || force) {
+      # The size of the local file is different from Shiller's file 
       file.copy("ie_data-remote.xls", fileName, overwrite=T)
       print(paste("The file", fileName, "has been updated.") )   
+   } else
+      print(paste("The file", fileName, "is up to date.") )
+   
+   if (verbose) {
+      suppressMessages( require(XLConnect) ) # to handle xls file
+      wk <- loadWorkbook("ie_data-remote.xls") # loading the remote file
+      rawDat <- readWorksheet(wk, sheet="Data", startRow=8)
+      
+      n <- dim(rawDat)[1] # row of the comments
+      print( paste0("According to the xls file, \'", rawDat$P[n], "\'") )
+      print( paste0("According to the xls file, \'", rawDat$CPI[n], "\'") )
    }
    file.remove("ie_data-remote.xls")
 }
@@ -358,10 +362,10 @@ checkXlsFileIsUpToDate <- function(fileName="./data/ie_data.xls") {
 ## for some columns in 'parameters' and 'stats', there are only a handful of possible values
 makeStringsFactors <- function() {
    allTypes <- c("constantAlloc", "gold", "UKhousePrice", "inflation", 
-                 "CAPE_hy", "CAPE_NH", #"detrended", 
+                 "CAPE_hy", "CAPE_NH", 
                  "Bollinger", "SMA", "reversal", "combined", 
-                 "Boll_CAPE", "Boll_detrended", "Boll_Boll", 
-                 "SMA_CAPE", "SMA_detrended", "reversal_CAPE", "reversal_detrended" )
+                 "Boll_CAPE", "Boll_Boll", "SMA_CAPE", "reversal_CAPE")
+   # "detrended", "Boll_detrended", "SMA_detrended", "reversal_detrended" )
    allSubtypes <- c(allTypes, "balanced", "technical", "value", "hybrid", "TR")
    allTypes <- c(allTypes, "training", "utility") # "training" and "utility" can only be types, not subtypes
    
@@ -385,11 +389,11 @@ makeStringsFactors <- function() {
 selectTypicalStrategiesToCreate <- function(){
    ## Technical strategies
    doStrat$Boll1      <<- T
-   doStrat$Boll2      <<- F
+   doStrat$Boll2      <<- T
    doStrat$SMA1       <<- T
    doStrat$SMA2       <<- T
    doStrat$reversal1  <<- T
-   doStrat$reversal2  <<- F
+   doStrat$reversal2  <<- F    # testing score (costs=2%): 8.459
    
    ## Value strategies
    doStrat$CAPE_hy1   <<- T
@@ -400,17 +404,16 @@ selectTypicalStrategiesToCreate <- function(){
    
    ## Hybrid strategies
    doStrat$Boll_CAPE1     <<- T
-   doStrat$Boll_CAPE2     <<- F
+   doStrat$Boll_CAPE2     <<- T
    doStrat$Boll_detrended1<<- F  # anything detrended is quarantined
    doStrat$SMA_CAPE1      <<- T
    doStrat$SMA_CAPE2      <<- T
-   doStrat$reversal_CAPE1 <<- F
-   doStrat$reversal_CAPE2 <<- F
+   doStrat$reversal_CAPE1 <<- F  # testing score (costs=2%): 8.45
+   doStrat$reversal_CAPE2 <<- F  # testing score (costs=2%): 8.79
    doStrat$Boll_Boll1     <<- T
    doStrat$Boll_Boll2     <<- T
    doStrat$Boll_balanced1 <<- T
 }
-
 
 # Generating typical strategies
 createTypicalStrategies <- function(extrapolateDividends=T, costs=def$tradingCost, 
@@ -439,14 +442,16 @@ createTypicalStrategies <- function(extrapolateDividends=T, costs=def$tradingCos
                         costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    
    if(doStrat$reversal1) 
-      createReversalStrategy(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
-                          avgOver=def$reversalAvgOver1, returnToMean=def$reversalReturnToMean1, 
-                          bearish=def$reversalBearish1, bullish=def$reversalBullish1, 
-                          costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+      createReversalStrategy(inputDF=def$reversalInputDF,       inputName=def$reversalInputName, 
+                             avgOver=def$reversalAvgOver1,      returnToMean=def$reversalReturnToMean1, 
+                             bearish=def$reversalBearish1,      bullish=def$reversalBullish1,
+                             yoyoOffset=def$reversalYoyoOffset1,yoyoPenalty=def$reversalYoyoPenalty1,
+                             costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    if(doStrat$reversal2) 
-      createReversalStrategy(inputDF=def$reversalInputDF,  inputName=def$reversalInputName, 
-                             avgOver=def$reversalAvgOver2, returnToMean=def$reversalReturnToMean2, 
-                             bearish=def$reversalBearish2, bullish=def$reversalBullish2, 
+      createReversalStrategy(inputDF=def$reversalInputDF,       inputName=def$reversalInputName, 
+                             avgOver=def$reversalAvgOver2,      returnToMean=def$reversalReturnToMean2, 
+                             bearish=def$reversalBearish2,      bullish=def$reversalBullish2, 
+                             yoyoOffset=def$reversalYoyoOffset2,yoyoPenalty=def$reversalYoyoPenalty2,
                              costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force) 
 
  

@@ -77,7 +77,7 @@ start <- function(dataSplit="all",           # "all" for all data, "training" an
                   downloadAndCheckAllFiles=F, # force downloading data files to check whether they are up to date
                   otherAssetClasses=F,        # loads gold and UK house prices
                   newcomer=F,                 # displays some information on the code
-                  force=F) {
+                  force=T) {
    
    if(!file.exists("main.r")) 
       stop("Use \'setwd()\' to change the working directory to that containing the r files.")
@@ -219,7 +219,7 @@ startTesting <- function(futureYears=10L, tradingCost=0.5/100, riskAsCost=1.5/10
          otherAssetClasses=otherAssetClasses, newcomer=newcomer, force=force)
    plotAllReturnsVsFour()
 }
-# startTesting(lastMonthSP500=2067.56, riskAsCost=1.5/100)        # S&P500 value for end of November 2014
+# startTesting(lastMonthSP500=2048.63)       # average of S&P500 through 24th December 2014
 
 
 # plotAllReturnsVsFour()

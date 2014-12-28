@@ -106,32 +106,41 @@ setHybridDefaultValues <- function() {
    {
       def$reversal_CAPEinputDF      <<- "dat"
       # reversal(CAPE) 1
-      def$reversal_CAPEyears1       <<- 10
+      def$reversal_CAPEyears1       <<- 11    # 10
       def$reversal_CAPEcheat1       <<- def$CAPEcheat
       def$reversal_CAPEinputName1   <<- paste0("CAPE", def$reversal_CAPEyears1)
       
-      def$reversal_CAPEavgOver1     <<- 14L
-      def$reversal_CAPEreturnToMean1<<- 44
-      def$reversal_CAPEbearish1     <<-  9
-      def$reversal_CAPEbullish1     <<-  9 
-      typical$reversal_CAPE1     <<- paste0(
-         "reversal_", def$reversal_CAPEavgOver1, "_", 
-         def$reversal_CAPEreturnToMean1, "_", def$reversal_CAPEbearish1, "_", def$reversal_CAPEbullish1,
-         "__", def$reversal_CAPEinputName1)
+      def$reversal_CAPEavgOver1     <<- 11L   # 14L
+      def$reversal_CAPEreturnToMean1<<- 19    # 44
+      def$reversal_CAPEbearish1     <<-  5.5  #  9
+      def$reversal_CAPEbullish1     <<-  6    #  9 
+      def$reversal_CAPEyoyoOffset1  <<-  1L
+      def$reversal_CAPEyoyoPenalty1 <<-  0 
+      typical$reversal_CAPE1        <<- nameReversalStrategy(
+         def$reversal_CAPEinputName1,    def$reversal_CAPEavgOver1,
+         def$reversal_CAPEreturnToMean1, def$reversal_CAPEbearish1, def$reversal_CAPEbullish1, 
+         def$reversal_CAPEyoyoOffset1,   def$reversal_CAPEyoyoPenalty1)
       
       # reversal(CAPE) 2
-      def$reversal_CAPEyears2       <<-  6
-      def$reversal_CAPEcheat2       <<-  0
+      def$reversal_CAPEyears2       <<- 11    #  6
+      def$reversal_CAPEcheat2       <<- def$CAPEcheat # 0
       def$reversal_CAPEinputName2   <<- paste0("CAPE", def$reversal_CAPEyears2)
       
-      def$reversal_CAPEavgOver2     <<- 12L
-      def$reversal_CAPEreturnToMean2<<- 21.5
-      def$reversal_CAPEbearish2     <<-  5
-      def$reversal_CAPEbullish2     <<-  5 
-      typical$reversal_CAPE2     <<- paste0(
-         "reversal_", def$reversal_CAPEavgOver2, "_", 
-         def$reversal_CAPEreturnToMean2, "_", def$reversal_CAPEbearish2, "_", def$reversal_CAPEbullish2,
-         "__", def$reversal_CAPEinputName2)
+      def$reversal_CAPEavgOver2     <<- 13L   # 12L
+      def$reversal_CAPEreturnToMean2<<- 35    # 21.5
+      def$reversal_CAPEbearish2     <<-  4    #  5
+      def$reversal_CAPEbullish2     <<-  4    #  5 
+      def$reversal_CAPEyoyoOffset2  <<-  1L
+      def$reversal_CAPEyoyoPenalty2 <<-  0 
+      typical$reversal_CAPE2        <<- nameReversalStrategy(
+               def$reversal_CAPEinputName2,    def$reversal_CAPEavgOver2,
+               def$reversal_CAPEreturnToMean2, def$reversal_CAPEbearish2, def$reversal_CAPEbullish2, 
+               def$reversal_CAPEyoyoOffset2,   def$reversal_CAPEyoyoPenalty2)
+      
+#       paste0(
+#          "reversal_", def$reversal_CAPEavgOver2, "_", 
+#          def$reversal_CAPEreturnToMean2, "_", def$reversal_CAPEbearish2, "_", def$reversal_CAPEbullish2,
+#          "__", def$reversal_CAPEinputName2)
    }
 
    ## Boll(Boll)
@@ -186,7 +195,6 @@ setHybridDefaultValues <- function() {
       
       # typical$Boll_balanced1  is defined after balanced is created
    }
-   
 }
 
    
@@ -270,7 +278,7 @@ searchForOptimalBoll_CAPE <- function(
 }
 
 
-searchForTwoOptimalBoll_CAPE <- function(minScore1=15.7, minScore2=15.7, do1=T, do2=T,
+searchForTwoOptimalBoll_CAPE <- function(minScore1=15.3, minScore2=15.7, do1=T, do2=T,
          minCAPEyears1=  14L, maxCAPEyears1= 16L, byCAPEyears1=  1L,
          minCAPEavgOver1= 0L, maxCAPEavgOver1=0L, byCAPEavgOver1=6L,  # 0 generally works best
          minAvgOver1=    17L, maxAvgOver1=   19L, byAvgOver1=    1L,
@@ -347,7 +355,7 @@ searchForOptimalSMA_CAPE <- function(
          minSMA1=       12L, maxSMA1=       20L, bySMA1=        2L,
          minSMA2=        4L, maxSMA2=        8L, bySMA2=        2L, 
          minBear=       36,  maxBear=       96,  byBear=        4, 
-         minDelta=       0,  maxDelta=       0,  byDelta=       1,  # 0 generally works best
+         minDelta=       0,  maxDelta=       0,  byDelta=       1,  # 0 is generally close to the optimum
          futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
          minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.7, minScore=13.6, 
          xMinVol=15, xMaxVol=18, xMinDD2=7.5, xMaxDD2=10.5, countOnly=F,
@@ -409,15 +417,18 @@ searchForOptimalSMA_CAPE <- function(
 
 searchForOptimalReversal_CAPE <- function(
          inputDF="dat", cheat=def$CAPEcheat,
-         minCAPEyears=6L, maxCAPEyears= 6L, byCAPEyears=1L, 
-         minAvgOver= 11L, maxAvgOver=  13L, byAvgOver=  1L,
-         minRTM=     21,  maxRTM=      23,  byRTM=      0.5,
-         minBear=     4,  maxBear=      6,  byBear=     0.5,
-         minDelta=    0,  maxDelta=     0,  byDelta=    0.5,  # 0 generally works best
+         minCAPEyears=  6L, maxCAPEyears=  6L, byCAPEyears=  1L, 
+         minCAPEavgOver=0L, maxCAPEavgOver=0L, byCAPEavgOver=6L,   # 0 generally works best
+         minAvgOver=   11L, maxAvgOver=   13L, byAvgOver=    1L,
+         minRTM=       21,  maxRTM=       23,  byRTM=        0.5,
+         minBear=       4,  maxBear=       6,  byBear=       0.5,
+         minDelta=      0,  maxDelta=      0,  byDelta=      0.5,  # 0 is generally close to the optimum
+         minYoyoOffset= 1L, maxYoyoOffset= 5L, byYoyoOffset= 2L, 
+         minYoyoPenalty=1,  maxYoyoPenalty=1,  byYoyoPenalty=0.4,  # 1 generally works best
          futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
          minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.7, minScore=14.5,
-         xMinVol=12, xMaxVol=15, xMinDD2=3.5, xMaxDD2=6,
-         col=F, plotType="symbols", nameLength=30, plotEvery=def$plotEvery, 
+         xMinVol=12., xMaxVol=14.5, xMinDD2=3.4, xMaxDD2=5.5,
+         type="training", col=F, plotType="symbols", nameLength=35, plotEvery=def$plotEvery, 
          referenceStrategies=c(typical$reversal_CAPE1,typical$reversal_CAPE2), force=F) {
 
    if (dataSplit != "training") 
@@ -425,20 +436,62 @@ searchForOptimalReversal_CAPE <- function(
    if (costs < 1/100) 
       warning("costs = ", costs*100, "%.", immediate.=T)
       
-   for (CAPEyears in seq(minCAPEyears, maxCAPEyears, by=byCAPEyears)) {
-      CAPEname <- paste0("CAPE",CAPEyears)
-      print( paste0("Starting the search for an optimal reversal(", CAPEname, ")..." ) )
-      if (!(CAPEname %in% colnames(dat))) 
-         calcCAPE(years=CAPEyears, cheat=cheat)   
-      
-      searchForOptimalReversal(inputDF, inputName=CAPEname, minAvgOver, maxAvgOver, byAvgOver, 
-                               minRTM, maxRTM, byRTM, minBear, maxBear, byBear, minDelta, maxDelta, byDelta, 
-                               futureYears, costs, minTR, maxVol, maxDD2, minTO, minScore,
-                               xMinVol, xMaxVol, xMinDD2, xMaxDD2, col, plotType, nameLength, plotEvery, 
-                               referenceStrategies, force)      
+   rangeCAPEyears   <- createRange(minCAPEyears,   maxCAPEyears,   byCAPEyears)
+   rangeCAPEavgOver <- createRange(minCAPEavgOver, maxCAPEavgOver, byCAPEavgOver)
+   
+   for (CAPEyears in rangeCAPEyears) 
+      for (CAPEavgOver in rangeCAPEavgOver) {
+         if (CAPEavgOver>0)
+            CAPEname <- paste0("CAPE", CAPEyears, "avg", CAPEavgOver)
+         else CAPEname <- paste0("CAPE", CAPEyears)
+         
+         print( paste0("Starting the search for an optimal reversal(", CAPEname, ")..." ) )
+         if (!(CAPEname %in% colnames(dat))) 
+            calcAvgCAPE(years=CAPEyears, cheat=cheat, avgOver=CAPEavgOver)
+         
+         searchForOptimalReversal(inputDF, inputName=CAPEname, 
+               minAvgOver=    minAvgOver,    maxAvgOver=    maxAvgOver,    byAvgOver=    byAvgOver,
+               minRTM=        minRTM,        maxRTM=        maxRTM,        byRTM=        byRTM, 
+               minBear   =    minBear,       maxBear   =    maxBear,       byBear   =    byBear,
+               minDelta  =    minDelta,      maxDelta  =    maxDelta,      byDelta  =    byDelta,
+               minYoyoOffset= minYoyoOffset, maxYoyoOffset= maxYoyoOffset, byYoyoOffset= byYoyoOffset, 
+               minYoyoPenalty=minYoyoPenalty,maxYoyoPenalty=maxYoyoPenalty,byYoyoPenalty=byYoyoPenalty,
+               futureYears, costs, minTR, maxVol, maxDD2, minTO, minScore, type=type,
+               xMinVol, xMaxVol, xMinDD2, xMaxDD2, col, plotType, nameLength, plotEvery, 
+               referenceStrategies, force)      
+         print("")
+      }
+}
+
+searchForTwoOptimalReversal_CAPE <- function(minScore1=15.5, minScore2=16, do1=T, do2=T) {
+   if(do1) {
+      print("*** reversal(CAPE) 1...")
+      searchForOptimalReversal_CAPE(minAvgOver=   10L, maxAvgOver=  12L, byAvgOver=   1L,
+                                    minRTM=       18,  maxRTM=      20,  byRTM=       1,
+                                    minBear=       5,  maxBear=      8,  byBear=      0.5, 
+                                    minYoyoOffset= 1L, maxYoyoOffset=4L, byYoyoOffset=1L, 
+                                    minDelta=      0,  maxDelta=     1,  byDelta=     0.5, 
+                                    minCAPEyears= 11L, maxCAPEyears=11L, byCAPEyears= 1L, 
+                                    minCAPEavgOver=0L,maxCAPEavgOver=0L,byCAPEavgOver=3L,
+                                    referenceStrategies=typical$reversal_CAPE1, minScore=minScore1)
+   }
+   if(do1 && do2) { # needed only if we do both
+      print("")
+      print("***************************************************************************************************")
       print("")
    }
-}
+   if(do2) {
+      print("*** reversal(CAPE) 2...")
+      searchForOptimalReversal_CAPE(minAvgOver=   13L, maxAvgOver=  13L, byAvgOver=   1L,
+                                    minRTM=       32,  maxRTM=      36,  byRTM=       1,
+                                    minBear=       4,  maxBear=      7,  byBear=      1,
+                                    minYoyoOffset= 1L, maxYoyoOffset=8L, byYoyoOffset=1L, 
+                                    minDelta=      0,  maxDelta=     0,  byDelta=     0.5, 
+                                    minCAPEyears= 11L, maxCAPEyears=11L, byCAPEyears= 1L, 
+                                    minCAPEavgOver=0L,maxCAPEavgOver=0L,byCAPEavgOver=3L,
+                                    referenceStrategies=typical$reversal_CAPE2, minScore=minScore2) 
+   }
+} 
 
 
 
@@ -500,7 +553,8 @@ searchForOptimalBoll_Boll <- function(
       for (bear1 in rangeBear1) 
          for (delta1 in rangeDelta1) {
             bull1 = bear1 + delta1               
-            inputName <- paste0("Boll_", avgOver1, "_", bear1, "_", bull1) 
+            inputName <- nameBollStrategy(, avgOver1, bear1, bull1)
+            
             # print(inputName)
             if (countOnly) {
                count <- searchForOptimalBoll(inputDF="TR", inputName=inputName, allocSource="stocks",
@@ -547,8 +601,8 @@ searchForOptimalBoll_Boll <- function(
             showSummaryForStrategy(referenceStrategies[i], nameLength=nameLength, costs=costs)
    }
 }
-
-
+   
+   
 searchForTwoOptimalBoll_Boll <- function(minScore1=16, minScore2=15.4, do1=T, do2=T,
                                          plotType="symbols", countOnly=F, force=F) {
    if(do1) {
@@ -556,11 +610,11 @@ searchForTwoOptimalBoll_Boll <- function(minScore1=16, minScore2=15.4, do1=T, do
       searchForOptimalBoll_Boll( 
             minAvgOver2=   15L, maxAvgOver2=   17L, byAvgOver2=    1L,
             minBear2=     -33,  maxBear2=     -31,  byBear2=       1, 
-            minYoyoOffset2= 1L, maxYoyoOffset2= 5L, byYoyoOffset2= 2L, 
-            minYoyoPenalty2=1,  maxYoyoPenalty2=1,  byYoyoPenalty2=0.4, # 1 generally works best
+            minYoyoOffset2= 1L, maxYoyoOffset2= 9L, byYoyoOffset2= 2L, 
+            minYoyoPenalty2=0.2,  maxYoyoPenalty2=0.8,  byYoyoPenalty2=0.2, # 1 generally works best
             minDelta2=      0,  maxDelta2=      0,  byDelta2=      0.5, # 0 is generally close to the optimum
             minAvgOver1=   24L, maxAvgOver1=   26L, byAvgOver1=    1L,
-            minBear1=    -147,  maxBear1=    -142,  byBear1=       1,
+            minBear1=    -147,  maxBear1=    -143,  byBear1=       1,
             minDelta1=      0,  maxDelta1=      0,  byDelta1=      0.5, # 0 is generally close to the optimum
             plotType=plotType, force=force, countOnly=countOnly, 
             referenceStrategies=typical$Boll_Boll1,

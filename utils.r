@@ -203,11 +203,12 @@ calcSignalForStrategy <- function(
          allocSource="stocks",     # the allocation when in the market (default = stocks)
          bearish,                  # value of the input at which allocation = 0
          bullish,                  # value of the input at which allocation = 1
+         yoyoOffset=1L,            # how far back we look (default must be 1 for backward compatibility)
+         yoyoPenalty=0,
          signalMin=def$signalMin,  # the values of the signal will be between...
          signalMax=def$signalMax,  # signalMin and signalMax
-         startIndex=def$startIndex,# where the signal starts (NA before that)
-         yoyoOffset=1L,            # how far back we look (default must be 1 for backward compatibility)
-         yoyoPenalty=0) {          # between 0 and 1 (default must be 0 for backward compatibility)
+         startIndex=def$startIndex # where the signal starts (NA before that)
+         ) {          # between 0 and 1 (default must be 0 for backward compatibility)
       
    dateRange <- startIndex:numData
    if( sum(is.na(input[dateRange])) > 0) # there should be no NA after startIndex
@@ -228,22 +229,23 @@ calcSignalForStrategy <- function(
    
    ## Avoiding a yoyo effect (buying then selling then buying, etc. every month)
    scale <- yoyoPenalty / (signalMax - signalMin)^2
-   for (i in (startIndex+yoyoOffset):numData) {
-      delta <- (signal[i-1, strategyName] - signal[i-yoyoOffset, strategyName]) * 
-               (signal[i,   strategyName] - signal[i-1, strategyName])
-      # delta = [ s_(n-off) - s_(n-1) ] * [ s_(n-1) - s_n ]
-      # if s_(n-off)=1, s_(n-1)=0 and s_n=1 (yoyo effect to be avoided)      then delta=-1
-      # if s_(n-off)=1, s_(n-1)=1 and s_n=0 (unobjectionable drop in signal) then delta= 0
-      
-      delta <- min(delta, 0) * scale
-      # normalizes delta between -yoyoPenalty and 0
-      # if delta>0 then we continue a buy or sell trend (unobjectionable)
-      
-      signal[i, strategyName] <<- signal[i, strategyName] + 
-         delta * ( signal[i, strategyName] - signal[i-1, strategyName] )
-      # if yoyoPenalty=1 and delta<0 then signal[i, strategyName] <- signal[i-1, strategyName]
-      # if yoyoPenalty=0 or  delta=0 then signal[i, strategyName] is untouched
-   }
+   if (yoyoPenalty!=0 && yoyoOffset!=1)
+      for (i in (startIndex+yoyoOffset):numData) {
+         delta <- (signal[i-1, strategyName] - signal[i-yoyoOffset, strategyName]) * 
+            (signal[i,   strategyName] - signal[i-1, strategyName])
+         # delta = [ s_(n-off) - s_(n-1) ] * [ s_(n-1) - s_n ]
+         # if s_(n-off)=1, s_(n-1)=0 and s_n=1 (yoyo effect to be avoided)      then delta=-1
+         # if s_(n-off)=1, s_(n-1)=1 and s_n=0 (unobjectionable drop in signal) then delta= 0
+         
+         delta <- min(delta, 0) * scale
+         # normalizes delta between -yoyoPenalty and 0
+         # if delta>0 then we continue a buy or sell trend (unobjectionable)
+         
+         signal[i, strategyName] <<- signal[i, strategyName] + 
+            delta * ( signal[i, strategyName] - signal[i-1, strategyName] )
+         # if yoyoPenalty=1 and delta<0 then signal[i, strategyName] <- signal[i-1, strategyName]
+         # if yoyoPenalty=0 or  delta=0 then signal[i, strategyName] is untouched
+      }
 }
 
 
@@ -315,11 +317,17 @@ regression <- function(x, y) { # y = a + b x
 }
 
 createRange <- function (minValue, maxValue, byValue) {
-   if (minValue != maxValue)
+   if (minValue == maxValue) # does not require byValue to make sense
+      return (minValue)
+   else if ( abs(byValue) > abs(maxValue-minValue) )   # does not require byValue to be of the correct sign
+      return (minValue)
+   else {
+      minValue <- round(minValue, 4) # cleaning to avoid that min=0.2000001, max=0.4, by=0.2 not include 0.4
+      maxValue <- round(maxValue, 4)
+      byValue  <- round(byValue, 4)
       return ( c( seq(minValue, maxValue, by=2*byValue), 
                   seq(minValue+byValue, maxValue, by=2*byValue) ) )
-   else return (minValue)
-   
+   }   
 }
 
 deleteStrategy <- function(stratName, warnings=T) {

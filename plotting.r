@@ -18,16 +18,16 @@ setPlottingDefaultColors <- function() {
    # Colors consistently used for the various strategies
    def$colCAPE_NH   <<- "cyan4"
    def$colCAPE_hy   <<- "cyan"
-   #def$colDetrended <<- "skyblue"
+   #def$colDetrended <<- "skyblue"         # anything detrended is quarantined
    def$colSMA       <<- "pink"
    def$colBollinger <<- "magenta"   
    def$colReversal  <<- "orange"
    def$colInflation <<- "purple"
    
    def$colBoll_CAPE     <<- "darkolivegreen4"   
-   def$colBoll_detrended<<- "seagreen3"   
+   # def$colBoll_detrended<<- "seagreen3" # anything detrended is quarantined
    def$colSMA_CAPE      <<- "greenyellow"   
-   # def$colReversal_CAPE <<- "darkolivegreen"
+   def$colReversal_CAPE <<- "darkolivegreen"
    def$colBoll_Boll <<- "darkolivegreen4"
    
    def$colValue     <<- "blue"
@@ -62,7 +62,7 @@ setPlottingDefaultColors <- function() {
    def$col5  <<- def$colCAPE_NH
    def$pch5  <<- def$pch
    
-   #    def$type5 <<- "detrended"
+   #    def$type5 <<- "detrended"        # anything detrended is quarantined
    #    def$col5  <<- def$colDetrended
    #    def$pch5  <<- def$pch
   
@@ -70,8 +70,12 @@ setPlottingDefaultColors <- function() {
    def$col6  <<- def$colBoll_CAPE
    def$pch6  <<- def$pch
    
-   def$type7 <<- "Boll_detrended"
-   def$col7  <<- def$colBoll_detrended
+   #    def$type7 <<- "Boll_detrended"   # anything detrended is quarantined
+   #    def$col7  <<- def$colBoll_detrended
+   #    def$pch7  <<- def$pch
+   
+   def$type7 <<- "reversal_CAPE"
+   def$col7  <<- def$colReversal_CAPE
    def$pch7  <<- def$pch
    
    def$type8 <<- "Boll_Boll"
@@ -460,6 +464,8 @@ plotReturnSideways <- function(stratName1=typical$balanced, stratName2="stocks",
                                inflationMin=0, inflationMax=12, minTR=0.7, maxTR=2.2,
                                pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
                                pngName="figures/sideways_markets.png") {
+   if (dataSplit != "all") 
+      warning("Not all data will be available in '", dataSplit, "' mode.", immediate.=T)
    
    if(pngOutput)
       png(file=pngName, width=pngWidth, height=pngHeight)

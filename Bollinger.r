@@ -36,7 +36,7 @@ setBollDefaultValues <- function() {
                                             def$BollBullish2,  def$BollYoyoOffset2, def$BollYoyoPenalty2)
 }
 
-nameBollStrategy <- function(inputName, avgOver, bearish, bullish, yoyoOffset, yoyoPenalty) { 
+nameBollStrategy <- function(inputName="TR", avgOver, bearish, bullish, yoyoOffset=1, yoyoPenalty=0) { 
    strategyName <- paste0("Boll_", avgOver, "_", bearish, "_", bullish)
    if (yoyoOffset>=2 && yoyoPenalty>0)
       strategyName <- paste0(strategyName, "_", yoyoOffset, "_", yoyoPenalty)
@@ -206,12 +206,15 @@ calcOptimalBoll <- function(inputDF, inputName, allocSource, minAvgOver, maxAvgO
    rangeAvgOver    <- createRange(minAvgOver,    maxAvgOver,    byAvgOver)
    rangeBear       <- createRange(minBear,       maxBear,       byBear)
    rangeYoyoOffset <- createRange(minYoyoOffset, maxYoyoOffset, byYoyoOffset)
-   rangeYoyoPenalty<- createRange(minYoyoPenalty,maxYoyoPenalty,byYoyoPenalty)
    rangeDelta      <- createRange(minDelta,      maxDelta,      byDelta)   
    
    for (avgOver in rangeAvgOver) 
       for (bear in rangeBear) 
-         for (yoyoOffset in rangeYoyoOffset) 
+         for (yoyoOffset in rangeYoyoOffset) {
+            if (yoyoOffset>1) # if yoyoOffset==1 there is no yoyo penalization: no need for a whole range
+               rangeYoyoPenalty <- createRange(minYoyoPenalty, maxYoyoPenalty, byYoyoPenalty)
+            else rangeYoyoPenalty <- minYoyoPenalty 
+            
             for (yoyoPenalty in rangeYoyoPenalty) {
                if (yoyoOffset==1 || yoyoPenalty==0) {# if no yoyo prevention because of _either_ parameter
                    yoyoOffset<-1                     #   then no yoyo prevention because of _both_ parameter.
@@ -245,6 +248,7 @@ calcOptimalBoll <- function(inputDF, inputName, allocSource, minAvgOver, maxAvgO
                   }
                }
             }
+         }
    if(countOnly)
       return( c(counterTot, counterNew) )
 }
@@ -269,9 +273,12 @@ searchForOptimalBoll <- function(inputDF="dat",   inputName="TR",  allocSource="
       warning("costs = ", costs*100, "%.", immediate.=T)
       
    # calculate how many parameters sets will be run
-   count <- calcOptimalBoll(inputDF, inputName, allocSource, minAvgOver, maxAvgOver, byAvgOver, 
-                            minBear, maxBear, byBear, minDelta, maxDelta, byDelta,  
-                            minYoyoOffset, maxYoyoOffset, byYoyoOffset, minYoyoPenalty, maxYoyoPenalty, byYoyoPenalty,
+   count <- calcOptimalBoll(inputDF, inputName, allocSource, 
+                            minAvgOver=    minAvgOver,    maxAvgOver=    maxAvgOver,    byAvgOver=    byAvgOver,
+                            minBear   =    minBear,       maxBear   =    maxBear,       byBear   =    byBear,
+                            minDelta  =    minDelta,      maxDelta  =    maxDelta,      byDelta  =    byDelta,
+                            minYoyoOffset= minYoyoOffset, maxYoyoOffset= maxYoyoOffset, byYoyoOffset= byYoyoOffset, 
+                            minYoyoPenalty=minYoyoPenalty,maxYoyoPenalty=maxYoyoPenalty,byYoyoPenalty=byYoyoPenalty,
                             futureYears, costs, type, 
                             minTR, maxVol, maxDD2, minTO, minScore, coeffTR, coeffVol, coeffDD2,
                             xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly=T,
@@ -282,11 +289,14 @@ searchForOptimalBoll <- function(inputDF="dat",   inputName="TR",  allocSource="
          print (paste0("Running ", count[1], " parameter sets (", count[2], " new)"))      
          if(showHeading) dashes <- displaySummaryHeader(futureYears=futureYears, nameLength=nameLength)
       }
-      cleanUpStrategies()
+#       cleanUpStrategies()
       
-      calcOptimalBoll(inputDF, inputName, allocSource, minAvgOver, maxAvgOver, byAvgOver, 
-                      minBear, maxBear, byBear, minDelta, maxDelta, byDelta,  
-                      minYoyoOffset, maxYoyoOffset, byYoyoOffset, minYoyoPenalty, maxYoyoPenalty, byYoyoPenalty,
+      calcOptimalBoll(inputDF, inputName, allocSource,  
+                      minAvgOver=    minAvgOver,    maxAvgOver=    maxAvgOver,    byAvgOver=    byAvgOver,
+                      minBear   =    minBear,       maxBear   =    maxBear,       byBear   =    byBear,
+                      minDelta  =    minDelta,      maxDelta  =    maxDelta,      byDelta  =    byDelta,
+                      minYoyoOffset= minYoyoOffset, maxYoyoOffset= maxYoyoOffset, byYoyoOffset= byYoyoOffset, 
+                      minYoyoPenalty=minYoyoPenalty,maxYoyoPenalty=maxYoyoPenalty,byYoyoPenalty=byYoyoPenalty,
                       futureYears, costs, type, 
                       minTR, maxVol, maxDD2, minTO, minScore, coeffTR, coeffVol, coeffDD2,
                       xMinVol, xMaxVol, xMinDD2, xMaxDD2, countOnly=F,
@@ -328,6 +338,8 @@ searchForTwoOptimalBoll <- function( minScore1=12.5, minScore2=10, do1=T, do2=T,
          costs=def$tradingCost+def$riskAsCostTechnical,
          plotType="symbols", force=F) {
    message("costs = ", costs*100, "%")
+   cleanUpStrategies()
+   
    if(do1) {   
       print("Bollinger 1...")
       createBollStrategy(inputDF=def$BollInputDF, inputName=def$BollInputName, avgOver=def$BollAvgOver1, 

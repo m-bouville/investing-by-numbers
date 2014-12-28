@@ -5,7 +5,7 @@ loadGoldData <- function() {
    dat$gold <<- NA
    nominalGold <- read.csv("./data/gold.csv", header=T)[, 1]
    
-   index1968 <- which(abs(dat$numericDate-(1968+1/12))<.01 ) 
+   index1968 <- which(abs(dat$numericDate-(1968+1/24))<.01 ) 
    # index corresponding to january 1968 (when gold data start)
    lastGoldIndex <- length(nominalGold)
    lastDatIndex <- numData
@@ -24,7 +24,8 @@ createGoldStrategy <- function(strategyName="", goldAllocation=15,
    if (strategyName == "") strategyName <- "gold" 
    if (!strategyName %in% colnames(TR)) TR[, strategyName] <<- numeric(numData)
    
-   index1968 <- which(abs(dat$numericDate-(1968+1/12))<.01 ) # index corresponding to january 1968 (when gold data start)
+   index1968 <- which(abs(dat$numericDate-(1968+1/24))<.01 ) 
+   # index corresponding to january 1968 (when gold data start)
    TR[, strategyName] <<- NA
    TR[index1968, strategyName] <<- 1
    for(i in (index1968+1):numData) 
@@ -68,7 +69,7 @@ createGoldStrategy <- function(strategyName="", goldAllocation=15,
 }
 
 
-# Loading gold data from Nationwide website
+# Loading UK property (real estate) data from Nationwide website
 loadUKhousePriceData <- function(downloadAndCheckAllFiles=F) {
    
    suppressMessages( library(XLConnect) ) # to handle xls file
@@ -90,7 +91,7 @@ loadUKhousePriceData <- function(downloadAndCheckAllFiles=F) {
    addNumColToDat("UKhousePrice")
    dat$UKhousePrice <<- NA
    
-   index1975 <- which(abs(dat$numericDate-(1975+1/12))<.01 ) 
+   index1975 <- which(abs(dat$numericDate-(1975+1/24))<.01 ) 
    # index1975 is index corresponding to january 1975 (when UK property data start)
    lastDatIndex <- numData
    
@@ -111,7 +112,8 @@ createUKhousePriceStrategy <- function(strategyName="", futureYears=def$futureYe
    if (strategyName == "") strategyName <- "UKhousePrice" 
    addNumColToTR(strategyName)
    
-   index1975 <- which(abs(dat$numericDate-(1975+1/12))<.01 ) # index corresponding to january 1975 (when UK property data start)
+   index1975 <- which(abs(dat$numericDate-(1975+1/24))<.01 ) 
+   # index corresponding to january 1975 (when UK property data start)
    TR[, strategyName] <<- NA
    TR[index1975+1, strategyName] <<- 1
    for(i in (index1975+2):numData) 

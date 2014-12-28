@@ -14,29 +14,29 @@
 setCombinedDefaultValues <- function() {
    def$minScore           <<- 10
    
-   def$technicalStrategies<<- c(typical$Boll1, typical$SMA1, typical$SMA2, typical$reversal1)
-   def$technicalScores    <<- c(13.61, 13.35, 11.24, 12.65)  # 'testing', costs=2%
-   # def$technicalScores  <<- c(12.59, 13.94, 12.50, 13.92)  # 'testing', costs=4%
+   def$technicalStrategies<<- c(typical$Boll1, typical$Boll2, typical$SMA1, typical$SMA2, typical$reversal1)
+   def$technicalScores    <<- c(14.00, 11.07, 13.51, 11.48, 13.99)  # 'testing', costs=2%
    def$minScoreTechnical  <<- def$minScore 
    
    def$valueStrategies    <<- c(typical$CAPE_hy1, typical$CAPE_hy2, typical$CAPE_NH)
-   def$valueScores        <<- c(12.72, 12.75, 10.63)  # 'testing', costs=2%
+   def$valueScores        <<- c(12.43, 12.51, 10.31)  # 'testing', costs=2%
    def$minScoreValue      <<- def$minScore 
    
-   def$hybridStrategies   <<- c(typical$Boll_CAPE1, typical$SMA_CAPE1, typical$SMA_CAPE2, 
+   def$hybridStrategies   <<- c(typical$Boll_CAPE1, typical$Boll_CAPE2, typical$SMA_CAPE1, typical$SMA_CAPE2, 
                                 typical$Boll_Boll1, typical$Boll_Boll2) #, typical$Boll_balanced1)
-   def$hybridScores       <<- c(14.95, 12.14, 12.64, 15.34, 12.78)  # 'testing', costs=2%
-   # def$hybridScores     <<- c(14.27, 13.70, 14.31, 15.26, 12.70)  # 'testing', costs=4%
+   def$hybridScores       <<- c(14.91, 10.94, 12.55, 13.03, 15.40, 12.58)  # 'testing', costs=2%
    def$minScoreHybrid     <<- def$minScore 
    
    def$balancedStrategies <<- c(typical$technical, typical$value, typical$hybrid)
-   def$balancedScores     <<- c(13.77, 13.05, 15.29)   # 'testing', costs=2%
+   def$balancedScores     <<- c(14.17, 12.73, 15.18)   # 'testing', costs=2%
    def$minScoreBalanced   <<- def$minScore 
 }
 
 
 ## Calculate the weighted average of the signals of several strategies
-calcCombinedStrategySignal <- function(inputStrategyName, fraction, strategyName, force=F) {
+calcCombinedStrategySignal <- function(inputStrategyName, fraction, strategyName, yoyoOffset=1L, yoyoPenalty=0, 
+                                       signalMin=def$signalMin, signalMax=def$signalMax, 
+                                       startIndex=def$startIndex, force=F) {
    
    if ( length(inputStrategyName) != length(fraction) )
       stop("inputStrategyName and fraction must have the same length.")      
@@ -54,12 +54,23 @@ calcCombinedStrategySignal <- function(inputStrategyName, fraction, strategyName
       for (i in 1:numLoops) 
          if(fraction[i]!=0) 
             signal[, strategyName] <<- signal[, strategyName] + fraction[i]*signal[, inputStrategyName[i] ]
-   }    
+      
+      ## see calcSignalForStrategy() in utils.r for explanations on yoyo prevention
+      scale <- yoyoPenalty / (signalMax - signalMin)^2
+      if (yoyoPenalty!=0 && yoyoOffset!=1)
+         for (i in (startIndex+yoyoOffset):numData) {
+            delta <- (signal[i-1, strategyName] - signal[i-yoyoOffset, strategyName]) * 
+               (signal[i,   strategyName] - signal[i-1, strategyName])
+            delta <- min(delta, 0) * scale
+            signal[i, strategyName] <<- signal[i, strategyName] + 
+               delta * ( signal[i, strategyName] - signal[i-1, strategyName] )
+         }      
+   }
 }
 
 
 combineStrategies <- function(
-      inputStrategyName, score, minScore, 
+      inputStrategyName, score, minScore, yoyoOffset=1L, yoyoPenalty=0, 
       futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost,
       coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
       strategyName="", type="combined", subtype, speed=0, force=F) {
@@ -106,6 +117,7 @@ combineStrategies <- function(
    
    if (!(strategyName %in% colnames(alloc)) | force) {   
       calcCombinedStrategySignal(inputStrategyName=inputStrategyName, fraction=fraction, 
+                                 yoyoOffset=yoyoOffset, yoyoPenalty=yoyoPenalty, 
                                  strategyName=strategyName, force=force)
       calcAllocFromSignal(strategyName)
    }

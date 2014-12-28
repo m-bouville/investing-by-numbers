@@ -19,19 +19,27 @@ setReversalDefaultValues <- function() {
    def$reversalInputDF       <<- "dat"
    def$reversalInputName     <<- "TR"
    
-   def$reversalAvgOver1      <<-   9L     # optimized with costs = 2%
-   def$reversalReturnToMean1 <<-  13.5
-   def$reversalBearish1      <<- -50
-   def$reversalBullish1      <<- -50 
-   typical$reversal1         <<- paste0("reversal_", def$reversalAvgOver1, "_", def$reversalReturnToMean1, "_", 
-                                     def$reversalBearish1, "_", def$reversalBullish1)
+   # optimized with costs = 2%
+   def$reversalAvgOver1      <<-  10L   #  9L    
+   def$reversalReturnToMean1 <<-  17    # 13.5
+   def$reversalBearish1      <<- -52.5  #-50
+   def$reversalBullish1      <<- -52.5  #-50
+   def$reversalYoyoOffset1   <<-  2L    #  1L
+   def$reversalYoyoPenalty1  <<-  1     #  0
+   typical$reversal1         <<- nameReversalStrategy(
+         def$reversalInputName, def$reversalAvgOver1, def$reversalReturnToMean1,
+         def$reversalBearish1,  def$reversalBullish1, def$reversalYoyoOffset1,   def$reversalYoyoPenalty1)
    
-   def$reversalAvgOver2      <<- 11L     # optimized with costs = 2%  # 11L
-   def$reversalReturnToMean2 <<- 21      # 17
-   def$reversalBearish2      <<-  0      # 2
-   def$reversalBullish2      <<-  0      # 2   
-   typical$reversal2         <<- paste0("reversal_", def$reversalAvgOver2, "_", def$reversalReturnToMean2, "_", 
-                                     def$reversalBearish2, "_", def$reversalBullish2)
+   # optimized with costs = 2%
+   def$reversalAvgOver2      <<- 11L     # 11L
+   def$reversalReturnToMean2 <<- 21.5    # 21
+   def$reversalBearish2      <<- -0.5    #  0
+   def$reversalBullish2      <<- -0.5    #  0   
+   def$reversalYoyoOffset2   <<-  3L     #  1L
+   def$reversalYoyoPenalty2  <<-  1      #  0
+   typical$reversal2         <<- nameReversalStrategy(
+      def$reversalInputName, def$reversalAvgOver2, def$reversalReturnToMean2,
+      def$reversalBearish2,  def$reversalBullish2, def$reversalYoyoOffset2,   def$reversalYoyoPenalty2)
    
    #    def$reversalAvgOver2      <<-  6L     # optimized with costs = 2%  # 6L
    #    def$reversalReturnToMean2 <<-  4.2    # 4.2
@@ -39,6 +47,17 @@ setReversalDefaultValues <- function() {
    #    def$reversalBullish2      <<-  3.4    # 4   
    #    typical$reversal2      <<- paste0("reversal_", def$reversalAvgOver2, "_", def$reversalReturnToMean2, "_", 
    #                                         def$reversalBearish2, "_", def$reversalBullish2)
+}
+
+
+
+nameReversalStrategy <- function(inputName="TR", avgOver, RTM, bearish, bullish, yoyoOffset=1, yoyoPenalty=0) { 
+   strategyName <- paste0("reversal_", avgOver, "_", RTM, "_", bearish, "_", bullish)
+   if (yoyoOffset>=2 && yoyoPenalty>0)
+      strategyName <- paste0(strategyName, "_", yoyoOffset, "_", yoyoPenalty)
+   if (inputName!="TR")
+      strategyName <- paste0(strategyName, "__", inputName)
+   return(strategyName)
 }
 
 
@@ -58,17 +77,17 @@ calcReversal <- function(inputDF, inputName, avgOver=def$reversalAvgOver, revers
 }
 
 
-calcReversalSignal <- function(rawSignal,                                
-                               bearish=def$BollBearish, bullish=def$BollBullish, 
+calcReversalSignal <- function(rawSignal, bearish=def$BollBearish, bullish=def$BollBullish, 
                                signalMin=def$signalMin, signalMax=def$signalMax,
-                               strategyName, startIndex=2*def$reversalAvgOver+1) {
+                               strategyName, startIndex=2*def$reversalAvgOver+1, yoyoOffset=1L, yoyoPenalty=0) {
    
    bearish=bearish/100
    bullish=bullish/100
    
    addNumColToSignal(strategyName)
    calcSignalForStrategy(strategyName, input=rawSignal, bearish=bearish, bullish=bullish,
-                         signalMin=signalMin, signalMax=signalMax, startIndex=startIndex ) 
+                         signalMin=signalMin, signalMax=signalMax, startIndex=startIndex,
+                         yoyoOffset=yoyoOffset, yoyoPenalty=yoyoPenalty) 
 }
 
 
@@ -83,16 +102,13 @@ createReversalStrategy <- function(inputDF=def$reversalInputDF, inputName=def$re
                                    signalMin=def$signalMin, signalMax=def$signalMax,
                                    strategyName="", type="reversal", 
                                    futureYears=def$futureYears, costs, 
-                                   coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, force=F) {
+                                   coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
+                                   yoyoOffset=1L, yoyoPenalty=0, force=F) {
    
    reversalName <- paste0("reversal_", inputName, "_", avgOver)
-   if(strategyName=="") {
-      if (inputName=="TR")
-         strategyName <- paste0("reversal_", avgOver, "_", returnToMean, "_", bearish, "_", bullish)
-      else
-         strategyName <- paste0("reversal_", avgOver, "_", returnToMean, "_", bearish, "_", bullish, 
-                                "__", inputName)
-   }
+   if(strategyName=="") 
+      strategyName <- nameReversalStrategy(inputName, avgOver, returnToMean, 
+                                           bearish, bullish, yoyoOffset, yoyoPenalty)
    
    if (bearish==bullish) bullish = bearish + 1e-3 # bear==bull creates problems
    
@@ -135,7 +151,8 @@ createReversalStrategy <- function(inputDF=def$reversalInputDF, inputName=def$re
       
       calcReversalSignal(rawSignal, bearish=bearish, bullish=bullish, 
                          signalMin=signalMin, signalMax=signalMax, 
-                         startIndex=startIndex, strategyName=strategyName)      
+                         startIndex=startIndex, strategyName=strategyName,
+                         yoyoOffset=yoyoOffset, yoyoPenalty=yoyoPenalty)      
       
       requireColInSignal(strategyName)
       addNumColToAlloc(strategyName)
@@ -194,70 +211,82 @@ createReversalStrategy <- function(inputDF=def$reversalInputDF, inputName=def$re
 
 
 calcOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
-                                minAvgOver=8L, maxAvgOver=10L, byAvgOver=1L, 
-                                minRTM = 10, maxRTM = 16, byRTM=1,
-                                minBear=-54, maxBear=-42, byBear=2, 
-                                minDelta=0,  maxDelta=2, byDelta=0.5, 
-                                futureYears=def$futureYears, costs=def$tradingCost, 
-                                minTR=0, maxVol=20, maxDD2=5, minTO=0.7, minScore=14.8, countOnly,
-                                xMinVol, xMaxVol, xMinDD2, xMaxDD2,
-                                col=F, plotType="symbols", nameLength=25, plotEvery=def$plotEvery, force=F) {
+         minAvgOver, maxAvgOver, byAvgOver, minRTM, maxRTM, byRTM,
+         minBear, maxBear, byBear, minDelta,  maxDelta, byDelta,
+         minYoyoOffset, maxYoyoOffset, byYoyoOffset, minYoyoPenalty, maxYoyoPenalty, byYoyoPenalty,
+         futureYears=def$futureYears, costs=def$tradingCost, 
+         minTR=0, maxVol=20, maxDD2=5, minTO=0.7, minScore=14.8, countOnly,
+         xMinVol, xMaxVol, xMinDD2, xMaxDD2, type="reversal",
+         col=F, plotType="symbols", nameLength=25, plotEvery=def$plotEvery, force=F) {
    
    counterTot <- 0; counterNew <- 0
    lastTimePlotted <- proc.time()  
    
    # creating ranges that allow to sample the parameter space broadly initially
-   rangeAvgOver <- createRange(minAvgOver, maxAvgOver, byAvgOver)
-   rangeRTM     <- createRange(minRTM,     maxRTM,     byRTM)
-   rangeBear    <- createRange(minBear,    maxBear,    byBear)
-   rangeDelta   <- createRange(minDelta,   maxDelta,   byDelta)   
+   rangeAvgOver  <- createRange(minAvgOver,   maxAvgOver,   byAvgOver)
+   rangeRTM      <- createRange(minRTM,       maxRTM,       byRTM)
+   rangeBear     <- createRange(minBear,      maxBear,      byBear)
+   rangeYoyoOffset<-createRange(minYoyoOffset,maxYoyoOffset,byYoyoOffset)
+   rangeDelta    <- createRange(minDelta,     maxDelta,     byDelta)   
    
    for (avgOver in rangeAvgOver) 
       for (RTM in rangeRTM) 
-         for (bear in rangeBear) {
-            for (delta in rangeDelta) {
-               bull = bear + delta
+         for (bear in rangeBear) 
+            for (yoyoOffset in rangeYoyoOffset) {
+               if (yoyoOffset>1) # if yoyoOffset==1 there is no yoyo penalization: no need for a whole range
+                  rangeYoyoPenalty <- createRange(minYoyoPenalty, maxYoyoPenalty, byYoyoPenalty)
+               else rangeYoyoPenalty <- minYoyoPenalty 
                
-               if (inputName=="TR")
-                  strategyName <- paste0("reversal_", avgOver, "_", RTM, "_", bear, "_", bull)
-               else
-                  strategyName <- paste0("reversal_", avgOver, "_", RTM, "_", bear, "_", bull, "__", inputName)
-               
-               counterTot <- counterTot + 1 
-               if(countOnly) {
-                  if ( !(strategyName %in% colnames(TR)) | !(strategyName %in% colnames(alloc)) )
-                     counterNew <- counterNew + 1                  
-               } else {
-                  createReversalStrategy(inputDF=inputDF, inputName=inputName, avgOver=avgOver, returnToMean=RTM, 
-                                         bearish=bear, bullish=bull, signalMin=def$signalMin, signalMax=def$signalMax,
-                                         strategyName=strategyName, costs=costs, force=force)                  
-                  showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
-                                         minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
-                                         nameLength=nameLength, force=F)
+               for (yoyoPenalty in rangeYoyoPenalty) {
+                  if (yoyoOffset==1 || yoyoPenalty==0) {# if no yoyo prevention because of _either_ parameter
+                     yoyoOffset<-1                     #   then no yoyo prevention because of _both_ parameter.
+                     yoyoPenalty<-0                    # This prevents several equivalent parameter couples
+                  }                                     #   (e.g. doing both offset=1, penalty=1 and offset=2, penalty=0)
+                  
+                  for (delta in rangeDelta) {
+                     bull = bear + delta
+                     
+                     strategyName <- nameReversalStrategy(inputName, avgOver, RTM, bear, bull, yoyoOffset, yoyoPenalty)
+                                          
+                     counterTot <- counterTot + 1 
+                     if(countOnly) {
+                        if ( !(strategyName %in% colnames(TR)) | !(strategyName %in% colnames(alloc)) )
+                           counterNew <- counterNew + 1                  
+                     } else {
+                        createReversalStrategy(inputDF=inputDF, inputName=inputName, avgOver=avgOver, returnToMean=RTM, 
+                                               bearish=bear, bullish=bull, yoyoOffset=yoyoOffset, yoyoPenalty=yoyoPenalty,
+                                               signalMin=def$signalMin, signalMax=def$signalMax,
+                                               strategyName=strategyName, type=type, costs=costs, force=force)                  
+                        showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
+                                               minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
+                                               nameLength=nameLength, force=F)
+                     }
+                     if ( !countOnly && (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { 
+                        # we replot only if it's been a while
+                        plotAllReturnsVsTwo(col=col, trainingPlotType=plotType, 
+                                            xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2)
+                        lastTimePlotted <- proc.time()
+                     }
+                  }
                }
             }
-            if ( !countOnly && (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { 
-               # we replot only if it's been a while
-               plotAllReturnsVsTwo(col=col, trainingPlotType=plotType, 
-                                   xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2)
-               lastTimePlotted <- proc.time()
-            }
-         }
    if(countOnly)
       print (paste0("Running ", counterTot, " parameter sets (", counterNew, " new)"))
 }
 
 
 searchForOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
-                                     minAvgOver=8L, maxAvgOver=10L, byAvgOver=1L,
-                                     minRTM=   13,  maxRTM=    15,  byRTM=    1,
-                                     minBear= -52,  maxBear=  -48,  byBear=   1,
-                                     minDelta=  0,  maxDelta=   1,  byDelta=  0.2, 
-                                     futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
-                                     minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.7, minScore=7.2,
-                                     xMinVol=13, xMaxVol=16.5, xMinDD2=4, xMaxDD2=9,
-                                     col=F, plotType="symbols", nameLength=30, plotEvery=def$plotEvery, 
-                                     referenceStrategies=c(typical$reversal1, typical$reversal2), force=F) {
+         minAvgOver=    8L, maxAvgOver=   10L, byAvgOver=    1L,
+         minRTM=       13,  maxRTM=       15,  byRTM=        1,
+         minBear=     -52,  maxBear=     -48,  byBear=       1,
+         minDelta=      0,  maxDelta=      1,  byDelta=      0.2, 
+         minYoyoOffset= 1L, maxYoyoOffset= 5L, byYoyoOffset= 2L, 
+         minYoyoPenalty=1,  maxYoyoPenalty=1,  byYoyoPenalty=0.4,  # 1 generally works best
+         futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
+         minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.7, minScore=7.2,
+         xMinVol=13, xMaxVol=16.5, xMinDD2=4, xMaxDD2=9,
+         type="training", col=F, plotType="symbols", nameLength=32, plotEvery=def$plotEvery, 
+         referenceStrategies=c(typical$reversal1, typical$reversal2), force=F) {
    
    if (dataSplit != "training") 
       warning("Doing training in '", dataSplit, "' mode.", immediate.=T)
@@ -267,18 +296,28 @@ searchForOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$
    cleanUpStrategies()
    
    # calculate how many parameter sets will be run
-   calcOptimalReversal(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOver, 
-                       minRTM, maxRTM, byRTM, minBear, maxBear, byBear, minDelta, maxDelta, byDelta, 
-                       futureYears, costs, minTR, maxVol, maxDD2, minTO, minScore, countOnly=T,
-                       xMinVol, xMaxVol, xMinDD2, xMaxDD2, col, plotType, nameLength, plotEvery, force)
+   calcOptimalReversal(inputDF, inputName, 
+         minAvgOver=    minAvgOver,    maxAvgOver=    maxAvgOver,    byAvgOver=    byAvgOver,
+         minRTM=        minRTM,        maxRTM=        maxRTM,        byRTM=        byRTM, 
+         minBear   =    minBear,       maxBear   =    maxBear,       byBear   =    byBear,
+         minDelta  =    minDelta,      maxDelta  =    maxDelta,      byDelta  =    byDelta,
+         minYoyoOffset= minYoyoOffset, maxYoyoOffset= maxYoyoOffset, byYoyoOffset= byYoyoOffset, 
+         minYoyoPenalty=minYoyoPenalty,maxYoyoPenalty=maxYoyoPenalty,byYoyoPenalty=byYoyoPenalty,
+         futureYears, costs, minTR, maxVol, maxDD2, minTO, minScore, countOnly=T,type=type,
+         xMinVol, xMaxVol, xMinDD2, xMaxDD2, col, plotType, nameLength, plotEvery, force)
    
    dashes <- displaySummaryHeader(futureYears=futureYears, nameLength=nameLength)
    
    # actually calculating
-   calcOptimalReversal(inputDF, inputName, minAvgOver, maxAvgOver, byAvgOver, 
-                       minRTM, maxRTM, byRTM, minBear, maxBear, byBear, minDelta, maxDelta, byDelta, 
-                       futureYears, costs, minTR, maxVol, maxDD2, minTO, minScore, countOnly=F,
-                       xMinVol, xMaxVol, xMinDD2, xMaxDD2, col, plotType, nameLength, plotEvery, force)
+   calcOptimalReversal(inputDF, inputName, 
+         minAvgOver=    minAvgOver,    maxAvgOver=    maxAvgOver,    byAvgOver=    byAvgOver,
+         minRTM=        minRTM,        maxRTM=        maxRTM,        byRTM=        byRTM, 
+         minBear   =    minBear,       maxBear   =    maxBear,       byBear   =    byBear,
+         minDelta  =    minDelta,      maxDelta  =    maxDelta,      byDelta  =    byDelta,
+         minYoyoOffset= minYoyoOffset, maxYoyoOffset= maxYoyoOffset, byYoyoOffset= byYoyoOffset, 
+         minYoyoPenalty=minYoyoPenalty,maxYoyoPenalty=maxYoyoPenalty,byYoyoPenalty=byYoyoPenalty,
+         futureYears, costs, minTR, maxVol, maxDD2, minTO, minScore, countOnly=F,type=type,
+         xMinVol, xMaxVol, xMinDD2, xMaxDD2, col, plotType, nameLength, plotEvery, force)
    
    print(dashes)
    for ( i in 1:length(referenceStrategies) )
@@ -288,14 +327,16 @@ searchForOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$
 }
 
 
-searchForThreeOptimalReversal <-function(minScore1=14.7, minScore2=15.65, minScore3=14.7, 
+searchForThreeOptimalReversal <-function(minScore1=14.92, minScore2=15.7, minScore3=14.9, 
                                          do1=T, do2=T, do3=T, plotType="symbols", force=F) {
    if(do1) {
       print("Reversal 1")
-      searchForOptimalReversal(minAvgOver=8L, maxAvgOver=10L,  byAvgOver=1L,
-                               minRTM=   13,  maxRTM=    14,   byRTM=    0.5,
-                               minBear= -52,  maxBear=  -49,   byBear=   0.5,
-                               minDelta=  0,  maxDelta=   1.5, byDelta=  0.5, 
+      searchForOptimalReversal(minAvgOver=    8L, maxAvgOver=   11L,  byAvgOver=    1L,
+                               minRTM=       15.5,maxRTM=       17.5, byRTM=        0.5,
+                               minBear=     -53,  maxBear=     -51.5, byBear=       0.5,
+                               minYoyoOffset= 2L, maxYoyoOffset= 3L,  byYoyoOffset= 1L, 
+                               minYoyoPenalty=1,  maxYoyoPenalty=1,   byYoyoPenalty=0.4,
+                               minDelta=      0,  maxDelta=      1,   byDelta=      0.5, 
                                referenceStrategies=typical$reversal1, minScore=minScore1 )
    }
    if( do1 && (do2||do3) ) { # needed only if there is something to seperate
@@ -305,10 +346,12 @@ searchForThreeOptimalReversal <-function(minScore1=14.7, minScore2=15.65, minSco
    }
    if(do2) {
       print("Reversal 2")
-      searchForOptimalReversal(minAvgOver=10L, maxAvgOver=12L, byAvgOver=1L,
-                               minRTM=    19,  maxRTM=    22,  byRTM=    0.5,
-                               minBear=   -2,  maxBear=    1,  byBear=   0.5,
-                               minDelta=   0,  maxDelta=   1,  byDelta=  0.5, 
+      searchForOptimalReversal(minAvgOver=   11L, maxAvgOver=   11L, byAvgOver=    1L,
+                               minRTM=       20.5,maxRTM=       22,  byRTM=        0.5,
+                               minBear=      -1,  maxBear=       0.5,byBear=       0.5,
+                               minYoyoOffset= 2L, maxYoyoOffset= 4L, byYoyoOffset= 1L, 
+                               minYoyoPenalty=1,  maxYoyoPenalty=1,  byYoyoPenalty=0.4, 
+                               minDelta=      0,  maxDelta=      0.5,byDelta=      0.5, 
                                referenceStrategies=typical$reversal2, minScore=minScore2 )
    }
    if( do3 && (do1||do2) ) { # needed only if there is something to seperate
@@ -318,9 +361,11 @@ searchForThreeOptimalReversal <-function(minScore1=14.7, minScore2=15.65, minSco
    }
    if(do3) {
       print("Reversal 3")
-      searchForOptimalReversal(minAvgOver=5L,  maxAvgOver= 7L,  byAvgOver=1L,
-                               minRTM=    4.,  maxRTM=     4.4, byRTM=    0.2,
-                               minBear=   2.6, maxBear=    3.8, byBear=   0.2,
-                               minDelta=  0,   maxDelta=   1.,  byDelta=  0.2, minScore=minScore3 )
+      searchForOptimalReversal(minAvgOver=    5L,  maxAvgOver=    7L,  byAvgOver=    1L,
+                               minRTM=        3.6, maxRTM=        5.2, byRTM=        0.4,
+                               minBear=       2.2, maxBear=       4.2, byBear=       0.4,
+                               minYoyoOffset= 3L,  maxYoyoOffset= 7L,  byYoyoOffset= 2L, 
+                               minYoyoPenalty=1,   maxYoyoPenalty=1,   byYoyoPenalty=0.4, 
+                               minDelta=      0,   maxDelta=      0.,  byDelta=      0.2, minScore=minScore3 )
    }
 }
