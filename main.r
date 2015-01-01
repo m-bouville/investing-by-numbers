@@ -217,7 +217,8 @@ startTesting <- function(futureYears=10L, tradingCost=0.5/100, riskAsCost=1.5/10
          removeDepression=F, # irrelevant to the testing data range
          smoothConstantAlloc=smoothConstantAlloc, downloadAndCheckAllFiles=downloadAndCheckAllFiles, 
          otherAssetClasses=otherAssetClasses, newcomer=newcomer, force=force)
-   plotAllReturnsVsFour()
+   if (!otherAssetClasses)
+      plotAllReturnsVsFour()
 }
 # startTesting(lastMonthSP500=2048.63)       # average of S&P500 through 24th December 2014
 
