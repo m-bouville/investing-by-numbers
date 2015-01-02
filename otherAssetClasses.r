@@ -3,7 +3,7 @@
 loadGoldData <- function() {
    addNumColToDat("gold")
    dat$gold <<- NA
-   nominalGold <- read.csv("./data/gold.csv", header=T)[, 1]
+   nominalGold <- read.csv("./data/gold.csv", header=T)[, 2]
    
    index1968 <- which(abs(dat$numericDate-(1968+1/24))<.01 ) 
    # index corresponding to january 1968 (when gold data start)
