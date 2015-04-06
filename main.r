@@ -163,7 +163,7 @@ start <- function(dataSplit="all",           # "all" for all data, "training" an
    
    showSummaries()
    print(paste0("RECOMMENDED STOCK ALLOCATION: ", 
-                round( 100*stats$latestStockAlloc[which(stats$strategy==typical$balanced)]), "%"))
+                       round( 100*stats$latestStockAlloc[which(stats$strategy==typical$balanced)]), "%"))
 
    if(otherAssetClasses) 
       if (dat$numericDate[numData] < 1968) # if there are no data after 1968 in 'dat' (training mode) 
@@ -222,8 +222,8 @@ startTesting <- function(futureYears=10L, tradingCost=0.5/100, riskAsCost=1.5/10
    if (!otherAssetClasses)
       plotAllReturnsVsFour()
 }
-# startTesting(lastMonthSP500=2081.0)    # average of S&P500 through 26th Feb. 2015 (source: stlouisfed.org)
-# startTesting(lastMonthSP500=2081.0, downloadAndCheckAllFiles=T, otherAssetClasses=T)
+# startTesting(lastMonthSP500=2079.8)    # average of S&P500 for Apr. 2015, up to 10th Apr. (source: stlouisfed.org)
+# startTesting(lastMonthSP500=2079.8, downloadAndCheckAllFiles=T, otherAssetClasses=T)
 
 
 # plotAllReturnsVsFour()
