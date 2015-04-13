@@ -701,7 +701,7 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost+def
             showSummaryForStrategy(typical$SMA2,       displayName="SMA 2", futureYears=futureYears, costs=costsTechnical, 
                                    coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)   
          if(doStrat$reversal1)      
-            showSummaryForStrategy(typical$reversal1,  displayName="reversal", futureYears=futureYears, costs=costsTechnical, 
+            showSummaryForStrategy(typical$reversal1,  displayName="reversal 1", futureYears=futureYears, costs=costsTechnical, 
                                    coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
          if(doStrat$reversal2)      
             showSummaryForStrategy(typical$reversal2,  displayName="reversal 2 **", futureYears=futureYears, costs=costsTechnical, 
@@ -721,7 +721,7 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost+def
             showSummaryForStrategy(typical$CAPE_NH,      displayName="CAPE no hysteresis", futureYears=futureYears, costs=costs, 
                                    coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
          if(doStrat$detrended1)      
-            showSummaryForStrategy(typical$detrended1, displayName="detrended", futureYears=futureYears, costs=costs, 
+            showSummaryForStrategy(typical$detrended1, displayName="detrended 1 **", futureYears=futureYears, costs=costs, 
                                    coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
          if(doStrat$detrended2)      
             showSummaryForStrategy(typical$detrended2, displayName="detrended 2 **", futureYears=futureYears, costs=costs, 

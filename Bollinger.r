@@ -19,24 +19,24 @@ setBollDefaultValues <- function() {
    def$BollInputDF     <<- "dat"
    def$BollInputName   <<- "TR"
    
-   def$BollAvgOver1    <<-  14L
-   def$BollBearish1    <<- -31.5
-   def$BollBullish1    <<- -31.5 
-   def$BollYoyoOffset1 <<-   1L  # optimization with yoyo prevention enabled did not do better
-   def$BollYoyoPenalty1<<-   0 
+   def$BollAvgOver1    <<-  14L    #  14L  # with costs=2%, w/o yoyo prevention
+   def$BollBearish1    <<- -33.5   # -31.5
+   def$BollBullish1    <<- -33.5   # -31.5 
+   def$BollYoyoOffset1 <<-   3L    #   1L
+   def$BollYoyoPenalty1<<-   1     #   0
    typical$Boll1       <<- nameBollStrategy(def$BollInputName, def$BollAvgOver1,    def$BollBearish1, 
                                             def$BollBullish1,  def$BollYoyoOffset1, def$BollYoyoPenalty1)
    
-   def$BollAvgOver2    <<- 10L    # 10L   # with costs=2%, w/o yoyo prevention
-   def$BollBearish2    <<- 46.5   # 46.5
-   def$BollBullish2    <<- 46.5   # 46.5 
-   def$BollYoyoOffset2 <<-  3L    #  1L
-   def$BollYoyoPenalty2<<-  1     #  0
+   def$BollAvgOver2    <<-  10L    # 10L   # with costs=2%, w/o yoyo prevention
+   def$BollBearish2    <<-  46.5   # 46.5
+   def$BollBullish2    <<-  46.5   # 46.5 
+   def$BollYoyoOffset2 <<-   3L    #  1L
+   def$BollYoyoPenalty2<<-   1     #  0
    typical$Boll2       <<- nameBollStrategy(def$BollInputName, def$BollAvgOver2,    def$BollBearish2, 
                                             def$BollBullish2,  def$BollYoyoOffset2, def$BollYoyoPenalty2)
 }
 
-nameBollStrategy <- function(inputName="TR", avgOver, bearish, bullish, yoyoOffset=1, yoyoPenalty=0) { 
+nameBollStrategy <- function(inputName="TR", avgOver, bearish, bullish, yoyoOffset=1L, yoyoPenalty=0) { 
    strategyName <- paste0("Boll_", avgOver, "_", bearish, "_", bullish)
    if (yoyoOffset>=2 && yoyoPenalty>0)
       strategyName <- paste0(strategyName, "_", yoyoOffset, "_", yoyoPenalty)
@@ -313,28 +313,19 @@ searchForOptimalBoll <- function(inputDF="dat",   inputName="TR",  allocSource="
    } else return (count)
 }
 
-## First to be run with a low value for costs (e.g. 0.5%) to find optima.
-## Then run around these parameters with a higher value of costs (say 2% or 4%)
-##   to find variants of the optima with slower turnovers
-##   (in order to weed out strategies that tend to sell and buy back immediately, 
-##   thereby increasing turnover without improving performance very much).
-## Since we are looking for a local optimum, what matters is the difference between
-##   2 similar strategies: delta(net return) = delta(gross return) - costs*delta(turnover).
-##   An artificially high value of costs penalizes high turnovers.
-## Too high a value of costs and the new optimum will be in a neighboring valley.
-## Of course, the minScores will have to change with costs.
-searchForTwoOptimalBoll <- function( minScore1=12.5, minScore2=10, do1=T, do2=T,
-         minAvgOver1  = 13L, maxAvgOver1  = 17L, byAvgOver1   = 1L, 
-         minBear1     =-44,  maxBear1     =-30,  byBear1      = 1, 
-         minYoyoOffset1= 3L, maxYoyoOffset1= 5L, byYoyoOffset1= 1L, 
+
+searchForTwoOptimalBoll <- function( minScore1=15.5, minScore2=14.4, do1=T, do2=T,
+         minAvgOver1  = 13L, maxAvgOver1  = 15L, byAvgOver1   = 1L, 
+         minBear1     =-36,  maxBear1     =-30,  byBear1      = 0.5, 
+         minYoyoOffset1= 1L, maxYoyoOffset1= 6L, byYoyoOffset1= 1L, 
          minYoyoPenalty1=1,  maxYoyoPenalty1=1,  byYoyoPenalty1=0.2,  # 1 generally works best
-         minDelta1    =  0,  maxDelta1    =  0,  byDelta1     = 1,    # 0 is generally close to the optimum
+         minDelta1    =  0,  maxDelta1    =  0,  byDelta1     = 0.5,  # 0 is generally close to the optimum
          
-         minAvgOver2  =  8L, maxAvgOver2  = 11L, byAvgOver2   = 1L,
-         minBear2     = 42,  maxBear2     = 62,  byBear2      = 1,
-         minYoyoOffset2= 2L, maxYoyoOffset2= 5L, byYoyoOffset2= 1L, 
-         minYoyoPenalty2=1,  maxYoyoPenalty2=1,  byYoyoPenalty2=0.4,  # 1 generally works best
-         minDelta2    =  0,  maxDelta2    =  0,  byDelta2     = 1,    # 0 is generally close to the optimum
+         minAvgOver2  =  9L, maxAvgOver2  = 11L, byAvgOver2   = 1L,
+         minBear2     = 45,  maxBear2     = 50,  byBear2      = 0.5,
+         minYoyoOffset2= 1L, maxYoyoOffset2= 4L, byYoyoOffset2= 1L, 
+         minYoyoPenalty2=1,  maxYoyoPenalty2=1,  byYoyoPenalty2=0.2,  # 1 generally works best
+         minDelta2    =  0,  maxDelta2    =  0,  byDelta2     = 0.5,  # 0 is generally close to the optimum
          costs=def$tradingCost+def$riskAsCostTechnical,
          plotType="symbols", force=F) {
    message("costs = ", costs*100, "%")

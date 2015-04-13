@@ -893,10 +893,8 @@ plotCumulativeFutureReturn <- function(
          xVect=TR$numericDate, 
          lwd1=2.5, lwd2=1.5, lwd3=1.5, lwd4=2.5,
          futureYears=def$futureYears, net=T, costs=def$tradingCost,
-         figureTitle="", 
-         pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
-         pngName=paste0("figures/cumulative_return_over_next_",
-                        futureYears,"_years.png") ) {
+         figureTitle="", pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
+         pngName=paste0("figures/cumulative_return_over_next_", futureYears,"_years.png") ) {
    
    if(pngOutput) 
       png(file=pngName, width=pngWidth, height=pngHeight)

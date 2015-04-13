@@ -221,7 +221,10 @@ splitData <- function(dataSplit, removeDepression, force) {
    
    dataAge <- round ( difftime ( Sys.Date() , dat$date[numData] ) )
    if ( dataSplit!="training" && dataAge > 31 )
-      warning("The latest data are ", dataAge, " days old; how about using 'lastMonthSP500'?", immediate.=T)   
+      warning("The latest data are ", dataAge, " days old; how about using 'lastMonthSP500'?", immediate.=T)
+   else if ( dataAge < 0 )
+      warning("The latest data are supposedly averaged over the month of ", round( 12*(dat$numericDate[numData]%%1)+.5 ),
+              "/", dat$numericDate[numData]%/%1, " (i.e. about the future).", immediate.=T)   
 }
 
 addFutureReturnsToDat <- function(force=F) {
@@ -264,8 +267,8 @@ loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=T, lastMon
    rawDat <- readWorksheet(wk, sheet="Data", startRow=8)
    
    numData <<- dim(rawDat)[1]-1 # number of rows (exclude row of comments)
-   ShillerMessage1 <- paste0("According to the xls file, \'", rawDat$P[numData+1], "\'")
-   ShillerMessage2 <- paste0("According to the xls file, \'", rawDat$CPI[numData+1], "\'")
+   ShillerMessage1 <- paste0("According to Shiller's xls file, \'", rawDat$P[numData+1], "\'")
+   ShillerMessage2 <- paste0("According to Shiller's xls file, \'", rawDat$CPI[numData+1], "\'")
 
    rawDat <- rawDat[-(numData+1), ] # removing the row containing the information just displayed
    if (lastMonthSP500=="") {
