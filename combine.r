@@ -15,20 +15,21 @@ setCombinedDefaultValues <- function() {
    def$minScore           <<- 10
    
    def$technicalStrategies<<- c(typical$Boll1, typical$Boll2, typical$SMA1, typical$SMA2, typical$reversal1)
-   def$technicalScores    <<- c(11.15, 11.07, 13.51, 11.48, 13.99)  # 'testing', costs=2%
+   def$technicalScores    <<- c(11.1, 11.2, 13.5, 11.5, 14.0)  # 'testing', costs=2%
    def$minScoreTechnical  <<- def$minScore 
    
-   def$valueStrategies    <<- c(typical$CAPE_hy1, typical$CAPE_hy2, typical$CAPE_NH)
-   def$valueScores        <<- c(12.43, 12.51, 10.31)  # 'testing', costs=2%
+   def$valueStrategies    <<- c(typical$CAPE_hy1, typical$CAPE_hy2, typical$CAPE_hy3, 
+                                typical$CAPE_NH1, typical$CAPE_NH2)
+   def$valueScores        <<- c(12.5, 12.4, 11.9, 10.3, 10.6)  # 'testing', costs=2%
    def$minScoreValue      <<- def$minScore 
    
    def$hybridStrategies   <<- c(typical$Boll_CAPE1, typical$Boll_CAPE2, typical$SMA_CAPE1, typical$SMA_CAPE2, 
                                 typical$Boll_Boll1, typical$Boll_Boll2) #, typical$Boll_balanced1)
-   def$hybridScores       <<- c(14.91, 10.94, 12.55, 13.03, 15.40, 12.58)  # 'testing', costs=2%
+   def$hybridScores       <<- c(15.0, 10.9, 12.6, 13.0, 15.5, 12.6)  # 'testing', costs=2%
    def$minScoreHybrid     <<- def$minScore 
    
    def$balancedStrategies <<- c(typical$technical, typical$value, typical$hybrid)
-   def$balancedScores     <<- c(13.68, 12.73, 15.18)   # 'testing', costs=2%
+   def$balancedScores     <<- c(13.7, 12.3, 15.3)   # 'testing', costs=2%
    def$minScoreBalanced   <<- def$minScore 
 }
 

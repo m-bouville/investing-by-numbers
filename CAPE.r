@@ -22,40 +22,51 @@ setCAPEdefaultValues <- function() {
    def$CAPEcheat       <<- 4
    
    ## CAPE strategy with hysteresis 1
-   def$CAPEyears_hy1   <<- 10L
-   def$CAPEcheat_hy1   <<- def$CAPEcheat
-   def$CAPEavgOver_hy1 <<- 32L           #34L
-   def$hystLoopWidthMidpoint1 <<- 19.
-   def$hystLoopWidth1  <<- 7.            # 6.4
-   def$slope1          <<- 2.
+   def$CAPEyears_hy1   <<-  6L
+   def$CAPEcheat_hy1   <<-  0   # given how small 'years' is, we need no 'cheat' at all
+   def$CAPEavgOver_hy1 <<- 16L 
+   def$hystLoopWidthMidpoint1 <<- 16.
+   def$hystLoopWidth1  <<- 16
+   def$slope1          <<-  3.
    typical$CAPE_hy1    <<- paste0("CAPE", def$CAPEyears_hy1, "avg", def$CAPEavgOver_hy1, "_hy_", 
                                   def$hystLoopWidthMidpoint1, "_", def$hystLoopWidth1, "_", def$slope1)
-
    ## CAPE strategy with hysteresis 2
-   def$CAPEyears_hy2   <<-  6L
-   def$CAPEcheat_hy2   <<-  0   # given how small 'years' is, we need no 'cheat' at all
-   def$CAPEavgOver_hy2 <<- 16L 
-   def$hystLoopWidthMidpoint2 <<- 16.
-   def$hystLoopWidth2  <<- 16
-   def$slope2          <<-  3.
+   def$CAPEyears_hy2   <<- 10L
+   def$CAPEcheat_hy2   <<- def$CAPEcheat
+   def$CAPEavgOver_hy2 <<- 32L           #34L
+   def$hystLoopWidthMidpoint2 <<- 19.
+   def$hystLoopWidth2  <<-  7.            # 6.4
+   def$slope2          <<-  2.
    typical$CAPE_hy2    <<- paste0("CAPE", def$CAPEyears_hy2, "avg", def$CAPEavgOver_hy2, "_hy_", 
                                   def$hystLoopWidthMidpoint2, "_", def$hystLoopWidth2, "_", def$slope2)
 
+   ## CAPE strategy with hysteresis 3
+   def$CAPEyears_hy3   <<-  6.5
+   def$CAPEcheat_hy3   <<-  0
+   def$CAPEavgOver_hy3 <<- 24
+   def$hystLoopWidthMidpoint3 <<- 16.5
+   def$hystLoopWidth3  <<- 11.8
+   def$slope3          <<-  2.8
+   typical$CAPE_hy3    <<- paste0("CAPE", def$CAPEyears_hy3, "avg", def$CAPEavgOver_hy3, "_hy_", 
+                                  def$hystLoopWidthMidpoint3, "_", def$hystLoopWidth3, "_", def$slope3)
+   
    ## CAPE strategy without hysteresis
-   def$CAPEyears_NH   <<-  4L   # optimized with costs = 2%
-   def$CAPEcheat_NH   <<-  0
-   def$CAPEavgOver_NH <<- 36L
-   def$CAPEbearish    <<- 15L
-   def$CAPEbullish    <<- 15L
-   typical$CAPE_NH <<- paste0("CAPE", def$CAPEyears_NH, "avg", def$CAPEavgOver_NH, "_NH_", 
-                                def$CAPEbearish, "_", def$CAPEbullish)
+   def$CAPEyears_NH1   <<-  4L   # optimized with costs = 2%
+   def$CAPEcheat_NH1   <<-  0
+   def$CAPEavgOver_NH1 <<- 36L
+   def$CAPEbearish1    <<- 15L
+   def$CAPEbullish1    <<- 15L
+   typical$CAPE_NH1 <<- paste0("CAPE", def$CAPEyears_NH1, "avg", def$CAPEavgOver_NH1, "_NH_", 
+                                def$CAPEbearish1, "_", def$CAPEbullish1)
 
-#    def$CAPEyears_NH   <<- 10L
-#    def$CAPEcheat_NH   <<- def$CAPEcheat
-#    def$CAPEavgOver_NH <<- 35L
-#    def$CAPEbearish    <<- 21L
-#    def$CAPEbullish    <<- 21L
-   # This corresponds to : (i) CAPEbearish = CAPEbullish, which means a strategy either all in or all out;
+   def$CAPEyears_NH2   <<- 1.5
+   def$CAPEcheat_NH2   <<- 0
+   def$CAPEavgOver_NH2 <<- 38L
+   def$CAPEbearish2    <<- 14.5
+   def$CAPEbullish2    <<- 14.5
+   typical$CAPE_NH2 <<- paste0("CAPE", def$CAPEyears_NH2, "avg", def$CAPEavgOver_NH2, "_NH_", 
+                               def$CAPEbearish2, "_", def$CAPEbullish2)
+# This corresponds to : (i) CAPEbearish = CAPEbullish, which means a strategy either all in or all out;
    #    (ii) a high value of the threshold (21), which leads to a high average stock allocation.
    
    def$initialOffset  <<- max( (def$CAPEyears_hy1-def$CAPEcheat)*12 + def$CAPEavgOver_hy1, 
@@ -67,13 +78,15 @@ setCAPEdefaultValues <- function() {
 ## calculating CAPE
 calcCAPE <- function(years=def$CAPEyears, cheat=def$CAPEcheat) {
   CAPEname <- paste0("CAPE", years)
-  addNumColToDat(CAPEname)
-  months <- 12*years
-  for(i in 1:(months-12*cheat)) { dat[i, CAPEname] <<- NA }
-  for(i in (months-12*cheat+1):numData) 
-    dat[i, CAPEname] <<- dat$price[i] / mean(dat$earnings[1:(i-1)], na.rm=T)
-  for(i in (months+1):numData) 
-     dat[i, CAPEname] <<- dat$price[i] / mean(dat$earnings[(i-months):(i-1)], na.rm=T)
+  if (!(CAPEname %in% colnames(dat))) {
+     addNumColToDat(CAPEname)
+     months <- 12*years
+     for(i in 1:(months-12*cheat)) { dat[i, CAPEname] <<- NA }
+     for(i in (months-12*cheat+1):numData) 
+       dat[i, CAPEname] <<- dat$price[i] / mean(dat$earnings[1:(i-1)], na.rm=T)
+     for(i in (months+1):numData) 
+        dat[i, CAPEname] <<- dat$price[i] / mean(dat$earnings[(i-months):(i-1)], na.rm=T)
+  }
 }
 
 
@@ -82,7 +95,7 @@ calcAvgCAPE <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver=def$CA
    CAPEname <- paste0("CAPE", years)
    if (!(CAPEname %in% colnames(dat))) 
       calcCAPE(years=years, cheat=cheat)
-   if(avgOver>0) {
+   if( avgOver>0 && !(paste0(CAPEname,"avg",avgOver) %in% colnames(dat)) ) {
       avgCAPEname <- paste0(CAPEname,"avg",avgOver)
       addNumColToDat(avgCAPEname)
       #   message(paste0("NB: dat$", avgCAPEname, " has average of ", CAPEname, "over ", avgOver, " *months*."))
@@ -145,24 +158,26 @@ createCAPEstrategy <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver
       calcStrategyReturn(strategyName, startIndex)
    }  
    
+   index <- which(parameters$strategy == strategyName)
    if ( !(strategyName %in% parameters$strategy) | force) {
       if ( !(strategyName %in% parameters$strategy) ) {
          parameters[nrow(parameters)+1, ] <<- NA
          parameters$strategy[nrow(parameters)] <<- strategyName
-      }
-      index <- which(parameters$strategy == strategyName)
-      
+      }   
       if (type=="") {
          if (hysteresis) type <- "CAPE_hy"
          else type <- "CAPE_NH"
       }
      
+      index <- which(parameters$strategy == strategyName)
+      
       parameters$strategy[index]   <<- strategyName
+      parameters$type[index]       <<- type
       if (type=="training") {
-         parameters$type[index]    <<- "training"
-         parameters$subtype[index] <<- type
-      } else
-         parameters$type[index]    <<- type
+         if (hysteresis) parameters$subtype[index] <<- "CAPE_hy"
+         else parameters$subtype[index] <<- "CAPE_NH"
+      } 
+         
       parameters$startIndex[index] <<- startIndex
       parameters$avgOver[index]    <<- avgOver
       if (hysteresis) {
@@ -180,7 +195,7 @@ createCAPEstrategy <- function(years=def$CAPEyears, cheat=def$CAPEcheat, avgOver
    calcStatisticsForStrategy(strategyName=strategyName, futureYears=futureYears, costs=costs,
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    statsIndex      <- which(stats$strategy == strategyName)
-   stats$type[statsIndex] <<- parameters$type[index]
+   stats$type[statsIndex]    <<- parameters$type[index]
    stats$subtype[statsIndex] <<- parameters$subtype[index]
 }
 
@@ -205,13 +220,23 @@ calcOptimalCAPEwithoutHysteresis <- function
    rangeBear    <- createRange(minBear,    maxBear,    byBear)
    rangeDelta   <- createRange(minDelta,   maxDelta,   byDelta)
    
-   for (years in rangeYears) {
-      if(!countOnly)  calcCAPE(years=years, cheat=cheat)
-      for (avgOver in rangeAvgOver) {
-         if(!countOnly)  calcAvgCAPE(years=years, cheat=cheat, avgOver=avgOver)
-         for (bear in rangeBear) 
-            for (delta in rangeDelta) {
-               bull = bear - delta
+   for (delta in rangeDelta) {
+      if (!countOnly && minDelta!=maxDelta) print(paste("  * Starting delta =", delta))
+      
+      for (bear in rangeBear) {
+         if (!countOnly && minBear!=maxBear) print(paste("      Starting bear =", bear))
+         bull = bear - delta
+         
+         for (years in rangeYears) {
+            if (!countOnly)  calcCAPE(years=years, cheat=cheat)
+            if (!countOnly && minDelta==maxDelta && minBear==maxBear && minYears!=maxYears) 
+               print(paste("      Starting years =", years))
+            
+            for (avgOver in rangeAvgOver) {
+               if (!countOnly)  calcAvgCAPE(years=years, cheat=cheat, avgOver=avgOver)
+               #if (!countOnly && minDelta==maxDelta && minYears==maxYears && minAvgOver!=maxAvgOver) 
+                  #print(paste("     Starting avgOver =", avgOver))
+               
                strategyName <- paste0("CAPE", years, "avg", avgOver, "_NH_", bear, "_", bull)
                
                #print(strategyName)
@@ -236,6 +261,7 @@ calcOptimalCAPEwithoutHysteresis <- function
                   lastTimePlotted <- proc.time()
                }
             }
+         }
       }
    }
    if(countOnly)
@@ -252,8 +278,8 @@ searchForOptimalCAPEwithoutHysteresis <-function(cheat=def$CAPEcheat_NH,
          coeffTR=def$coeffTR, coeffMed=def$coeffMed, coeffFive=def$coeffFive, 
          coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
          xMinVol=13.5, xMaxVol=18, xMinDD2=5, xMaxDD2=9.,       
-         CPUnumber=def$CPUnumber, col=F, plotType="symbols", nameLength=24, plotEvery=def$plotEvery, 
-         referenceStrategies=typical$CAPE_NH, force=F) {
+         CPUnumber=def$CPUnumber, col=F, plotType="symbols", nameLength=27, plotEvery=def$plotEvery, 
+         referenceStrategies=typical$CAPE_NH1, force=F) {
    
    if (dataSplit != "training") 
       warning("Doing training in '", dataSplit, "' mode.", immediate.=T)
@@ -359,17 +385,19 @@ calcOptimalCAPEwithHysteresis <- function(minYears, maxYears, byYears, cheat,
    rangeWidth   <- createRange(minWidth, maxWidth, byWidth)
    rangeSlope   <- createRange(minSlope, maxSlope, bySlope)
    
-   for (years in rangeYears) {
-      if(!countOnly) 
-         calcCAPE(years=years, cheat=cheat)
-      for (avgOver in rangeAvgOver) {
+   for (mid in rangeMid) {
+      if (!countOnly && minMid!=maxMid) print(paste("  * Starting mid =", mid))
+      
+      for (years in rangeYears) {
          if(!countOnly) 
-            calcAvgCAPE(years=years, cheat=cheat, avgOver=avgOver)
-         if (avgOver>0)
-            CAPEname <- paste0("CAPE", years, "avg", avgOver)
-         else CAPEname <- paste0("CAPE", years)
-         
-         for (mid in rangeMid)   
+            calcCAPE(years=years, cheat=cheat)
+         for (avgOver in rangeAvgOver) {
+            if(!countOnly) 
+               calcAvgCAPE(years=years, cheat=cheat, avgOver=avgOver)
+            if (avgOver>0)
+               CAPEname <- paste0("CAPE", years, "avg", avgOver)
+            else CAPEname <- paste0("CAPE", years)
+            
             for (width in rangeWidth) {      
                for (slope in rangeSlope) {
                   strategyName <- paste0(CAPEname, "_hy_", mid, "_", width, "_", slope)
@@ -380,16 +408,16 @@ calcOptimalCAPEwithHysteresis <- function(minYears, maxYears, byYears, cheat,
                         counterNew <- counterNew + 1                  
                   } else {
                      createCAPEstrategy(years=years, cheat=cheat, avgOver=avgOver, strategyName=strategyName, 
-                                     hystLoopWidthMidpoint=mid, hystLoopWidth=width, slope=slope,
-                                     signalMin=def$signalMin, signalMax=def$signalMax,
-                                     hysteresis=T, type="training", futureYears=futureYears, force=force)
+                                        hystLoopWidthMidpoint=mid, hystLoopWidth=width, slope=slope,
+                                        signalMin=def$signalMin, signalMax=def$signalMax,
+                                        hysteresis=T, type="training", futureYears=futureYears, force=force)
                      showSummaryForStrategy(strategyName, futureYears=futureYears, costs=costs, 
-                                         minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
-                                         coeffTR=coeffTR, coeffMed=coeffMed, coeffFive=coeffFive, 
-                                         coeffVol=coeffVol, coeffDD2=coeffDD2, 
-                                         nameLength=nameLength, force=F)
+                                            minTR=minTR, maxVol=maxVol, maxDD2=maxDD2, minTO=minTO, minScore=minScore, 
+                                            coeffTR=coeffTR, coeffMed=coeffMed, coeffFive=coeffFive, 
+                                            coeffVol=coeffVol, coeffDD2=coeffDD2, 
+                                            nameLength=nameLength, force=F)
                   }
-               
+                  
                   if ( !countOnly && (summary(proc.time())[[1]] - lastTimePlotted[[1]] ) > plotEvery ) { 
                      # we replot only if it's been a while
                      plotAllReturnsVsTwo(col=col, trainingPlotType=plotType,
@@ -398,6 +426,7 @@ calcOptimalCAPEwithHysteresis <- function(minYears, maxYears, byYears, cheat,
                   }
                }
             }
+         }
       }
    }
    if(countOnly)
@@ -412,7 +441,7 @@ searchForOptimalCAPEwithHysteresis <-function(
          minWidth=   5.8, maxWidth=   7.2, byWidth=  0.2,
          minSlope=   2.0, maxSlope=   2.6, bySlope=  0.2, 
          futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
-         minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=5, minScore=7.6,
+         minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=5, minScore=12,
          coeffTR=def$coeffTR, coeffMed=def$coeffMed, coeffFive=def$coeffFive,
          coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
          xMinVol=11.5, xMaxVol=18.5, xMinDD2=7, xMaxDD2=10.5,
@@ -461,27 +490,24 @@ searchForOptimalCAPEwithHysteresis <-function(
 
 
 searchForThreeOptimalCAPE <-function(plotType="symbols", force=F) {
+   print("searching for optimal CAPE strategy with hysteresis 1...")
+   searchForOptimalCAPEwithHysteresis( minYears=   6L,  maxYears=   6L,  byYears=  1L, 
+                                       minAvgOver=15L,  maxAvgOver=16L,  byAvgOver=1L, 
+                                       minMid =   16,   maxMid =   16,   byMid =   1, 
+                                       minWidth=  13,   maxWidth=  17,   byWidth=  0.5,
+                                       minSlope=   1.5, maxSlope=   3.5, bySlope=  0.5, 
+                                       maxVol=19, maxDD2=7.5, minScore=12 )
+   
+   print("")
+   print("searching for optimal CAPE strategy with hysteresis 2...")
    searchForOptimalCAPEwithHysteresis(   cheat=6, 
                                          minYears=   8L,  maxYears=  24L,  byYears=   4L, 
                                          minAvgOver=12L,  maxAvgOver=36L,  byAvgOver=12L, 
                                          minMid=    10,   maxMid=    22,   byMid=     2, 
                                          minWidth=   2,   maxWidth=  10,   byWidth=   4,
                                          minSlope=   1,   maxSlope=   5,   bySlope=   2,
-                                         plotEvery=30, coeffTR=0.7, coeffMed=0.15, coeffFive=0.15, minScore=9)
-   
-   
-   print("searching for optimal CAPE strategy with hysteresis 1...")
-   searchForOptimalCAPEwithoutHysteresis()
-   
-   print("")
-   print("searching for optimal CAPE strategy with hysteresis 2...")
-   searchForOptimalCAPEwithHysteresis( minYears=   6L,  maxYears=   6L,  byYears=  1L, 
-                                       minAvgOver=15L,  maxAvgOver=16L,  byAvgOver=1L, 
-                                       minMid =   16,   maxMid =   16,   byMid =   1, 
-                                       minWidth=  13,   maxWidth=  17,   byWidth=  0.5,
-                                       minSlope=   1.5, maxSlope=   3.5, bySlope=  0.5, 
-                                       maxVol=19, maxDD2=7.5, minScore=7.52 )
-   
+                                         plotEvery=30, coeffTR=0.7, coeffMed=0.15, coeffFive=0.15, minScore=12)
+      
    print("")
    print("searching for optimal CAPE strategy without hysteresis...")
    searchForOptimalCAPEwithoutHysteresis()

@@ -127,7 +127,8 @@ start <- function(dataSplit="all",           # "all" for all data, "training" an
    }
    if (!exists("DD") | force) loadDDlist(otherAssetClasses=otherAssetClasses, force=force) # loading the dates of major drawdowns
    
-   if (dataSplit != "all") splitData(dataSplit=dataSplit, removeDepression=removeDepression, force=force)
+   if (dataSplit != "all") 
+      splitData(dataSplit=dataSplit, removeDepression=removeDepression, lastMonthSP500Used=(lastMonthSP500!=""), force=force)
    else {
       dat$splitting <<- factor(numData)
       levels(dat$splitting) <<- c("training", "testing")
@@ -162,7 +163,8 @@ start <- function(dataSplit="all",           # "all" for all data, "training" an
    createTypicalStrategies(force=force)
    
    showSummaries()
-   print(paste0("RECOMMENDED STOCK ALLOCATION: ", 
+   if (dataSplit != "training") 
+      print(paste0("RECOMMENDED STOCK ALLOCATION: ", 
                        round( 100*stats$latestStockAlloc[which(stats$strategy==typical$balanced)]), "%"))
 
    if(otherAssetClasses) 
@@ -222,8 +224,8 @@ startTesting <- function(futureYears=10L, tradingCost=0.5/100, riskAsCost=1.5/10
    if (!otherAssetClasses)
       plotAllReturnsVsFour()
 }
-# startTesting(lastMonthSP500=2079.8)    # average of S&P500 for Apr. 2015, up to 10th Apr. (source: stlouisfed.org)
-# startTesting(lastMonthSP500=2079.8, downloadAndCheckAllFiles=T, otherAssetClasses=T)
+# startTesting(lastMonthSP500=2089.7)    # S&P500 for Apr. 2015, up to 22th Apr. (source: stlouisfed.org)
+# startTesting(lastMonthSP500=2088.7, downloadAndCheckAllFiles=T, otherAssetClasses=T)
 
 
 # plotAllReturnsVsFour()

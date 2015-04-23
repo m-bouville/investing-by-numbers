@@ -145,7 +145,7 @@ createParametersDF <- function() {
                              stringsAsFactors=F)
 }
 
-splitData <- function(dataSplit, removeDepression, force) {
+splitData <- function(dataSplit, removeDepression, lastMonthSP500Used=F, force) {
    if (dataSplit == "training" && removeDepression) {
       oldNumData <- numData
       numData <<- 12*(1926-1870)  # data range will go up to the end of 1926
@@ -219,12 +219,15 @@ splitData <- function(dataSplit, removeDepression, force) {
       warning(dataSplit, " is not a valid value for \'dataSplit\':", "
               choose one of \'all\', \'training\' or \'testing\'.")
    
-   dataAge <- round ( difftime ( Sys.Date() , dat$date[numData] ) )
-   if ( dataSplit!="training" && dataAge > 31 )
-      warning("The latest data are ", dataAge, " days old; how about using 'lastMonthSP500'?", immediate.=T)
-   else if ( dataAge < 0 )
-      warning("The latest data are supposedly averaged over the month of ", round( 12*(dat$numericDate[numData]%%1)+.5 ),
-              "/", dat$numericDate[numData]%/%1, " (i.e. about the future).", immediate.=T)   
+   if (!lastMonthSP500Used) {
+      ## dataAge calculates how old the last data are (dat$date[numData] is the middle of the month, hence - 15).
+      dataAge <- round ( difftime ( Sys.Date() , dat$date[numData] ) ) - 15 
+      if ( dataSplit!="training" && dataAge > 28 )
+         warning("The latest data are ", dataAge, " days old; how about using 'lastMonthSP500'?", immediate.=T)
+      else if ( dataAge < 0 )
+         warning("The latest data are supposedly averaged over the month of ", round( 12*(dat$numericDate[numData]%%1)+.5 ),
+                 "/", dat$numericDate[numData]%/%1, " (i.e. about the future).", immediate.=T)   
+   }
 }
 
 addFutureReturnsToDat <- function(force=F) {
@@ -401,7 +404,9 @@ selectTypicalStrategiesToCreate <- function(){
    ## Value strategies
    doStrat$CAPE_hy1   <<- T
    doStrat$CAPE_hy2   <<- T
-   doStrat$CAPE_NH    <<- T
+   doStrat$CAPE_hy3   <<- T
+   doStrat$CAPE_NH1   <<- T
+   doStrat$CAPE_NH2   <<- T
    doStrat$detrended1 <<- F  # anything detrended is quarantined
    doStrat$detrended2 <<- F  # anything detrended is quarantined
    
@@ -469,9 +474,18 @@ createTypicalStrategies <- function(extrapolateDividends=T, costs=def$tradingCos
                          hysteresis=T, hystLoopWidthMidpoint=def$hystLoopWidthMidpoint2,
                          hystLoopWidth=def$hystLoopWidth2, slope=def$slope2, type="CAPE_hy",
                          costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-   if(doStrat$CAPE_NH) 
-      createCAPEstrategy(years=def$CAPEyears_NH, cheat=def$CAPEcheat_NH, avgOver=def$CAPEavgOver_NH, 
-                         hysteresis=F, bearish=def$CAPEbearish, bullish=def$CAPEbullish, type="CAPE_NH",
+   if(doStrat$CAPE_hy3) 
+      createCAPEstrategy(years=def$CAPEyears_hy3, cheat=def$CAPEcheat_hy3, avgOver=def$CAPEavgOver_hy3, 
+                         hysteresis=T, hystLoopWidthMidpoint=def$hystLoopWidthMidpoint3,
+                         hystLoopWidth=def$hystLoopWidth3, slope=def$slope3, type="CAPE_hy",
+                         costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+   if(doStrat$CAPE_NH1) 
+      createCAPEstrategy(years=def$CAPEyears_NH1, cheat=def$CAPEcheat_NH1, avgOver=def$CAPEavgOver_NH1, 
+                         hysteresis=F, bearish=def$CAPEbearish1, bullish=def$CAPEbullish1, type="CAPE_NH",
+                         costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)   
+   if(doStrat$CAPE_NH2) 
+      createCAPEstrategy(years=def$CAPEyears_NH2, cheat=def$CAPEcheat_NH2, avgOver=def$CAPEavgOver_NH2, 
+                         hysteresis=F, bearish=def$CAPEbearish2, bullish=def$CAPEbullish2, type="CAPE_NH",
                          costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)  
    
    if(doStrat$detrended1) 

@@ -290,7 +290,7 @@ searchForTwoOptimalBoll_CAPE <- function(minScore1=15.3, minScore2=15.7, do1=T, 
          minDelta2=      0,  maxDelta2=       0,  byDelta2=      1,   # 0 is generally close to the optimum
          minCAPEyears2=  4L, maxCAPEyears2=   6L, byCAPEyears2=  1L, 
          minCAPEavgOver2=0L, maxCAPEavgOver2= 0L, byCAPEavgOver2=6L,  # 0 generally works best
-         plotType="symbols", countOnly=F, force=F) {
+         plotType="symbols", countOnly=F, costs=def$tradingCost+def$riskAsCostTechnical, force=F) {
    if(do1) {
       print("*** Boll(CAPE) 1...")
       if ((typical$Boll_CAPE1 %in% colnames(TR))) {
@@ -310,7 +310,7 @@ searchForTwoOptimalBoll_CAPE <- function(minScore1=15.3, minScore2=15.7, do1=T, 
             minYoyoOffset= minYoyoOffset1,  maxYoyoOffset= maxYoyoOffset1,  byYoyoOffset= byYoyoOffset1, 
             minYoyoPenalty=minYoyoPenalty1, maxYoyoPenalty=maxYoyoPenalty1, byYoyoPenalty=byYoyoPenalty1,
             minDelta  =    minDelta1,       maxDelta  =    maxDelta1,       byDelta  =    byDelta1,
-            plotType=plotType, force=force, countOnly=countOnly, 
+            plotType=plotType, force=force, countOnly=countOnly, costs=costs,
             referenceStrategies=typical$Boll_CAPE1, maxVol=17.5, minScore=minScore1)
    }
    if(do1 && do2) { # needed only if we do both
@@ -337,7 +337,7 @@ searchForTwoOptimalBoll_CAPE <- function(minScore1=15.3, minScore2=15.7, do1=T, 
             minYoyoOffset= minYoyoOffset2,  maxYoyoOffset= maxYoyoOffset2,  byYoyoOffset= byYoyoOffset2, 
             minYoyoPenalty=minYoyoPenalty2, maxYoyoPenalty=maxYoyoPenalty2, byYoyoPenalty=byYoyoPenalty2,
             minDelta  =    minDelta2,       maxDelta  =    maxDelta2,       byDelta  =    byDelta2,
-            plotType=plotType, force=force, countOnly=countOnly, 
+            plotType=plotType, force=force, countOnly=countOnly, costs=costs,
             maxVol=15.5, maxDD2=6.5, minScore=minScore2,
             referenceStrategies=typical$Boll_CAPE2)
    }
@@ -502,12 +502,12 @@ searchForOptimalBoll_Boll <- function(
          minBear1=    -224, maxBear1=     -80,  byBear1=      32,
          minDelta1=      0, maxDelta1=      0,  byDelta1=      1,   # 0 is generally close to the optimum
          futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
-         minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.6, minScore=12.5,
+         minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.6, minScore=14.5,
          coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
          xMinVol=14, xMaxVol=16.5, xMinDD2=6., xMaxDD2=8.,
          type="training", col=F, plotType="symbols", 
-         referenceStrategies=c(typical$Boll_Boll), 
-         nameLength=42, plotEvery=def$plotEvery, countOnly=F, force=F) {
+         referenceStrategies=c(typical$Boll_Boll1, typical$Boll_Boll2), 
+         nameLength=38, plotEvery=def$plotEvery, countOnly=F, force=F) {
    
    if (dataSplit != "training") 
       warning("Doing training in '", dataSplit, "' mode.", immediate.=T)
@@ -526,7 +526,7 @@ searchForOptimalBoll_Boll <- function(
             minAvgOver1=    minAvgOver1,    maxAvgOver1=    maxAvgOver1,    byAvgOver1=    byAvgOver1,
             minBear1   =    minBear1,       maxBear1   =    maxBear1,       byBear1   =    byBear1,
             minDelta1  =    minDelta1,      maxDelta1  =    maxDelta1,      byDelta1  =    byDelta1,
-            countOnly=T )   
+            costs=costs, xMinVol=xMinVol, xMaxVol=xMaxVol, xMinDD2=xMinDD2, xMaxDD2=xMaxDD2, countOnly=T )   
    
    if (minAvgOver1==maxAvgOver1) numAvgOver1 <- 1
       else numAvgOver1 <- (maxAvgOver1-minAvgOver1)%/%byAvgOver1 + 1

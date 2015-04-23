@@ -496,8 +496,10 @@ calcStatisticsForStrategy <- function(strategyName, futureYears=def$futureYears,
       indexPara <- which(parameters$strategy == strategyName)     
       if ( length(indexPara) > 0 ) { # otherwise we are probably dealing with a constant allocation
          startIndex <- parameters$startIndex[indexPara]
-         def$startIndex <<- max(def$startIndex, startIndex) # update def$startIndex if need be
-         def$startYear  <<- max(def$startYear, (startIndex-1)/12+def$dataStartYear )
+         if(!is.na(startIndex))
+            def$startIndex <<- max(def$startIndex, startIndex) # update def$startIndex if need be
+         else warning("startIndex = ", startIndex)
+         def$startYear  <<- max(def$startYear, (def$startIndex-1)/12+def$dataStartYear )
          def$plotStartYear <<- max(def$plotStartYear, def$startYear)
       }
       dateRange <- def$startIndex:numData
@@ -717,8 +719,14 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost+def
          if(doStrat$CAPE_hy2)      
             showSummaryForStrategy(typical$CAPE_hy2,     displayName="CAPE hysteresis 2", futureYears=futureYears, costs=costs, 
                                    coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-         if(doStrat$CAPE_NH)      
-            showSummaryForStrategy(typical$CAPE_NH,      displayName="CAPE no hysteresis", futureYears=futureYears, costs=costs, 
+         if(doStrat$CAPE_hy3)      
+            showSummaryForStrategy(typical$CAPE_hy3,     displayName="CAPE hysteresis 3", futureYears=futureYears, costs=costs, 
+                                   coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+         if(doStrat$CAPE_NH1)      
+            showSummaryForStrategy(typical$CAPE_NH1,      displayName="CAPE no hyster. 1 ", futureYears=futureYears, costs=costs, 
+                                   coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+         if(doStrat$CAPE_NH2)      
+            showSummaryForStrategy(typical$CAPE_NH2,      displayName="CAPE no hyster. 2", futureYears=futureYears, costs=costs, 
                                    coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
          if(doStrat$detrended1)      
             showSummaryForStrategy(typical$detrended1, displayName="detrended 1 **", futureYears=futureYears, costs=costs, 
@@ -787,7 +795,7 @@ findStrategiesOnCriteria <- function(minTR=0, maxVol=Inf, maxDD2=Inf, minTO=0, m
                                      futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
                                      coeffTR=def$coeffTR, coeffMed=def$coeffMed, coeffFive=def$coeffFive,
                                      coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
-                                     nameLength=25, force=F) {
+                                     nameLength=30, force=F) {
    dashes <- displaySummaryHeader(futureYears=futureYears, nameLength=nameLength)
    for ( i in 1:dim(stats)[[1]] ) 
       showSummaryForStrategy(strategyName=stats$strategy[i], futureYears=def$futureYears, costs=costs, 

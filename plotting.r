@@ -122,6 +122,7 @@ setPlottingDefaultColors <- function() {
 setPlottingDefaultValues <- function() {
    def$yTRmin    <<-   7.5
    def$yTRmax    <<-   9.8
+   def$yStatsName<<-  ""
    
    def$pngWidth  <<-1024
    def$pngHeight <<- 768
@@ -132,7 +133,7 @@ setPlottingDefaultValues <- function() {
    def$maxDD2    <<-  10
    def$maxTO     <<- 130
    
-   def$plotEndYear <<- 2015.
+   def$plotEndYear <<- 2015.5
    def$maxTR     <<- 150000
        
    setPlottingDefaultColors()
@@ -333,7 +334,7 @@ plotReturnAndAllocTechnical <- function(
 
 plotReturnAndAllocValue <- function(
          stratName1=typical$CAPE_hy1, stratName2=typical$CAPE_hy2, 
-         stratName3=typical$CAPE_NH,  stratName4=typical$value,
+         stratName3=typical$CAPE_NH1, stratName4=typical$value,
          col1=def$colCAPE_hy, col2=def$colCAPE_hy, col3=def$colCAPE_NH, col4=def$colValue, 
          lwd1=2, lwd2=1.5, lwd3=1.5, lwd4=1.5,
          startYear=def$plotStartYear, endYear=def$plotEndYear, 
@@ -407,7 +408,7 @@ plotReturnAndAllocSubstrategies <- function(
          stratName3=typical$stratNamesSubstrategies[3], stratName4=typical$stratNamesSubstrategies[4],
          col1=typical$stratColsSubstrategies[1], col2=typical$stratColsSubstrategies[2], 
          col3=typical$stratColsSubstrategies[3], col4=typical$stratColsSubstrategies[4],
-         lwd1=2.5, lwd2=1.5, lwd3=1.5, lwd4=2.5,
+         lwd1=1.5, lwd2=1.5, lwd3=1.5, lwd4=2.5,
          startYear=def$plotStartYear, endYear=def$plotEndYear, costs=def$tradingCost, 
          detrendBy=0, minTR=.9, maxTR=def$maxTR, yLabelReturn="", 
          legendPlacement="topleft", net=T, normalize=T,
@@ -1001,8 +1002,8 @@ plotAllReturnsVsSomeParameter <- function(type1=def$type1, col1=def$col1, pch1=d
                                           Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
                                           Msubtype4=def$Msubtype4, Mcol4=def$Mcol4, Mpch4=def$Mpch4, 
                                           lineCol=def$lineCol, trainingPlotType="dots",
-                                          xStatsName, xFactor=100, xLabel="volatility (%)",
-                                          yStatsName="", yFactor=100,
+                                          xStatsName,    xFactor=100, xLabel="volatility (%)",
+                                          yStatsName="", yFactor=100, yLabel="",
                                           xMin, xMax, yMin=def$yTRmin, yMax=def$yTRmax, 
                                           costs=def$tradingCost, 
                                           pngOutput=F, pngWidth=def$pngWidth,
@@ -1068,23 +1069,26 @@ plotAllReturnsVsSomeParameter <- function(type1=def$type1, col1=def$col1, pch1=d
    } else if (trainingPlotType=="symbols")
       Stype <- "p"
    else stop(trainingPlotType, " is not a legitimate value for argument trainingPlotType, only line, dots or symbols")
-      
-   if (costs==0)
-      def$yStatsName <<- "TR"
-   else if (costs==0.5/100)
-      def$yStatsName <<- "netTR0.5"
-   else if (round(100*costs,2) %in% c(1, 2, 3, 4, 6, 8, 10) )
-      def$yStatsName <<- paste0("netTR", round(100*costs,2) )
-   else stop("No \'netTR", round(costs*100), "\' entry exists in 'stats'.")
+         
+   if (yStatsName == "") {
+      if (costs==0)
+         yStatsName <- "TR"
+      else if (costs==0.5/100)
+         yStatsName <- "netTR0.5"
+      else if (round(100*costs,2) %in% c(1, 2, 3, 4, 6, 8, 10) )
+         yStatsName <- paste0("netTR", round(100*costs,2) )
+      else stop("No \'netTR", round(costs*100), "\' entry exists in 'stats'.")
+   }
    
+   if (yLabel == "") yLabel <- paste0("total return (%), net of costs of ", round(costs*100, 1), "%")
+
    xRange <- c(xMin, xMax)
    yRange <- c(yMin - 100*costs/2, yMax - 100*costs/4)
    par( mar=c(4.2, 4.2, 1.5, 1.5) )
       
    plot(xFactor*subset(stats[, xStatsName], stats$type==type1), 
         yFactor*subset(stats[, yStatsName], stats$type==type1), 
-        pch=pch1, col=col1, xlim=xRange, ylim=yRange, 
-        xlab=xLabel, ylab=paste0("total return (%), net of costs of ", round(costs*100, 1), "%") )
+        pch=pch1, col=col1, xlim=xRange, ylim=yRange, xlab=xLabel, ylab=yLabel)
    points(xFactor*subset(stats[, xStatsName], stats$type==type2), 
         yFactor*subset(stats[, yStatsName], stats$type==type2), 
         pch=pch2, col=col2, xlab="", ylab="", xlim=xRange, ylim=yRange)
@@ -1453,6 +1457,46 @@ plotAllReturnsVsTwo <- function(type1=def$type1, col1=def$col1, pch1=def$pch1,
       print( paste0("png file (", pngWidth, " by ", pngHeight, ") written to: ", pngName) )
    }
 }
+
+
+plotAllDrawdownsVsVolatility <- function(type1=def$type1, col1=def$col1, pch1=def$pch1, 
+                                       type2=def$type2, col2=def$col2, pch2=def$pch2,
+                                       type3=def$type3, col3=def$col3, pch3=def$pch3, 
+                                       type4=def$type4, col4=def$col4, pch4=def$pch4,
+                                       type5=def$type5, col5=def$col5, pch5=def$pch5, 
+                                       type6=def$type6, col6=def$col6, pch6=def$pch6, 
+                                       type7=def$type7, col7=def$col7, pch7=def$pch7, 
+                                       type8=def$type8, col8=def$col8, pch8=def$pch8, 
+                                       type9=def$type9, col9=def$col9, pch9=def$pch9, 
+                                       type10=def$type10,col10=def$col10,pch10=def$pch10,
+                                       Msubtype1=def$Msubtype1, Mcol1=def$Mcol1, Mpch1=def$Mpch1, 
+                                       Msubtype2=def$Msubtype2, Mcol2=def$Mcol2, Mpch2=def$Mpch2, 
+                                       Msubtype3=def$Msubtype3, Mcol3=def$Mcol3, Mpch3=def$Mpch3, 
+                                       Msubtype4=def$Msubtype4, Mcol4=def$Mcol4, Mpch4=def$Mpch4, 
+                                       lineCol=def$lineCol, trainingPlotType="dots",
+                                       xFactor=100, xLabel="volatility (%)",
+                                       yFactor=100, yLabel="drawdowns (%)",
+                                       xMin=def$minVol, xMax=def$maxVol, yMin=def$minDD2, yMax=def$maxDD2, 
+                                       costs=def$tradingCost,
+                                       pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
+                                       pngName="figures/drawdowns_vs_volatility.png") {
+   
+   plotAllReturnsVsSomeParameter(type1=type1, col1=col1, pch1=pch1, type2=type2, col2=col2, pch2=pch2,
+                                 type3=type3, col3=col3, pch3=pch3, type4=type4, col4=col4, pch4=pch4,
+                                 type5=type5, col5=col5, pch5=pch5, type6=type6, col6=col6, pch6=pch6, 
+                                 type7=type7, col7=col7, pch7=pch7, type8=type8, col8=col8, pch8=pch8, 
+                                 type9=type9, col9=col9, pch9=pch9,type10=type10,col10=col10,pch10=pch10,
+                                 Msubtype1=Msubtype1, Mcol1=Mcol1, Mpch1=Mpch1, 
+                                 Msubtype2=Msubtype2, Mcol2=Mcol2, Mpch2=Mpch2, 
+                                 Msubtype3=Msubtype3, Mcol3=Mcol3, Mpch3=Mpch3, 
+                                 Msubtype4=Msubtype4, Mcol4=Mcol4, Mpch4=Mpch4, 
+                                 lineCol=lineCol, trainingPlotType=trainingPlotType,
+                                 xStatsName="volatility", xFactor=xFactor, xLabel=xLabel,
+                                 yStatsName="DD2", yFactor=yFactor, yLabel=yLabel,
+                                 xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax, costs=costs,
+                                 pngOutput=pngOutput, pngWidth=pngWidth, pngHeight=pngHeight, pngName=pngName) 
+}
+
 
 ## Obsolete: use createStrategiesAndSavePlots() instead
 # saveAllPlotsAsPng <- function(pngWidth=def$pngWidth, pngHeight=def$pngHeight) {
