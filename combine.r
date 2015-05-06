@@ -12,7 +12,7 @@
 ############################################
 
 setCombinedDefaultValues <- function() {
-   def$minScore           <<- 10
+   def$minScore           <<- 9.5
    
    def$technicalStrategies<<- c(typical$Boll1, typical$Boll2, typical$SMA1, typical$SMA2, typical$reversal1)
    def$technicalScores    <<- c(11.1, 11.2, 13.5, 11.5, 14.0)  # 'testing', costs=2%

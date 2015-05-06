@@ -462,7 +462,7 @@ plotReturnSideways <- function(stratName1=typical$balanced, stratName2="stocks",
                                col1=def$colBalanced,  col2=def$colConstantAlloc, col3=def$colBonds, 
                                lwd1=2, lwd2=3, lwd3=1.5, lwd4=2.5, 
                                inflationYears=7, derivativeYears=0, inflationCol=def$colInflation, 
-                               inflationMin=0, inflationMax=12, minTR=0.7, maxTR=2.2,
+                               inflationMin=0, inflationMax=12, minTR=0.7, maxTR=2.4,
                                pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
                                pngName="figures/sideways_markets.png") {
    if (dataSplit != "all") 

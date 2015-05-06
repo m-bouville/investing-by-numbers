@@ -224,9 +224,10 @@ startTesting <- function(futureYears=10L, tradingCost=0.5/100, riskAsCost=1.5/10
    if (!otherAssetClasses)
       plotAllReturnsVsFour()
 }
-# startTesting(lastMonthSP500=2089.7)    # S&P500 for Apr. 2015, up to 22th Apr. (source: stlouisfed.org)
-# startTesting(lastMonthSP500=2088.7, downloadAndCheckAllFiles=T, otherAssetClasses=T)
 
+
+# startTesting(lastMonthSP500=2098, downloadAndCheckAllFiles=T, otherAssetClasses=T)
+   ## This is S&P500 for May 2015, up to 6th May (source: stlouisfed.org)
 
 # plotAllReturnsVsFour()
 # checkXlsFileIsUpToDate()

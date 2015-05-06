@@ -447,7 +447,7 @@ searchForOptimalCAPEwithHysteresis <-function(
          xMinVol=11.5, xMaxVol=18.5, xMinDD2=7, xMaxDD2=10.5,
          CPUnumber=def$CPUnumber, col=F, plotType="symbols", 
          nameLength=28, plotEvery=def$plotEvery, 
-         referenceStrategies=c(typical$CAPE_hy1, typical$CAPE_hy2), force=F) {
+         referenceStrategies=c(typical$CAPE_hy1, typical$CAPE_hy2, typical$CAPE_hy3), force=F) {
    
    if (dataSplit != "training") 
       warning("Doing training in '", dataSplit, "' mode.", immediate.=T)
