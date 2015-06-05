@@ -110,9 +110,95 @@ calcNext30YrsReturn <- function(strategyName, force=F) {
    five30 <- quantile(next30yrs[, strategyName], .05, na.rm=T)[[1]]
    return( c(median=median30, five=five30) )
 }
+calcNextReturns     <- function(strategyName, force=F) {
+   if ( !exists("next5yrs") || dim(next5yrs)[[1]] != dim(dat)[[1]] )
+      next5yrs  <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+   calcNext5YrsReturn(strategyName, force)
 
+   if ( !exists("next10yrs") || dim(next10yrs)[[1]] != dim(dat)[[1]] ) 
+      next10yrs  <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+   calcNext10YrsReturn(strategyName, force)
+
+   if ( !exists("next15yrs") || dim(next15yrs)[[1]] != dim(dat)[[1]] ) 
+      next15yrs  <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+   calcNext15YrsReturn(strategyName, force)
+   
+   if ( !exists("next20yrs") || dim(next20yrs)[[1]] != dim(dat)[[1]] ) 
+      next20yrs  <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+   calcNext20YrsReturn(strategyName, force)
+   
+   if ( !exists("next30yrs") || dim(next30yrs)[[1]] != dim(dat)[[1]] ) 
+      next30yrs  <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+   calcNext30YrsReturn(strategyName, force)
+}
+
+calcStatsFutureReturnsAnnualized<- function(strategyName, force=F) {
+   calcNextReturns(strategyName, force)
+   print( "            min., low 5%, low 25%, median, hi 25%, hi 5%, max." )
+   pc <- round (quantile(next5yrs[strategyName], probs=c(0, .05, .25, .5, .75, 0.95, 1), na.rm=T)*100, 2)
+   print( paste0(" 5 years: ", pc[1], "%, ", pc[2], "%, ", pc[3], "%, ", pc[4], "%, ", pc[5], "%, ", pc[6], "%, ", pc[7], "%" ) )
+   pc <- round (quantile(next10yrs[strategyName], probs=c(0, .05, .25, .5, .75, 0.95, 1), na.rm=T)*100, 2)
+   print( paste0("10 years:  ", pc[1], "%, ", pc[2], "%, ", pc[3], "%, ", pc[4], "%, ", pc[5], "%, ", pc[6], "%, ", pc[7], "%" ) )
+   pc <- round (quantile(next15yrs[strategyName], probs=c(0, .05, .25, .5, .75, 0.95, 1), na.rm=T)*100, 2)
+   print( paste0("15 years:  ", pc[1], "%,  ", pc[2], "%, ", pc[3], "%, ", pc[4], "%,  ", pc[5], "%, ", pc[6], "%, ", pc[7], "%" ) )
+   pc <- round (quantile(next20yrs[strategyName], probs=c(0, .05, .25, .5, .75, 0.95, 1), na.rm=T)*100, 2)
+   print( paste0("20 years:  ", pc[1], "%,  ", pc[2], "%, ", pc[3], "%, ", pc[4], "%,  ", pc[5], "%, ", pc[6], "%, ", pc[7], "%" ) )
+   pc <- round (quantile(next30yrs[strategyName], probs=c(0, .05, .25, .5, .75, 0.95, 1), na.rm=T)*100, 2)
+   print( paste0("30 years:   ", pc[1], "%,  ", pc[2], "%, ", pc[3], "%, ", pc[4], "%,  ", pc[5], "%,  ", pc[6], "%, ", pc[7], "%" ) )
+}
+calcStatsNextReturns<- function(strategyName, initialAmount=100, force=F) {
+   calcNextReturns(strategyName, force)
+   print( "            min., low 5%, low 25%, median, hi 25%, hi 5%, max." )
+   pc <- round( ((1+quantile( next5yrs["stocks"], probs=c(0, .05, .25, .5, .75, 0.95, 1), na.rm=T)) ^  5 - 1) * initialAmount, 0)
+   print( paste0(" 5 years:   $", pc[1], ",   $", pc[2], ",   $", pc[3], ",   $", pc[4], ",   $", pc[5], ",   $", pc[6], ",   $", pc[7] ) )
+   pc <- round( ((1+quantile(next10yrs["stocks"], probs=c(0, .05, .25, .5, .75, 0.95, 1), na.rm=T)) ^ 10 - 1) * initialAmount, 0)
+   print( paste0("10 years:   $", pc[1], ",   $", pc[2], ",   $", pc[3], ",   $", pc[4], ",   $", pc[5], ",   $", pc[6], ",   $", pc[7] ) )
+   pc <- round( ((1+quantile(next15yrs["stocks"], probs=c(0, .05, .25, .5, .75, 0.95, 1), na.rm=T)) ^ 15 - 1) * initialAmount, 0)
+   print( paste0("15 years:   $", pc[1], ",     $", pc[2], ",   $", pc[3], ",   $", pc[4], ",   $", pc[5], ",    $", pc[6], ",   $", pc[7] ) )
+   pc <- round( ((1+quantile(next20yrs["stocks"], probs=c(0, .05, .25, .5, .75, 0.95, 1), na.rm=T)) ^ 20 - 1) * initialAmount, 0)
+   print( paste0("20 years:    $", pc[1], ",     $", pc[2], ",   $", pc[3], ",   $", pc[4], ",   $", pc[5], ",    $", pc[6], ",    $", pc[7] ) )
+   pc <- round( ((1+quantile(next30yrs["stocks"], probs=c(0, .05, .25, .5, .75, 0.95, 1), na.rm=T)) ^ 30 - 1) * initialAmount, 0)
+   print( paste0("30 years:    $", pc[1], ",    $", pc[2], ",   $", pc[3], ",   $", pc[4], ",   $", pc[5], ",    $", pc[6], ",    $", pc[7] ) )
+}
+
+
+calcFutureStockReturns <- function( years=seq(.5, 35, by=.5), force=F ) {
+   if ( !exists("futureStockReturns") || force)
+      futureStockReturns  <<- data.frame(date = dat$date, numericDate = dat$numericDate)
+   
+   for (year in years) {
+      yearName <- toString(year)
+      futureStockReturns[, yearName] <<- numeric(numData)
+      months <- 12*year; exponent <- 1/year;
+      
+      futureStockReturns[1:(numData-months), yearName] <<- 
+         (TR[1:(numData-months)+months, "stocks"] / TR[1:(numData-months), "stocks"]) ^ exponent - 1
+      futureStockReturns[(numData-months+1):numData, yearName] <<- NA
+   }
+}
+calcStockStats <- function( years=seq(.5, 35, by=.5), force=F ) {
+   calcFutureStockReturns(years, force)
+   stockStats <<- data.frame( "min"    = numeric(), 
+                              "low1"   = numeric(), 
+                              "low5"   = numeric(), 
+                              "low25"  = numeric(), 
+                              "median" = numeric(), 
+                              "high25" = numeric(), 
+                              "high5"  = numeric(), 
+                              "high1"  = numeric(), 
+                              "max"    = numeric(),
+                              "proba.real.loss" = numeric() )
+   for (year in years) {
+      yearName <- toString(year)
+      pc <- quantile(futureStockReturns[yearName], probs=c(0, .01, .05, .25, .5, .75, 0.95, .99, 1), na.rm=T)
+      stockStats[yearName, 1:9] <<- ( pc )
+      stockStats[yearName, 10]   <<- sum(futureStockReturns[yearName] < 0, na.rm=T) / sum(!is.na(futureStockReturns[yearName]) )
+   }
+}
+
+   
 ## calculating future annualized return of strategies
-calcStrategyFutureReturn <- function(strategyName, futureYears = numeric(), force=F) {
+calcStatsFutureReturns <- function(strategyName, futureYears = numeric(), force=F) {
    if (futureYears==5)
       median_five <-  calcNext5YrsReturn(strategyName, force)
    else if (futureYears==10)
@@ -785,8 +871,8 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost+def
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    showSummaryForStrategy(typical$balanced,     displayName="balanced", futureYears=futureYears, costs=costs, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
-   #    showSummaryForStrategy("balanced2",             displayName="balanced direct", futureYears=futureYears, costs=costs, 
-   #                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
+   showSummaryForStrategy("balanced50",         displayName="balanced 50-50", futureYears=futureYears, costs=costs, 
+                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
 }
    print(dashes)
 }
