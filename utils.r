@@ -198,7 +198,7 @@ calcStockStats <- function( years=seq(.5, 35, by=.5), force=F ) {
 
    
 ## calculating future annualized return of strategies
-calcStatsFutureReturns <- function(strategyName, futureYears = numeric(), force=F) {
+calcStrategyFutureReturn <- function(strategyName, futureYears = numeric(), force=F) {
    if (futureYears==5)
       median_five <-  calcNext5YrsReturn(strategyName, force)
    else if (futureYears==10)

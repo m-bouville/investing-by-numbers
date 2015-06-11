@@ -600,6 +600,8 @@ createTypicalStrategies <- function(extrapolateDividends=T, costs=def$tradingCos
    combineStrategies(inputStrategyName=def$balancedStrategies, score=def$balancedScores, subtype="balanced", 
                      minScore=def$minScoreBalanced, 
                      costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)    
+   combineStrategies(inputStrategyName=c(typical$balanced, "stocks", "bonds"), score=c(50, 0.75*50, 0.25*50), subtype="balanced", 
+                     minScore=0, strategyName="balanced50", costs=costs, coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)    
    
    if(doStrat$Boll_balanced1) {
 #       typical$Boll_balanced1 <<- paste0("Boll_", def$Boll_balancedAvgOver1, "_", def$Boll_balancedBearish1, "_", 

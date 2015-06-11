@@ -219,11 +219,11 @@ plotReturn <- function(
    
    if ( yLabel=="" ) {
       if( costs==0 )  # trading cost = 0: gross returns
-         yLabel <- paste0("total return (%), GROSS of costs")
+         yLabel <- paste0("total real return, gross of trading costs")
       else if( costs>0 ) # trading cost > 0: net returns
-         yLabel <- paste0("total return (%), net of costs of ", round(costs*100, 1), "%")   
+         yLabel <- paste0("total real return, net of trading costs of ", round(costs*100, 1), "%")   
       else # no notion of trading cost (e.g. for asset classes)
-         yLabel <- paste0("total return (%)")
+         yLabel <- paste0("total real return")
       if (detrendBy != 0)
          yLabel <- paste0(yLabel, " (detrended by ", detrendBy, "%)")
    }
@@ -460,7 +460,7 @@ plotReturnAndInflation <- function(stratName1=typical$balanced, stratName2="stoc
 ## 15-year-long sideways markets
 plotReturnSideways <- function(stratName1=typical$balanced, stratName2="stocks", stratName3="bonds", 
                                col1=def$colBalanced,  col2=def$colConstantAlloc, col3=def$colBonds, 
-                               lwd1=2, lwd2=3, lwd3=1.5, lwd4=2.5, 
+                               lwd1=2, lwd2=3, lwd3=1.5, lwd4=2.5, costs=def$tradingCost,
                                inflationYears=7, derivativeYears=0, inflationCol=def$colInflation, 
                                inflationMin=0, inflationMax=12, minTR=0.7, maxTR=2.4,
                                pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
@@ -489,7 +489,7 @@ plotReturnSideways <- function(stratName1=typical$balanced, stratName2="stocks",
    stratName4 <- inflationName
    
    par(mfrow = c(2, 2))   
-   plotReturn(startYear=1909, endYear=1921.5, minTR=minTR, maxTR=maxTR, 
+   plotReturn(startYear=1909, endYear=1921.5, minTR=minTR, maxTR=maxTR, costs=costs,
               stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4, 
               col1=col1, col2=col2, col3=col3, col4=col4, lwd1=lwd1, lwd2=lwd2, lwd3=lwd3, lwd4=lwd4,
               legendPlacement="topleft")
@@ -498,7 +498,7 @@ plotReturnSideways <- function(stratName1=typical$balanced, stratName2="stocks",
         col=inflationCol, ylim=c(inflationMin/100, inflationMax/100), ylab= "", yaxt='n' )
    par(new=F)
    
-   plotReturn(startYear=1936, endYear=1949.5, minTR=minTR, maxTR=maxTR, 
+   plotReturn(startYear=1936, endYear=1949.5, minTR=minTR, maxTR=maxTR, costs=costs,
               stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4,
               col1=col1, col2=col2, col3=col3, col4=col4, lwd1=lwd1, lwd2=lwd2, lwd3=lwd3, lwd4=lwd4,
               legendPlacement="none")
@@ -507,7 +507,7 @@ plotReturnSideways <- function(stratName1=typical$balanced, stratName2="stocks",
         col=inflationCol, ylim=c(inflationMin/100, inflationMax/100), ylab= "", yaxt='n' )
    par(new=F)
    
-   plotReturn(startYear=1964.75,   endYear=1982,   minTR=minTR, maxTR=maxTR, 
+   plotReturn(startYear=1964.75,   endYear=1982,   minTR=minTR, maxTR=maxTR, costs=costs,
               stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4,
               col1=col1, col2=col2, col3=col3, col4=col4, lwd1=lwd1, lwd2=lwd2, lwd3=lwd3, lwd4=lwd4,
               legendPlacement="none")
@@ -516,7 +516,7 @@ plotReturnSideways <- function(stratName1=typical$balanced, stratName2="stocks",
         col=inflationCol, ylim=c(inflationMin/100, inflationMax/100), ylab= "", yaxt='n' )
    par(new=F)
    
-   plotReturn(startYear=1998.25,   endYear=2011.5,   minTR=minTR, maxTR=maxTR,
+   plotReturn(startYear=1998.25,   endYear=2011.5,   minTR=minTR, maxTR=maxTR, costs=costs,
               stratName1=stratName1, stratName2=stratName2, stratName3=stratName3, stratName4=stratName4,
               col1=col1, col2=col2, col3=col3, col4=col4, lwd1=lwd1, lwd2=lwd2, lwd3=lwd3, lwd4=lwd4,
               legendPlacement="none")

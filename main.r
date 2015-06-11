@@ -66,10 +66,10 @@ showForNewcomer <- function() {
 }
 
 # Loading and preparing data
-start <- function(dataSplit="all",           # "all" for all data, "training" and "testing" for half the data
+start <- function(dataSplit="all",            # "all" for all data, "training" and "testing" for half the data
                   futureYears=15L,            # to calculate the return over the next so many years
                   tradingCost=0.5/100,        # cost of turning the portfolio entirely 
-                  riskAsCost= 0  /100,
+                  riskAsCost= 1.5/100,
                   lastMonthSP500="",          # to enter by hand the value of the S&P 500 at the end of last month
                   removeDepression=F,         # stops the 'training' time range before the Depression.
                   extrapolateDividends=T,     # whether to extrapolate missing recent dividends (or remove incomplete months)
@@ -164,8 +164,9 @@ start <- function(dataSplit="all",           # "all" for all data, "training" an
    
    showSummaries()
    if (dataSplit != "training") 
-      print(paste0("RECOMMENDED STOCK ALLOCATION: ", 
-                       round( 100*stats$latestStockAlloc[which(stats$strategy==typical$balanced)]), "%"))
+      print(paste0("CURRENT RECOMMENDED STOCK ALLOCATION: ", 
+                  round( 100*stats$latestStockAlloc[which(stats$strategy==typical$balanced)]), "% | ", 
+                  round( 100*stats$latestStockAlloc[which(stats$strategy=="balanced50")]), "%"))
 
    if(otherAssetClasses) 
       if (dat$numericDate[numData] < 1968) # if there are no data after 1968 in 'dat' (training mode) 
@@ -224,14 +225,12 @@ startTesting <- function(futureYears=10L, tradingCost=0.5/100, riskAsCost=1.5/10
    if (!otherAssetClasses)
       plotAllReturnsVsFour()
 }
-
-
-# startTesting(lastMonthSP500=2098, downloadAndCheckAllFiles=T, otherAssetClasses=T)
-   ## This is S&P500 for May 2015, up to 6th May (source: stlouisfed.org)
+## Using S&P500 data for July 2015, up to 9th July (source: stlouisfed.org):
+# startTesting(lastMonthSP500=2067, downloadAndCheckAllFiles=T, otherAssetClasses=T)
+   
 
 # plotAllReturnsVsFour()
-# checkXlsFileIsUpToDate()
-
+# checkXlsFileIsUpToDate(force=T)
 
 
 ## Plotting to png files:
