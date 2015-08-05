@@ -150,12 +150,14 @@ plotDD <- function(DDindex, padding=0, minTR=.8, maxTR=1.5, newStartYear="", new
           function(x) round(drawdown(x, newStartYear, newEndYear)*100,1) )
 }
 
-# Displays the inflation during a certain drawdown event (useful to tell how much of the real drawdown was due to inflation)
+# Displays the inflation during a certain drawdown event 
+#   (useful to tell how much of the real drawdown was due to inflation)
 showDDinflation <- function(DDindex) {
    return ( dat$CPI[(DD$endYear[DDindex]-def$dataStartYear)*12+1] / dat$CPI[(DD$startYear[DDindex]-def$dataStartYear)*12+1] - 1)
 }
 
-# Calculates the inflation during all drawdown events (useful to tell how much of the real drawdown was due to inflation)
+# Calculates the inflation during all drawdown events 
+#   (useful to tell how much of the real drawdown was due to inflation)
 calcDDinflationAll <- function() {
    DD$inflation <<- numeric(numDD)
    for (i in 1:numDD) 
