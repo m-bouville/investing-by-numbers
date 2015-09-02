@@ -46,7 +46,7 @@ loadDDlist <- function(otherAssetClasses=T, force=F) {
 drawdown <- function(strategyName, startYear, endYear) {
    requireColInTR(strategyName)
    startIndex <- (startYear-def$dataStartYear)*12+1
-   endIndex <- min((endYear-def$dataStartYear)*12, numData)
+   endIndex <- min((endYear-def$dataStartYear)*12, numData+1) # numData+1 b/c then we do endIndex-1
    
    if ( is.na( TR[startIndex, strategyName] ) )
       return(NA) # DD cannot be calculated
