@@ -9,11 +9,11 @@ A key characteristic of any strategy is its time scale. A strategy that can tell
 
 Some indicators aim at telling that the market is in a trend (up or down). If one expects the market to keep trending up one buys, if one expects a downward trend one sells. Such trends can exist over minutes or years. Trading on the shorter time scales is a full-time activity.
 
-I use monthly data starting in the 19th century (I deal with stocks as an asset class rather than with individual stocks), not daily or tick-by-tick data from the past few years. Two advantages of strategies trading less often are:
+I use monthly data starting at then end of the 19th century (I deal with stocks as an asset class rather than with individual stocks), not daily or tick-by-tick data from the past few years. Two advantages of strategies trading less often are:
 - they are less time consuming, i.e. not a full-time job, 
 - the trading costs are not as huge an issue.
 I test the strategies,
-- taking costs into account and 
+- taking costs into account (the default value is high because it includes implicit losses like slippage plus a safety margin) and 
 - splitting the data between searching for parameters and testing them.
 So I do not claim that a certain strategy should work in theory, I actually test it and show the results as plots: https://github.com/m-bouville/investing-by-numbers/tree/master/figures (so you can make up your own mind as to whether this is working or not).
 
@@ -28,9 +28,10 @@ I focus on time scales of years, which essentially means investing in stocks exc
 - there are no asset classes other than stocks and bonds,
 - the strategies use only data that are publically available.
 
+The strategy returns about as much as a constant allocation 80% in stocks, but with less volatility and smaller drawdowns.
+
 
 ### Diving into the details
-
 The strategies are described in https://github.com/m-bouville/investing-by-numbers/tree/master/docs/strategies.md
 
 The code is described in https://github.com/m-bouville/investing-by-numbers/tree/master/docs/code_structure.md
@@ -61,14 +62,7 @@ Then tested between 1942 and 2014:
 combined strategies (squares):
 - value:     blue
 - technical: red
+- hybrid:    green
 - balanced:  black
 
-constant-allocation stock-bond portfolios: green line
-
-
-### Discussion
-The whole point of splitting data between a search for optimal parameters and testing is that what looked like the best strategy may in fact be due to a strange turn of event which made us create a great strategy for too specific a situation. The test between 1942 and 2014 shows that value strategies fare a lot less well than from 1871 to 1942. So the masochism worked just fine.
-
-The reason why the value strategies fall harder than technical strategies is that they turn their portfolio infrequently. Sixty years of data for a strategy with a natural cycle time of twenty years means that we fit to only three cycles. In a sense there are more data available for technical strategies, not in terms of number of years but in terms of number of cycles.
-
-Also, since the optimization takes place over 1871-1942 the process is controlled by the Depression: any strategy that handles it well will look good (even if it does not do so well elsewhere).
+constant-allocation stock-bond portfolios: brown line

@@ -441,7 +441,7 @@ searchForOptimalCAPEwithHysteresis <-function(
          minWidth=   5.8, maxWidth=   7.2, byWidth=  0.2,
          minSlope=   2.0, maxSlope=   2.6, bySlope=  0.2, 
          futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
-         minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=5, minScore=12,
+         minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=5, minScore=16,
          coeffTR=def$coeffTR, coeffMed=def$coeffMed, coeffFive=def$coeffFive,
          coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
          xMinVol=11.5, xMaxVol=18.5, xMinDD2=7, xMaxDD2=10.5,
@@ -512,7 +512,8 @@ searchForThreeOptimalCAPE <-function(plotType="symbols", force=F) {
    print("searching for optimal CAPE strategy without hysteresis...")
    searchForOptimalCAPEwithoutHysteresis()
    
-   plotReturnAndAlloc("CAPE6avg16_hy_16_16_3", "CAPE10avg32_hy_19_7_2", , )}
+   #plotReturnAndAlloc("CAPE6avg16_hy_16_16_3", "CAPE10avg32_hy_19_7_2", , )
+   }
 
 
 plotFutureReturnVsCAPE <- function(CAPEname1=paste0("CAPE", def$CAPEyears),

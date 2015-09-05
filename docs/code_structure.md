@@ -37,7 +37,7 @@ The reason for this extra step is that an allocation of 0 does not tell us wheth
 ## 'stats' and 'parameters' dataframes
 The 'stats' dataframe contains the summary of statistics for the strategies. It is filled by calcStatisticsForStrategy() and its contents displayed by showSummaryForStrategy(); the function showSummaries() displays the statistics of the basic strategies in one go (all three functions are in utils.r). It has column names like:
 - 'TR', the average real total return;
-- 'netTR2', the average real total return, net of 2% of costs (tradingCost + riskAsCost) - because we demand that strategies that trade more also earn more, as said before;
+- 'netTR4', the average real total return, net of 4% of costs (tradingCost + riskAsCost) - because we demand that strategies that trade more also earn more, as said before;
 - 'volatility';
 - 'avgStockAlloc' and 'latestStockAlloc', the latter indicating what the strategy says we should be doing now;
 - 'turnover' (in years) and its inverse 'invTurnover' (used in plots);

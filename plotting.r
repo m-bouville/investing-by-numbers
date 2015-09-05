@@ -121,7 +121,7 @@ setPlottingDefaultColors <- function() {
 #default values of other plotting parameters
 setPlottingDefaultValues <- function() {
    def$yTRmin    <<-   7.5
-   def$yTRmax    <<-   9.8
+   def$yTRmax    <<-  10.2
    def$yStatsName<<-  ""
    
    def$pngWidth  <<-1024
@@ -133,8 +133,8 @@ setPlottingDefaultValues <- function() {
    def$maxDD2    <<-  10
    def$maxTO     <<- 130
    
-   def$plotEndYear <<- 2015.5
-   def$maxTR     <<- 150000
+   def$plotEndYear <<- 2016
+   def$maxTR     <<- 20000
        
    setPlottingDefaultColors()
 }
@@ -316,7 +316,7 @@ plotAlloc <- function(
 }
 
 plotReturnAndAllocTechnical <- function(
-         stratName1=typical$Boll1,     stratName2=typical$SMA1, 
+         stratName1=typical$SMA1,     stratName2=typical$SMA2, 
          stratName3=typical$reversal1, stratName4=typical$technical,
          col1=def$colBollinger, col2=def$colSMA, col3=def$colReversal, col4=def$colTechnical,
          lwd1=1.5, lwd2=1.5, lwd3=1.5, lwd4=2,
@@ -462,7 +462,7 @@ plotReturnSideways <- function(stratName1=typical$balanced, stratName2="stocks",
                                col1=def$colBalanced,  col2=def$colConstantAlloc, col3=def$colBonds, 
                                lwd1=2, lwd2=3, lwd3=1.5, lwd4=2.5, costs=def$tradingCost,
                                inflationYears=7, derivativeYears=0, inflationCol=def$colInflation, 
-                               inflationMin=0, inflationMax=12, minTR=0.7, maxTR=2.4,
+                               inflationMin=0, inflationMax=12, minTR=0.7, maxTR=2.,
                                pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
                                pngName="figures/sideways_markets.png") {
    if (dataSplit != "all") 
@@ -1520,7 +1520,7 @@ createStrategiesAndSavePlots_generic <- function(futureYears, tradingCost, dataS
                                                  otherAssetClasses=F) {
    
    start(dataSplit=dataSplit, futureYears=futureYears, tradingCost=tradingCost, 
-         riskAsCost=0, riskAsCostTechnical=0, # no riskAs Cost for plotting
+         riskAsCost=0, # no riskAs Cost for plotting
          extrapolateDividends=T, smoothConstantAlloc=T, downloadAndCheckAllFiles=F,
          otherAssetClasses=otherAssetClasses, newcomer=F, force=T)
    rangeName         <- paste0(startYear, "_", endYear)
@@ -1584,18 +1584,18 @@ createStrategiesAndSavePlots_testing <- function(futureYears, tradingCost, plotM
    createGoldStrategy(pngOutput=T)
 }
 
-createStrategiesAndSavePlots_none <- function(futureYears, tradingCost, plotMany=F, 
+createStrategiesAndSavePlots_all <- function(futureYears, tradingCost, plotMany=F, 
                                               pngWidth=def$pngWidth, pngHeight=def$pngHeight) {
    
    figureTitle      <- paste0("1871-2014 (parameters optimized over 1871-1942)")
    figureTitleShort <- paste0("1871-", 2014-futureYears, " (parameters optimized over 1871-1942)")   
-   createStrategiesAndSavePlots_generic(futureYears=futureYears, tradingCost=tradingCost, dataSplit="none",
+   createStrategiesAndSavePlots_generic(futureYears=futureYears, tradingCost=tradingCost, dataSplit="all",
                                         startYear=1871, endYear=2014, figureTitle, figureTitleShort,
                                         pngWidth=pngWidth, pngHeight=pngHeight, plotMany=plotMany) 
 }
 
 
-createStrategiesAndSavePlots <- function(futureYears=c(10L, 20L, 30L), tradingCost=0.5/100, plotMany=c(F, T, F), 
+createStrategiesAndSavePlots <- function(futureYears=c(10L, 20L, 30L), tradingCost=4/100, plotMany=c(F, T, F), 
                                          pngWidth=def$pngWidth, pngHeight=def$pngHeight) {
    source("main.r")       # for start()
       
@@ -1618,10 +1618,10 @@ createStrategiesAndSavePlots <- function(futureYears=c(10L, 20L, 30L), tradingCo
    
    if ( plotMany[3] )    
       for (i in 1:length(futureYears)) 
-         createStrategiesAndSavePlots_none(futureYears=futureYears[i], tradingCost=tradingCost,
+         createStrategiesAndSavePlots_all(futureYears=futureYears[i], tradingCost=tradingCost,
                                            plotMany=plotMany[3], pngWidth=pngWidth, pngHeight=pngHeight)
    else # we do not plot anything related to 'futureYears', so no need to do several
-      createStrategiesAndSavePlots_none(futureYears=futureYears[1], tradingCost=tradingCost,
+      createStrategiesAndSavePlots_all(futureYears=futureYears[1], tradingCost=tradingCost,
                                         plotMany=plotMany[3], pngWidth=pngWidth, pngHeight=pngHeight)
    
    plotReturnSideways(pngOutput=T, pngWidth=pngWidth, pngHeight=pngHeight)

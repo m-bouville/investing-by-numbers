@@ -68,8 +68,8 @@ showForNewcomer <- function() {
 # Loading and preparing data
 start <- function(dataSplit="all",            # "all" for all data, "training" and "testing" for half the data
                   futureYears=15L,            # to calculate the return over the next so many years
-                  tradingCost=0.5/100,        # cost of turning the portfolio entirely 
-                  riskAsCost= 1.5/100,
+                  tradingCost=4/100,        # cost of turning the portfolio entirely 
+                  riskAsCost= 0/100,
                   lastMonthSP500="",          # to enter by hand the value of the S&P 500 at the end of last month
                   removeDepression=F,         # stops the 'training' time range before the Depression.
                   extrapolateDividends=T,     # whether to extrapolate missing recent dividends (or remove incomplete months)
@@ -165,8 +165,8 @@ start <- function(dataSplit="all",            # "all" for all data, "training" a
    showSummaries()
    if (dataSplit != "training") 
       print(paste0("CURRENT RECOMMENDED STOCK ALLOCATION: ", 
-                  round( 100*stats$latestStockAlloc[which(stats$strategy==typical$balanced)]), "% | ", 
-                  round( 100*stats$latestStockAlloc[which(stats$strategy=="balanced50")]), "%"))
+                  round( 100*stats$latestStockAlloc[which(stats$strategy==typical$balanced)]), "% (", 
+                  round( 100*stats$latestStockAlloc[which(stats$strategy=="balanced50")]), "%)"))
 
    if(otherAssetClasses) 
       if (dat$numericDate[numData] < 1968) # if there are no data after 1968 in 'dat' (training mode) 
@@ -201,7 +201,7 @@ start <- function(dataSplit="all",            # "all" for all data, "training" a
 }
 
 # Loading and preparing data for TRAINING
-startTraining <- function(futureYears=10L, tradingCost=0.5/100, riskAsCost=1.5/100,
+startTraining <- function(futureYears=10L, tradingCost=4/100, riskAsCost=0/100,
                           removeDepression=F, smoothConstantAlloc=F, newcomer=F, force=T) {
    if ( tradingCost+riskAsCost < 1/100 ) 
       warning("costs = ", (tradingCost+riskAsCost)*100, "%.", immediate.=T)
@@ -214,7 +214,7 @@ startTraining <- function(futureYears=10L, tradingCost=0.5/100, riskAsCost=1.5/1
 }
 
 # Loading and preparing data for TESTING
-startTesting <- function(futureYears=10L, tradingCost=0.5/100, riskAsCost=1.5/100,
+startTesting <- function(futureYears=10L, tradingCost=4/100, riskAsCost=0/100,
                          lastMonthSP500="", extrapolateDividends=T, smoothConstantAlloc=F,   
                          downloadAndCheckAllFiles=F, otherAssetClasses=F, newcomer=F, force=T) {
    start(dataSplit="testing", futureYears=futureYears, tradingCost=tradingCost, riskAsCost=riskAsCost, 
@@ -225,8 +225,8 @@ startTesting <- function(futureYears=10L, tradingCost=0.5/100, riskAsCost=1.5/10
    if (!otherAssetClasses)
       plotAllReturnsVsFour()
 }
-## Using S&P500 data for September 2015, up to 2nd September (source: stlouisfed.org):
-# startTesting(lastMonthSP500=1930, downloadAndCheckAllFiles=T, otherAssetClasses=T)
+## Using S&P500 data for September 2015, up to 4th September (source: stlouisfed.org):
+# startTesting(lastMonthSP500=1935, downloadAndCheckAllFiles=T, otherAssetClasses=T)
    
 
 # plotAllReturnsVsFour()

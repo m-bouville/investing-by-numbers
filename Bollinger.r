@@ -19,19 +19,21 @@ setBollDefaultValues <- function() {
    def$BollInputDF     <<- "dat"
    def$BollInputName   <<- "TR"
    
-   def$BollAvgOver1    <<-  10L    # 10L   # with costs=2%, w/o yoyo prevention
-   def$BollBearish1    <<-  46.5   # 46.5
-   def$BollBullish1    <<-  46.5   # 46.5 
-   def$BollYoyoOffset1 <<-   3L    #  1L
-   def$BollYoyoPenalty1<<-   1     #  0
+   # with costs = 4%
+   def$BollAvgOver1    <<-  13.25 #   16 (4%) # 10.5 (costs=2%)
+   def$BollBearish1    <<-  -4    # -152      # 46.5
+   def$BollBullish1    <<-  -4    # -152      # 46.5
+   def$BollYoyoOffset1 <<-  15L   #    6L     #  3L
+   def$BollYoyoPenalty1<<-   1    #    1      #  1
    typical$Boll1       <<- nameBollStrategy(def$BollInputName, def$BollAvgOver1,    def$BollBearish1, 
                                             def$BollBullish1,  def$BollYoyoOffset1, def$BollYoyoPenalty1)
 
-   def$BollAvgOver2    <<-  14L    #  14L  # with costs=2%, w/o yoyo prevention
-   def$BollBearish2    <<- -33.5   # -31.5
-   def$BollBullish2    <<- -33.5   # -31.5 
-   def$BollYoyoOffset2 <<-   3L    #   1L
-   def$BollYoyoPenalty2<<-   1     #   0
+   # with costs = 4%
+   def$BollAvgOver2    <<-  14.25   #  14L  # with costs = 2%
+   def$BollBearish2    <<- -31.25   # -33.5
+   def$BollBullish2    <<- -31.25   # -33.5 
+   def$BollYoyoOffset2 <<-   5L     #   3L
+   def$BollYoyoPenalty2<<-   1      #   1
    typical$Boll2       <<- nameBollStrategy(def$BollInputName, def$BollAvgOver2,    def$BollBearish2, 
                                             def$BollBullish2,  def$BollYoyoOffset2, def$BollYoyoPenalty2)
    }
@@ -254,17 +256,17 @@ calcOptimalBoll <- function(inputDF, inputName, allocSource, minAvgOver, maxAvgO
 }
 
 searchForOptimalBoll <- function(inputDF="dat",   inputName="TR",  allocSource="",
-         minAvgOver=    4L, maxAvgOver=   40L, byAvgOver=    2L, 
-         minBear=    -150,  maxBear=      40,  byBear=       5, 
+         minAvgOver=    4L, maxAvgOver=   40L, byAvgOver=    4L, 
+         minBear=    -180,  maxBear=      80,  byBear=      10, 
          minDelta=      0,  maxDelta=      0,  byDelta=      5,    # 0 is generally close to the optimum
-         minYoyoOffset= 1L, maxYoyoOffset= 5L, byYoyoOffset= 2L, 
+         minYoyoOffset= 1L, maxYoyoOffset= 7L, byYoyoOffset= 2L, 
          minYoyoPenalty=1,  maxYoyoPenalty=1,  byYoyoPenalty=0.4,  # 1 generally works best
          futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
-         minTR=-Inf, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.7, minScore=8,
+         minTR=-Inf, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.7, minScore=14,
          coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
          xMinVol=12.5, xMaxVol=16.5, xMinDD2=3, xMaxDD2=11,
          type="training", col=F, plotType="symbols", 
-         nameLength=24, plotEvery=def$plotEvery, countOnly=F, showHeading=T,
+         nameLength=28, plotEvery=def$plotEvery, countOnly=F, showHeading=T,
          referenceStrategies=c(typical$Boll1, typical$Boll2), force=F) {
  
    if (dataSplit != "training") 
@@ -314,15 +316,17 @@ searchForOptimalBoll <- function(inputDF="dat",   inputName="TR",  allocSource="
 }
 
 
-searchForTwoOptimalBoll <- function( minScore1=14.4, minScore2=15.5, do1=T, do2=T,
-         minAvgOver1  =  9L, maxAvgOver1  = 11L, byAvgOver1   = 1L,
-         minBear1     = 45,  maxBear1     = 50,  byBear1      = 0.5,
-         minYoyoOffset1= 1L, maxYoyoOffset1= 4L, byYoyoOffset1= 1L, 
+searchForTwoOptimalBoll <- function( minScore1=16, minScore2=16.15, do1=T, do2=T,
+         minAvgOver1  = 15,  maxAvgOver1  = 17,  byAvgOver1   = 0.5,
+         minBear1    =-154,  maxBear1    =-140,  byBear1      = 1,
+#        minAvgOver1  =  9.5,maxAvgOver1  = 11,  byAvgOver1   = 0.5,
+#        minBear1     = 44,  maxBear1     = 48,  byBear1      = 0.5,
+         minYoyoOffset1= 5L, maxYoyoOffset1= 7L, byYoyoOffset1= 1L, 
          minYoyoPenalty1=1,  maxYoyoPenalty1=1,  byYoyoPenalty1=0.2,  # 1 generally works best
          minDelta1    =  0,  maxDelta1    =  0,  byDelta1     = 0.5,  # 0 is generally close to the optimum
          
-         minAvgOver2  = 13L, maxAvgOver2  = 15L, byAvgOver2   = 1L,                                     
-         minBear2     =-36,  maxBear2     =-30,  byBear2      = 0.5, 
+         minAvgOver2  = 13.5,maxAvgOver2  = 15,  byAvgOver2   = 0.5,                                     
+         minBear2     =-38,  maxBear2     =-30,  byBear2      = 0.5, 
          minYoyoOffset2= 1L, maxYoyoOffset2= 6L, byYoyoOffset2= 1L, 
          minYoyoPenalty2=1,  maxYoyoPenalty2=1,  byYoyoPenalty2=0.2,  # 1 generally works best
          minDelta2    =  0,  maxDelta2    =  0,  byDelta2     = 0.5,  # 0 is generally close to the optimum

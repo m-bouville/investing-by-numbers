@@ -23,12 +23,12 @@ setReversalDefaultValues <- function() {
    def$reversalAvgOver1      <<-  10L   #  9L    
    def$reversalReturnToMean1 <<-  17    # 13.5
    def$reversalBearish1      <<- -52.5  #-50
-   def$reversalBullish1      <<- -52.5  #-50
-   def$reversalYoyoOffset1   <<-  2L    #  1L
-   def$reversalYoyoPenalty1  <<-  1     #  0
+   def$reversalBullish1      <<- def$reversalBearish1
+   def$reversalYoyoOffset1   <<-   2L
+   def$reversalYoyoPenalty1  <<-   1
    typical$reversal1         <<- nameReversalStrategy(
          def$reversalInputName, def$reversalAvgOver1, def$reversalReturnToMean1,
-         def$reversalBearish1,  def$reversalBullish1, def$reversalYoyoOffset1,   def$reversalYoyoPenalty1)
+         def$reversalBearish1,  def$reversalBullish1, def$reversalYoyoOffset1, def$reversalYoyoPenalty1)
    
 #    # optimized with costs = 2%
 #    def$reversalAvgOver2      <<- 11L     # 11L
@@ -42,15 +42,15 @@ setReversalDefaultValues <- function() {
 #       def$reversalBearish2,  def$reversalBullish2, def$reversalYoyoOffset2,   def$reversalYoyoPenalty2)
    
    # optimized with costs = 2%
-   def$reversalAvgOver2      <<- 10L   # 6L
-   def$reversalReturnToMean2 <<- 33.   # 4.7
-   def$reversalBearish2      <<- 19.   # 4.6
-   def$reversalBullish2      <<- 19.   # 4.6
+   def$reversalAvgOver2      <<- 10L  # 6L
+   def$reversalReturnToMean2 <<- 33.      # 4.7
+   def$reversalBearish2      <<- 19.      # 4.6
+   def$reversalBullish2      <<- def$reversalBearish2
    def$reversalYoyoOffset2   <<- 17L
    def$reversalYoyoPenalty2  <<-  1
    typical$reversal2         <<- nameReversalStrategy(
       def$reversalInputName, def$reversalAvgOver2, def$reversalReturnToMean2,
-      def$reversalBearish2,  def$reversalBullish2, def$reversalYoyoOffset2,   def$reversalYoyoPenalty2)
+      def$reversalBearish2,  def$reversalBullish2, def$reversalYoyoOffset2, def$reversalYoyoPenalty2)
    
    #    def$reversalAvgOver2      <<-  6L     # optimized with costs = 2%  # 6L
    #    def$reversalReturnToMean2 <<-  4.2    # 4.2
@@ -294,14 +294,14 @@ calcOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$rever
 
 
 searchForOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$reversalInputName, 
-         minAvgOver=    8L, maxAvgOver=   10L, byAvgOver=    1L,
-         minRTM=       13,  maxRTM=       15,  byRTM=        1,
-         minBear=     -52,  maxBear=     -48,  byBear=       1,
-         minDelta=      0,  maxDelta=      1,  byDelta=      0.2, 
-         minYoyoOffset= 1L, maxYoyoOffset= 5L, byYoyoOffset= 2L, 
+         minAvgOver=    4L, maxAvgOver=   16L, byAvgOver=    2L,
+         minRTM=      -40,  maxRTM=       28,  byRTM=        4,
+         minBear=     -68,  maxBear=      28,  byBear=       8,
+         minDelta=      0,  maxDelta=      0,  byDelta=      0.2, 
+         minYoyoOffset= 3L, maxYoyoOffset=15L, byYoyoOffset= 4L, 
          minYoyoPenalty=1,  maxYoyoPenalty=1,  byYoyoPenalty=0.4,  # 1 generally works best
          futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCostTechnical, 
-         minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.7, minScore=11,
+         minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=0.7, minScore=15,
          xMinVol=13, xMaxVol=16.5, xMinDD2=4, xMaxDD2=9,
          type="training", col=F, plotType="symbols", nameLength=32, plotEvery=def$plotEvery, 
          referenceStrategies=c(typical$reversal1, typical$reversal2), force=F) {
@@ -345,17 +345,17 @@ searchForOptimalReversal <- function(inputDF=def$reversalInputDF, inputName=def$
 }
 
 
-searchForThreeOptimalReversal <-function(minScore1=14.92, minScore2=15.7, minScore3=14.9, 
+searchForThreeOptimalReversal <-function(minScore1=15., minScore2=17, minScore3=15, 
                                          do1=T, do2=T, do3=T, plotType="symbols", 
                                          costs=def$tradingCost+def$riskAsCostTechnical, force=F) {
    if(do1) {
       print("Reversal 1")
-      searchForOptimalReversal(minAvgOver=    8L, maxAvgOver=   11L,  byAvgOver=    1L,
-                               minRTM=       15.5,maxRTM=       17.5, byRTM=        0.5,
-                               minBear=     -53,  maxBear=     -51.5, byBear=       0.5,
-                               minYoyoOffset= 2L, maxYoyoOffset= 3L,  byYoyoOffset= 1L, 
-                               minYoyoPenalty=1,  maxYoyoPenalty=1,   byYoyoPenalty=0.4,
-                               minDelta=      0,  maxDelta=      1,   byDelta=      0.5, 
+      searchForOptimalReversal(minAvgOver=    9.5, maxAvgOver=   10.5, byAvgOver=    0.5,
+                               minRTM=       16.5, maxRTM=       18,   byRTM=        0.5,
+                               minBear=     -53,   maxBear=     -50,   byBear=       0.5,
+                               minYoyoOffset= 1L,  maxYoyoOffset= 4L,  byYoyoOffset= 1L, 
+                               minYoyoPenalty=1,   maxYoyoPenalty=1,   byYoyoPenalty=0.4,
+                               minDelta=      0,   maxDelta=      0,   byDelta=      0.5, 
                                referenceStrategies=typical$reversal1, costs=costs, minScore=minScore1 )
    }
    if( do1 && (do2||do3) ) { # needed only if there is something to seperate
@@ -370,8 +370,9 @@ searchForThreeOptimalReversal <-function(minScore1=14.92, minScore2=15.7, minSco
                                minBear=      -1,  maxBear=       0.5,byBear=       0.5,
                                minYoyoOffset= 1L, maxYoyoOffset= 4L, byYoyoOffset= 1L, 
                                minYoyoPenalty=1,  maxYoyoPenalty=1,  byYoyoPenalty=0.4, 
-                               minDelta=      0,  maxDelta=      0.5,byDelta=      0.5, 
-                               referenceStrategies=typical$reversal2, costs=costs, minScore=minScore2 )
+                               minDelta=      0,  maxDelta=      0., byDelta=      0.5, 
+                               referenceStrategies=c(typical$reversal1, typical$reversal2), 
+                               costs=costs, minScore=minScore2 )
    }
    if( do3 && (do1||do2) ) { # needed only if there is something to seperate
       print("")

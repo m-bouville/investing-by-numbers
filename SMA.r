@@ -221,7 +221,7 @@ searchForOptimalSMA <- function(inputDF="dat", inputName="TR",
                                 xMinVol=14., xMaxVol=18., xMinDD2=6, xMaxDD2=10,
                                 type="training", col=F, plotType="symbols", 
                                 nameLength=22, plotEvery=def$plotEvery, countOnly=F,
-                                referenceStrategies=c(typical$SMA1, typical$SMA), force=F) {
+                                referenceStrategies=c(typical$SMA1, typical$SMA2), force=F) {
    
    if (dataSplit != "training") 
       warning("Doing training in '", dataSplit, "' mode.", immediate.=T)

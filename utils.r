@@ -196,7 +196,7 @@ calcStockStats <- function( years=seq(.5, 35, by=.5), force=F ) {
    }
 }
 
-   
+
 ## calculating future annualized return of strategies
 calcStrategyFutureReturn <- function(strategyName, futureYears = numeric(), force=F) {
    if (futureYears==5)
@@ -770,17 +770,17 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost+def
    showSummaryForStrategy("stocks", displayName="stocks", futureYears=futureYears, costs=costs, 
                           coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
    if(detailed) {
-      showSummaryForStrategy("constantAlloc60_40", displayName="60% stock 40% bond", futureYears=futureYears, costs=costs, 
+      showSummaryForStrategy("constantAlloc80_20", displayName="80% stock 20% bond", futureYears=futureYears, costs=costs, 
                              coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
 
       print(dashes)
       ## Technical strategies
       {
          if(doStrat$Boll1) 
-            showSummaryForStrategy(typical$Boll1,      displayName="Bollinger 1", futureYears=futureYears, costs=costsTechnical, 
+            showSummaryForStrategy(typical$Boll1,      displayName="Bollinger 1 **", futureYears=futureYears, costs=costsTechnical, 
                                    coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
          if(doStrat$Boll2)      
-            showSummaryForStrategy(typical$Boll2,      displayName="Bollinger 2", futureYears=futureYears, costs=costsTechnical, 
+            showSummaryForStrategy(typical$Boll2,      displayName="Bollinger 2 **", futureYears=futureYears, costs=costsTechnical, 
                                    coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
          if(doStrat$SMA1)      
             showSummaryForStrategy(typical$SMA1,       displayName="SMA 1", futureYears=futureYears, costs=costsTechnical, 
@@ -829,7 +829,7 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost+def
             showSummaryForStrategy(typical$Boll_CAPE1, displayName="Boll(CAPE) 1", futureYears=futureYears, costs=costsTechnical, 
                                    coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
          if(doStrat$Boll_CAPE2)      
-            showSummaryForStrategy(typical$Boll_CAPE2, displayName="Boll(CAPE) 2", futureYears=futureYears, costs=costsTechnical, 
+            showSummaryForStrategy(typical$Boll_CAPE2, displayName="Boll(CAPE) 2 **", futureYears=futureYears, costs=costsTechnical, 
                                    coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
          if(doStrat$Boll_detrended1)      
             showSummaryForStrategy(typical$Boll_detrended1, displayName="Boll(detrended)", futureYears=futureYears, costs=costsTechnical, 
@@ -881,7 +881,7 @@ findStrategiesOnCriteria <- function(minTR=0, maxVol=Inf, maxDD2=Inf, minTO=0, m
                                      futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
                                      coeffTR=def$coeffTR, coeffMed=def$coeffMed, coeffFive=def$coeffFive,
                                      coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, 
-                                     nameLength=30, force=F) {
+                                     nameLength=36, force=F) {
    dashes <- displaySummaryHeader(futureYears=futureYears, nameLength=nameLength)
    for ( i in 1:dim(stats)[[1]] ) 
       showSummaryForStrategy(strategyName=stats$strategy[i], futureYears=def$futureYears, costs=costs, 

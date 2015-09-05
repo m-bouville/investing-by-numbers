@@ -82,7 +82,7 @@ setDefaultValues <- function(dataSplit, futureYears, removeDepression,
    setCombinedDefaultValues()
    
    typical$stratCols  <<- c(col1=def$colConstantAlloc, col2=def$colBonds, 
-                            col3=def$colValue, col4=def$colBalanced)
+                            col3=def$colConstantAlloc, col4=def$colBalanced)
    typical$stratColsSubstrategies  <<- c(col1=def$colTechnical, col2=def$colValue, 
                                          col3=def$colHybrid, col4=def$colBalanced)
 }
@@ -175,7 +175,7 @@ splitData <- function(dataSplit, removeDepression, lastMonthSP500Used=F, force) 
       dat <<- dat[1:numData, ] 
       def$plotEndYear <<- round( (numData-1)/12 + def$dataStartYear )
       
-      def$maxTR  <<-400
+      def$maxTR  <<-180
       def$yTRmin <<-  7.8
       def$yTRmax <<- 10.2
       def$minVol <<- 12.5
@@ -199,9 +199,9 @@ splitData <- function(dataSplit, removeDepression, lastMonthSP500Used=F, force) 
       def$dataStartYear  <<- (startIndex-1)/12 + def$dataStartYear 
       def$plotStartYear  <<- 1942
          
-      def$maxTR  <<-600
-      def$yTRmin <<-  5.5
-      def$yTRmax <<-  9.5
+      def$maxTR  <<-150
+      def$yTRmin <<-  6.
+      def$yTRmax <<-  8.
       def$minVol <<- 11
       def$maxVol <<- 15.5
       def$minDD2 <<-  2.5
@@ -394,12 +394,12 @@ makeStringsFactors <- function() {
 
 selectTypicalStrategiesToCreate <- function(){
    ## Technical strategies
-   doStrat$Boll1      <<- T
-   doStrat$Boll2      <<- T
+   doStrat$Boll1      <<- F  # testing score (costs=4%): 11.8
+   doStrat$Boll2      <<- F  # testing score (costs=4%): 12.2
    doStrat$SMA1       <<- T
    doStrat$SMA2       <<- T
    doStrat$reversal1  <<- T
-   doStrat$reversal2  <<- F    # testing score (costs=2%): 8.459
+   doStrat$reversal2  <<- F   # testing score (costs=2%): 8.5
    
    ## Value strategies
    doStrat$CAPE_hy1   <<- T
@@ -412,14 +412,14 @@ selectTypicalStrategiesToCreate <- function(){
    
    ## Hybrid strategies
    doStrat$Boll_CAPE1     <<- T
-   doStrat$Boll_CAPE2     <<- T
+   doStrat$Boll_CAPE2     <<- F  # testing score (costs=4%) < 10
    doStrat$Boll_detrended1<<- F  # anything detrended is quarantined
    doStrat$SMA_CAPE1      <<- T
    doStrat$SMA_CAPE2      <<- T
-   doStrat$reversal_CAPE1 <<- F  # testing score (costs=2%): 8.45
-   doStrat$reversal_CAPE2 <<- F  # testing score (costs=2%): 8.79
+   doStrat$reversal_CAPE1 <<- F  # testing score (costs=2%):  8.45
+   doStrat$reversal_CAPE2 <<- F  # testing score (costs=2%):  8.79
    doStrat$Boll_Boll1     <<- T
-   doStrat$Boll_Boll2     <<- T
+   doStrat$Boll_Boll2     <<- T  # testing score (costs=4%): 12.5
    doStrat$Boll_balanced1 <<- T
 }
 
@@ -626,7 +626,7 @@ createTypicalStrategies <- function(extrapolateDividends=T, costs=def$tradingCos
    # creating lists of typical strategies (for plotting)
    typical$strategies <<- c(typical$balanced, typical$technical, typical$value, "stocks")
    typical$stratNames <<- c(stratName1="stocks", stratName2="bonds", 
-                            stratName3=typical$value, stratName4=typical$balanced)
+                            stratName3="constantAlloc80_20", stratName4=typical$balanced)
    typical$stratNamesSubstrategies <<- c(stratName1=typical$technical, stratName2=typical$value, 
                                          stratName3=typical$hybrid, stratName4=typical$balanced)
    
