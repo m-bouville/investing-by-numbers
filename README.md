@@ -9,11 +9,11 @@ A key characteristic of any strategy is its time scale. A strategy that can tell
 
 Some indicators aim at telling that the market is in a trend (up or down). If one expects the market to keep trending up one buys, if one expects a downward trend one sells. Such trends can exist over minutes or years. Trading on the shorter time scales is a full-time activity.
 
-I use monthly data starting at then end of the 19th century (I deal with stocks as an asset class rather than with individual stocks), not daily or tick-by-tick data from the past few years. Two advantages of strategies trading less often are:
+I use monthly data starting at the end of the 19th century (I deal with stocks as an asset class rather than with individual stocks), not daily or tick-by-tick data from the past few years. Two advantages of strategies trading less often are:
 - they are less time consuming, i.e. not a full-time job, 
 - the trading costs are not as huge an issue.
 I test the strategies,
-- taking costs into account (the default value is high because it includes implicit losses like slippage plus a safety margin) and 
+- taking costs into account, with a high default value to account for implicit losses (like slippage) and still have a generous safety margin and 
 - splitting the data between searching for parameters and testing them.
 So I do not claim that a certain strategy should work in theory, I actually test it and show the results as plots: https://github.com/m-bouville/investing-by-numbers/tree/master/figures (so you can make up your own mind as to whether this is working or not).
 
@@ -28,7 +28,7 @@ I focus on time scales of years, which essentially means investing in stocks exc
 - there are no asset classes other than stocks and bonds,
 - the strategies use only data that are publically available.
 
-The strategy returns about as much as a constant allocation 80% in stocks, but with less volatility and smaller drawdowns.
+The overall strategy returns about as much as a constant allocation 80% in stocks, but with less volatility and smaller drawdowns.
 
 
 ### Diving into the details
@@ -43,12 +43,10 @@ The parameters are optimized using data from 1871 to 1942:
 - https://github.com/m-bouville/investing-by-numbers/blob/master/figures/1871_1942-return_and_allocation.png
 - https://github.com/m-bouville/investing-by-numbers/blob/master/figures/1871_1942-return_vs_four.png
 
-Then tested between 1942 and 2014:
+Then tested between 1942 and 2015:
 - https://github.com/m-bouville/investing-by-numbers/blob/master/figures/1942_2014-return_and_allocation.png
 - https://github.com/m-bouville/investing-by-numbers/blob/master/figures/1942_2014-return_vs_four.png
-
-- https://github.com/m-bouville/investing-by-numbers/blob/master/figures/return_strategy_with_gold.png shows results with gold
-- https://github.com/m-bouville/investing-by-numbers/blob/master/figures/sideways_markets.png shows 4 time periods when markets move sideways.
+- https://github.com/m-bouville/investing-by-numbers/blob/master/figures/sideways_markets.png shows 4 time periods when markets moved sideways.
 
 
 

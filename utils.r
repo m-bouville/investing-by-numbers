@@ -891,6 +891,137 @@ findStrategiesOnCriteria <- function(minTR=0, maxVol=Inf, maxDD2=Inf, minTO=0, m
                              nameLength=nameLength, force=force)     
 }
 
+
+
+calcBondAsAgeStrategy <- function(totalYears=def$futureYears, years=c(0, 30, Inf), allocations=c(0.75, 0.45, 0.45), 
+                                  strategyName="", force=F) {
+   if (! totalYears %in% c(5,10,15,20,30))
+      stop("totalYears must be one of 5, 10, 15, 20 or 30.")
+   months   <- 12*totalYears
+   exponent <-  1/totalYears
+   
+   if ( length(years) != length(allocations) )
+      stop("years and allocations must have the same length.")
+   for (j in 2:length(years) )
+      if (years[j-1] >= years[j]) 
+         stop("years must be given in strictly increasing order.")
+   for (j in 1:length(years) ) 
+      if (allocations[j] < 0 || allocations[j] > 1) 
+         stop("allocations must take values between 0 and 1.")
+   
+   allocation <- vector("numeric", length=months-1)
+   
+   for(i in 1:months)
+      for (j in 1:(length(years)-1) )
+         if ( (i >= years[j]*12+1) && (i < years[j+1]*12+1) )
+            allocation[i] <- allocations[j] + (allocations[j+1] - allocations[j]) * 
+      (i - (years[j]*12+1) ) / (years[j+1]*12 - years[j]*12)
+   
+   print(paste0("average allocation: ", round(mean(allocation)*100,1), "%"))
+   if(strategyName=="") {
+      strategyName <- paste0("bondAsAge_", round(mean(allocation)*100,1))
+      print(paste0("strategyName: ", strategyName, 
+                   " (average allocation: ", round(mean(allocation)*100,1), "%)"))
+   } else    print(paste0("average allocation: ", round(mean(allocation)*100,1), "%"))
+
+   for (startIndex in 1:(numData-months) ) {
+      value <- 1
+     
+      for( i in 0:(months-1) )
+         value <- value * ( allocation[i+1] * dat$monthlyDifference[startIndex+i+1] + dat$bondsMonthly[startIndex+i+1] ) 
+      # alloc * (stocks-bonds) + bonds = alloc * stocks + (1-alloc) * bonds
+      
+      if (totalYears == 5)
+         next5yrs[startIndex,  strategyName] <<- value ^ exponent - 1
+      else if (totalYears == 10)
+         next10yrs[startIndex, strategyName] <<- value ^ exponent - 1
+      else if (totalYears == 15)
+         next15yrs[startIndex, strategyName] <<- value ^ exponent - 1
+      else if (totalYears == 20)
+         next20yrs[startIndex, strategyName] <<- value ^ exponent - 1
+      else if (totalYears == 30)
+         next30yrs[startIndex, strategyName] <<- value ^ exponent - 1
+   }
+}
+
+
+allocFromRate <- function(rate, min=0, max=1, overAlloc=1) {
+   allocation <- (rate-.020)/.046*overAlloc
+   if (allocation < min) allocation <- min
+   else if (allocation > max) allocation <- max
+   return(allocation)
+}
+
+calcDynamicStrategy <- function(target, totalYears=def$futureYears, 
+                                spread=0.4, minAlloc=0, maxAlloc=1, speedup=2, overAlloc=1.05,
+                                strategyName="", force=F) {
+   if (! totalYears %in% c(5,10,15,20,30))
+      stop("totalYears must be one of 5, 10, 15, 20 or 30.")
+   months   <- 12*totalYears
+   exponent <-  1/totalYears
+   if (spread < 0)  stop("spread cannot be negative.")
+   if (spread == 0) warning("spread=0 means a constant allocation.", immediate.=T)
+   
+   rate <- round((target^exponent-1)*100,1)
+   allocation <- round(allocFromRate(rate/100, min=0, max=1)*100,0)
+      
+   if (rate>8)
+      warning("The target of ", target, " corresponds to a real return of ", rate, "% p.a. ", 
+              "You are insane.", immediate.=T)
+   else if (rate>6.6)
+      warning("The target of ", target, " corresponds to a real return of ", rate, "% p.a. (more than stocks). ", 
+              "You are quite optimistic.", immediate.=T)
+   else print(paste0("The target of ", target, " corresponds to a real return of ", rate, "% p.a., ", 
+                     "i.e. an allocation of ", allocation, "% stocks." ) )
+
+   min <- allocation/100 - spread; 
+   if (min < minAlloc) min <- minAlloc
+   max <- allocation/100 + spread
+   if (max > maxAlloc) max <- maxAlloc
+   
+   if(strategyName=="") {
+      strategyName <- paste0("active_", totalYears, "yr_", rate,"pc_", 
+                             round(speedup,1), "_", spread*100, "pc")
+      print(paste0("strategyName: ", strategyName, " (allocation between ", min*100, "% and ", max*100, "%)."))
+   }
+    
+   totalAlloc <- 0; numAlloc   <- 0; # to calculate the average allocation
+   success    <- 0; numAttempt <- 0; # to calculate the success rate
+   
+   for (startIndex in 1:(numData-months) ) {
+      value <- 1
+
+      for( i in 0:(months-1) ) {
+         rate <- (target/value)^(12/(months-i)*speedup)-1 # annual growth rate to meet target
+         allocation <- allocFromRate(rate, min, max, overAlloc)
+         totalAlloc <- totalAlloc + allocation
+         numAlloc   <- numAlloc + 1
+         
+#          value <- value * ( allocation * TR[startIndex+i+1, typical$balanced]/TR[ startIndex+i, typical$balanced] + 
+#                                (1-allocation) * TR$bonds[startIndex+i+1]/TR$bonds[startIndex+i] )
+         value <- value * ( allocation * dat$monthlyDifference[startIndex+i+1] + dat$bondsMonthly[startIndex+i+1] )
+      }
+      numAttempt <- numAttempt + 1
+      if (value >= target) success <- success + 1
+      
+      if (totalYears == 5)
+         next5yrs[startIndex,  strategyName] <<- value ^ exponent - 1
+      else if (totalYears == 10)
+         next10yrs[startIndex, strategyName] <<- value ^ exponent - 1
+      else if (totalYears == 15)
+         next15yrs[startIndex, strategyName] <<- value ^ exponent - 1
+      else if (totalYears == 20)
+         next20yrs[startIndex, strategyName] <<- value ^ exponent - 1
+      else if (totalYears == 30)
+         next30yrs[startIndex, strategyName] <<- value ^ exponent - 1
+   }
+   print(paste0("success rate: ", round((success/numAttempt)*100,1), "% reach the target of ", target))
+   print(paste0("average allocation: ", round((totalAlloc/numAlloc)*100,1), "%"))
+}
+
+
+
+
 # not to be used anymore
 calcTRnetOfTradingCost <- function(strategyName, tradingCost=def$tradingCost+def$riskAsCost, force=F) {
    warning("calcTRnetOfTradingCost() should not be used anymore.")

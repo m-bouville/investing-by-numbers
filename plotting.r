@@ -891,11 +891,13 @@ plotCumulativeFutureReturn <- function(
          stratName3=typical$stratNames[3], stratName4=typical$stratNames[4],
          col1=typical$stratCols[1], col2=typical$stratCols[2], 
          col3=typical$stratCols[3], col4=typical$stratCols[4],
-         xVect=TR$numericDate, 
-         lwd1=2.5, lwd2=1.5, lwd3=1.5, lwd4=2.5,
+         xVect=TR$numericDate, lwd1=2.5, lwd2=1.5, lwd3=1.5, lwd4=2.5,
          futureYears=def$futureYears, net=T, costs=def$tradingCost,
+         inverted=F, step=0.01, cropping=0,
          figureTitle="", pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
          pngName=paste0("figures/cumulative_return_over_next_", futureYears,"_years.png") ) {
+   if (! futureYears %in% c(5,10,15,20,30))
+      stop("futureYears must be one of 5, 10, 15, 20 or 30.")
    
    if(pngOutput) 
       png(file=pngName, width=pngWidth, height=pngHeight)
@@ -907,7 +909,6 @@ plotCumulativeFutureReturn <- function(
                        " years, net of costs of ", round(costs*100, 1), "%")   
    else # no notion of cost (e.g. for asset classes)
       yLabel <- paste0("annual return (%) over next ", futureYears, " years")
-   
    
    stratNames <- c(stratName1, stratName2, stratName3, stratName4)
    numCurves <- length(stratNames)
@@ -922,36 +923,52 @@ plotCumulativeFutureReturn <- function(
       returnDF <- 100 * next20yrs[, stratNames]
    else if (futureYears==30) 
       returnDF <- 100 * next30yrs[, stratNames]  
-   
+
    cp <- complete.cases(returnDF)
-   
+
    if(net & costs>0) # reduce TR because of costs
       for (strat in 1:numCurves) 
          if (stratNames[strat] != "") {
             index <- which(stats$strategy == stratNames[strat])
-            returnDF[cp, strat] <- returnDF[cp, strat] - 100*costs/stats$turnover[index]
+            if (length(index)>0)
+               returnDF[cp, strat] <- returnDF[cp, strat] - 100*costs/stats$turnover[index]
          }
    
-   minTR <- min(returnDF[cp, ])
-   maxTR <- max(returnDF[cp, ])
+   if (length(cropping)==1) cropping <- c(cropping, cropping) # if croppoing is a scalar, make it a vector
+   minTR <- min(returnDF[cp, ]) + cropping[1];   maxTR <- max(returnDF[cp, ]) - cropping[2]
    par(mar=c(4.2, 4.2, 1.5, 1.5))
    if (figureTitle != "") par( oma = c( 0, 0, 1.5, 0 ) )
+   quantiles <- seq(0, 1, step)
    
-   plot(quantile(returnDF[cp, 1], probs = seq(0, 1, 0.01)), type="l", col=col1, lwd=lwd1, ylim=c(minTR,maxTR),
-        main="", xlab="cumulative frequency (%)", ylab=yLabel)
-   if(stratName2!="")
-      lines(quantile(returnDF[cp, 2], probs = seq(0, 1, 0.01)), col=col2, lwd=lwd2 )
-   if(stratName3!="")
-      lines(quantile(returnDF[cp, 3], probs = seq(0, 1, 0.01)), col=col3, lwd=lwd3 )
-   if(stratName4!="")
-      lines(quantile(returnDF[cp, 4], probs = seq(0, 1, 0.01)), col=col4, lwd=lwd4 )
-   
-   legend( "topleft", stratNames, 
-           bty="n", lwd=c(lwd1, lwd2, lwd3, lwd4), lty=1, col=c(col1, col2, col3, col4) )
-   
+   if (!inverted) {
+      plot(quantile(returnDF[cp, 1], probs = quantiles), (1-quantiles)*100, type="l", col=col1, lwd=lwd1, 
+           xlim=c(minTR,maxTR), ylim=c(3.5, 96.5), main="", ylab="cumulative frequency (%)", xlab=yLabel)
+      if(stratName2!="")
+         lines(quantile(returnDF[cp, 2], probs = quantiles), (1-quantiles)*100, col=col2, lwd=lwd2 )
+      if(stratName3!="")
+         lines(quantile(returnDF[cp, 3], probs = quantiles), (1-quantiles)*100, col=col3, lwd=lwd3 )
+      if(stratName4!="")
+         lines(quantile(returnDF[cp, 4], probs = quantiles), (1-quantiles)*100, col=col4, lwd=lwd4 )
+      legend( "bottomleft", stratNames, 
+              bty="n", lwd=c(lwd1, lwd2, lwd3, lwd4), lty=1, col=c(col1, col2, col3, col4) )
+   } else {
+      plot(quantiles*100, quantile(returnDF[cp, 1], probs = quantiles), type="l", col=col1, lwd=lwd1, 
+           xlim=c(3.5, 96.5), ylim=c(minTR,maxTR), main="", xlab="cumulative frequency (%)", ylab=yLabel)
+      if(stratName2!="")
+         lines(quantiles*100, quantile(returnDF[cp, 2], probs = quantiles), col=col2, lwd=lwd2 )
+      if(stratName3!="")
+         lines(quantiles*100, quantile(returnDF[cp, 3], probs = quantiles), col=col3, lwd=lwd3 )
+      if(stratName4!="")
+         lines(quantiles*100, quantile(returnDF[cp, 4], probs = quantiles), col=col4, lwd=lwd4 )
+      legend( "topleft", stratNames, 
+              bty="n", lwd=c(lwd1, lwd2, lwd3, lwd4), lty=1, col=c(col1, col2, col3, col4) )
+   }
+
    if (figureTitle != "") title( figureTitle, outer = TRUE )
    par(oma = c( 0, 0, 0, 0 ))
    
+   
+   #print( quantile(returnDF[cp, 3], probs = quantiles) );
    if(pngOutput) {
       dev.off()
       print( paste0("png file (", pngWidth, " by ", pngHeight, ") written to: ", pngName) )

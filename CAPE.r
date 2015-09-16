@@ -516,13 +516,13 @@ searchForThreeOptimalCAPE <-function(plotType="symbols", force=F) {
    }
 
 
-plotFutureReturnVsCAPE <- function(CAPEname1=paste0("CAPE", def$CAPEyears),
-                                   CAPEname2=paste0("CAPE", def$CAPEyears, "avg", def$CAPEavgOver1),
+plotFutureReturnVsCAPE <- function(CAPEname1=paste0("CAPE", def$CAPEyears_hy2),
+                                   CAPEname2=paste0("CAPE", def$CAPEyears_hy2, "avg", def$CAPEavgOver_hy2),
                                    #CAPEname2=paste0("CAPE", def$CAPEyears, "avg", def$CAPEavgOver2),
                                    col1="blue", col2="red", showFit=T, complete=T,
                                    futureYears=def$futureYears, 
                                    minCAPE=1.5, maxCAPE=44, minTR="", maxTR="", 
-                                   figureTitle="", 
+                                   figureTitle="", logScale="", #logScale is either "" or "x"
                                    pngOutput=F, pngWidth=def$pngWidth, pngHeight=def$pngHeight, 
                                    pngName=paste0("figures/return_over_next_", 
                                                   futureYears, "_years_vs_CAPE.png") ) {
@@ -535,21 +535,24 @@ plotFutureReturnVsCAPE <- function(CAPEname1=paste0("CAPE", def$CAPEyears),
          
    if (futureYears==10) 
       returnVect <- 100 * next10yrs[, "stocks"]
+   else if (futureYears==15) 
+      returnVect <- 100 * next15yrs[, "stocks"]
    else if (futureYears==20) 
       returnVect <- 100 * next20yrs[, "stocks"]
    else if (futureYears==30) 
       returnVect <- 100 * next30yrs[, "stocks"]
+   else stop("futureYears = ", futureYears, " years is not available.")
    
    dateRange <- 1:numData
    if ( complete ) {
       ## adjust dateRange based on complete data
       i <- 1
-      while ( ( CAPEname1 != "" && is.na(dat[i, CAPEname2]) ) | 
+      while ( ( CAPEname1 != "" && is.na(dat[i, CAPEname1]) ) | 
               ( CAPEname2 != "" && is.na(dat[i, CAPEname2]) ) |
                 is.na(returnVect[i]) ) 
          i <- i+1
       j <- numData
-      while ( ( CAPEname1 != "" && is.na(dat[j, CAPEname2]) ) | 
+      while ( ( CAPEname1 != "" && is.na(dat[j, CAPEname1]) ) | 
               ( CAPEname2 != "" && is.na(dat[j, CAPEname2]) ) |
                 is.na(returnVect[j]) ) 
          j <- j-1
@@ -558,28 +561,42 @@ plotFutureReturnVsCAPE <- function(CAPEname1=paste0("CAPE", def$CAPEyears),
    
    par(mar=c(4.2, 4.2, 1.5, 1.5))
    if (figureTitle != "") par( oma = c( 0, 0, 1.5, 0 ) )
-   xRange <- c(minCAPE, maxCAPE)
+   if (logScale!="x") {
+      xRange <- c(minCAPE, maxCAPE)
+      xLabel<-"CAPE"
+   } else {
+      xRange <- c(5, 46)
+      xLabel<-"CAPE (log scale)"
+   }
    yRange <- c(minTR, maxTR)
    
    if( CAPEname1 != "" ) {   
       plot(dat[dateRange, CAPEname1], returnVect[dateRange], col=col1, 
-           xlim=xRange, ylim=yRange, xlab="CAPE", ylab=yLabel)
+           xlim=xRange, ylim=yRange, xlab=xLabel, ylab=yLabel, log=logScale)
       if (showFit) {
-         fit1 <- lm( returnVect[dateRange] ~ dat[dateRange, CAPEname1], na.action=na.omit)
+         if (logScale=="x")
+            fit1 <- lm( returnVect[dateRange] ~ log10(dat[dateRange, CAPEname1]), na.action=na.omit)
+         else fit1 <- lm( returnVect[dateRange] ~ dat[dateRange, CAPEname1], na.action=na.omit)
          abline(fit1, col=col1, lwd=2)
       }
       par(new=T)
    }
    if( CAPEname2 != "" ) {
       plot(dat[dateRange, CAPEname2], returnVect[dateRange], col=col2, 
-           xlim=xRange, ylim=yRange, xlab="", ylab="")
+           xlim=xRange, ylim=yRange, xlab="", ylab="", log=logScale)
       if (showFit) {
-         fit2 <- lm( returnVect[dateRange] ~ dat[dateRange, CAPEname2], na.action=na.omit)
+         if (logScale=="x")
+            fit2 <- lm( returnVect[dateRange] ~ log10(dat[dateRange, CAPEname2]), na.action=na.omit)
+         else fit2 <- lm( returnVect[dateRange] ~ dat[dateRange, CAPEname2], na.action=na.omit)
          abline(fit2, col=col2, lwd=2)
       }
    }
    
-   legend( "topright", c(CAPEname1, CAPEname2), bty="n", col=c(col1, col2), pch=1)
+   if( CAPEname1 != "" ) {
+      if( CAPEname2 != "" )
+         legend( "topright", c(CAPEname1, CAPEname2), bty="n", col=c(col1, col2), pch=1)
+      else legend( "topright", c(CAPEname1), bty="n", col=c(col1), pch=1)
+   } else legend( "topright", c(CAPEname2), bty="n", col=c(col2), pch=1)
    par(new=F)
 
    if (figureTitle != "") title( figureTitle, outer = TRUE )
