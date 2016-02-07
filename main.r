@@ -225,8 +225,8 @@ startTesting <- function(futureYears=10L, tradingCost=4/100, riskAsCost=0/100,
    if (!otherAssetClasses)
       plotAllReturnsVsFour()
 }
-## Using S&P500 data for October 2015, up to 5th October:
-# startTesting(lastMonthSP500=1955, downloadAndCheckAllFiles=T, otherAssetClasses=T)
+## Using S&P500 data for February 2016, up to 5th:
+# startTesting(lastMonthSP500=1900, downloadAndCheckAllFiles=T, otherAssetClasses=T)
    
 
 # plotAllReturnsVsFour()
