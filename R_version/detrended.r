@@ -20,21 +20,29 @@ setDetrendedDefaultValues <- function() {
    def$detrendedInputName   <<- "TR"
       
    
-   def$detrendedYears1      <<- 14L    # optimized with costs = 2%
+   def$detrendedYears1      <<- 15.5  # 14L   # optimized with costs = 2%
    def$detrendedCheat1      <<-  6L 
-   def$detrendedAvgOver1    <<- 69L 
-   def$detrendedBearish1    <<- 10
-   def$detrendedBullish1    <<- 10 
+   def$detrendedAvgOver1    <<- 66L   # 69L
+   def$detrendedBearish1    <<- 10.5  # 10
+   def$detrendedBullish1    <<- 10.5  # 10
    typical$detrended1    <<- paste0("detrended_", def$detrendedYears1, "_", def$detrendedAvgOver1, "_", 
                                        def$detrendedBearish1, "_", def$detrendedBullish1)
    
-   def$detrendedYears2      <<- 13L    # optimized with costs = 2%
+   def$detrendedYears2      <<- 13L    # optimized with costs = 4%
    def$detrendedCheat2      <<-  6L 
-   def$detrendedAvgOver2    <<- 30L 
-   def$detrendedBearish2    <<- -5
-   def$detrendedBullish2    <<- -5
+   def$detrendedAvgOver2    <<- 26L 
+   def$detrendedBearish2    <<- -5.5
+   def$detrendedBullish2    <<- -5.5
    typical$detrended2    <<- paste0("detrended_", def$detrendedYears2, "_", def$detrendedAvgOver2, "_", 
-                                       def$detrendedBearish2, "_", def$detrendedBullish2)
+                                    def$detrendedBearish2, "_", def$detrendedBullish2)
+   
+#    def$detrendedYears2      <<- 13L    # optimized with costs = 2%
+#    def$detrendedCheat2      <<-  6L 
+#    def$detrendedAvgOver2    <<- 30L 
+#    def$detrendedBearish2    <<- -5
+#    def$detrendedBullish2    <<- -5
+#    typical$detrended2    <<- paste0("detrended_", def$detrendedYears2, "_", def$detrendedAvgOver2, "_", 
+#                                        def$detrendedBearish2, "_", def$detrendedBullish2)
    
 #    ## detrended strategy with lower stock allocation (and vol and DD)
 #    def$detrendedAvgOver1    <<- 23L    # optimized with costs = 2%
@@ -231,12 +239,12 @@ searchForOptimalDetrended <- function(inputDF=def$detrendedInputDF, inputName=de
          minBear=  -16,  maxBear=    54,   byBear=    8,
          minDelta=   0,  maxDelta=    0,   byDelta=   1,
          futureYears=def$futureYears, costs=def$tradingCost+def$riskAsCost, 
-         minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=2, minScore=12, 
+         minTR=0, maxVol=def$maxVol, maxDD2=def$maxDD2, minTO=2, minScore=14, 
          coeffTR=def$coeffTR, coeffVol=def$coeffVol, coeffDD2=def$coeffDD2, col=F, 
          plotType="symbols", CPUnumber=def$CPUnumber, 
          xMinVol=16.5, xMaxVol=24.5, xMinDD2=3, xMaxDD2=11.5,
          referenceStrategies=c(typical$detrended1, typical$detrended2), 
-         nameLength=25, plotEvery=def$plotEvery, force=F) {
+         nameLength=27, plotEvery=def$plotEvery, force=F) {
  
    if (dataSplit != "training") 
       warning("Doing training in '", dataSplit, "' mode.", immediate.=T)

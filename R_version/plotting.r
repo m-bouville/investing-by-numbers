@@ -18,7 +18,7 @@ setPlottingDefaultColors <- function() {
    # Colors consistently used for the various strategies
    def$colCAPE_NH   <<- "cyan4"
    def$colCAPE_hy   <<- "cyan"
-   #def$colDetrended <<- "skyblue"         # anything detrended is quarantined
+   def$colDetrended <<- "skyblue"         # anything detrended is quarantined
    def$colSMA       <<- "pink"
    def$colBollinger <<- "magenta"   
    def$colReversal  <<- "orange"
@@ -133,7 +133,7 @@ setPlottingDefaultValues <- function() {
    def$maxDD2    <<-  10
    def$maxTO     <<- 130
    
-   def$plotEndYear <<- 2016
+   def$plotEndYear <<- 2018.5
    def$maxTR     <<- 20000
        
    setPlottingDefaultColors()

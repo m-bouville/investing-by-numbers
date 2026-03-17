@@ -42,7 +42,7 @@ loadDDlist <- function(otherAssetClasses=T, force=F) {
    }
 }
 
-## Calculate the drawdown (bigger price fall) for a certain startegy in a given date range
+## Calculate the drawdown (bigger price fall) for a certain strategy in a given date range
 drawdown <- function(strategyName, startYear, endYear) {
    requireColInTR(strategyName)
    startIndex <- (startYear-def$dataStartYear)*12+1
@@ -126,8 +126,8 @@ showWorstDrawdownsWithReference <- function(strategyName, refStrategyName, thres
 }
 
 plotDD <- function(DDindex, padding=0, minTR=.8, maxTR=1.5, newStartYear="", newEndYear="", 
-                   stratName1=def$typicalStrategies[[1]], stratName2=def$typicalStrategies[[2]], 
-                   stratName3=def$typicalStrategies[[3]], stratName4=def$typicalStrategies[[4]]) {
+                   stratName1=typical$strategies[[1]], stratName2=typical$strategies[[2]], 
+                   stratName3=typical$strategies[[3]], stratName4=typical$strategies[[4]]) {
    if (newStartYear == "") 
       newStartYear <- DD$startYear[DDindex]
    else if (newStartYear < 1000) # obviously not a year
@@ -149,6 +149,40 @@ plotDD <- function(DDindex, padding=0, minTR=.8, maxTR=1.5, newStartYear="", new
    sapply(c(stratName1, stratName2, stratName3, stratName4), 
           function(x) round(drawdown(x, newStartYear, newEndYear)*100,1) )
 }
+
+
+
+## Calculate the length of bear markets in a given date range
+calcLengthBear <- function(strategyName, startYear, endYear) {
+   requireColInTR(strategyName)
+   startIndex <- (startYear-def$dataStartYear)*12+1
+   endIndex <- min((endYear-def$dataStartYear)*12, numData+1) # numData+1 b/c then we do endIndex-1
+   
+   if ( is.na( TR[startIndex, strategyName] ) )
+      return(NA) # DD cannot be calculated
+   else {
+      lengthCrash <- 0
+      peakTR <- TR[startIndex, strategyName]
+      peakIndex <- startIndex
+      lengthBear  <- endYear - startYear
+      
+      i = startIndex+1;
+      while ( i <= (endIndex-1) && !is.na(TR[i, strategyName]) && (TR[i, strategyName] >= peakTR) ) {
+         print(c(i, TR[i, strategyName], peakTR));
+         peakTR <- TR[i, strategyName];
+         i=i+1;
+      }
+      peakIndex <- i
+      print(c(i, TR[i, strategyName], peakTR));
+
+      while ( i <= (endIndex-1) && !is.na(TR[i, strategyName]) && (TR[i, strategyName] <= peakTR) )
+         {i=i+1; print(c(i, TR[i, strategyName], peakTR));}
+      lengthCrash <- (i - peakIndex)/12.
+ 
+      return(lengthCrash)
+   }
+}
+
 
 # Displays the inflation during a certain drawdown event 
 #   (useful to tell how much of the real drawdown was due to inflation)

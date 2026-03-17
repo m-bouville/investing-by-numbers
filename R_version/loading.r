@@ -259,7 +259,7 @@ addConstAllocToDat <- function(smoothConstantAlloc, costs=def$tradingCost, force
 
 ## Loading data from xls file
 ## the xls file has *nominal* values, the "dat" data frame has *real* values
-loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=T, lastMonthSP500="") {  
+loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=F, lastMonthSP500="") {  
    if(!file.exists("./data/ie_data.xls")) # download file if not already locally available
       download.file("http://www.econ.yale.edu/~shiller/./data/ie_data.xls", "./data/ie_data.xls", mode = "wb")
    else if(downloadAndCheckAllFiles) # We force checking whether the local file is up to date
@@ -269,7 +269,7 @@ loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=T, lastMon
    wk <- loadWorkbook("./data/ie_data.xls") 
    rawDat <- readWorksheet(wk, sheet="Data", startRow=8)
    
-   numData <<- dim(rawDat)[1]-1 # number of rows (exclude row of comments)
+   numData <<- nrow(rawDat)-1 # number of rows (exclude row of comments)
    ShillerMessage1 <- paste0("According to Shiller's xls file, \'", rawDat$P[numData+1], "\'")
    ShillerMessage2 <- paste0("According to Shiller's xls file, \'", rawDat$CPI[numData+1], "\'")
 
@@ -309,9 +309,9 @@ loadData <- function(extrapolateDividends=T, downloadAndCheckAllFiles=T, lastMon
    dat <<- data.frame(date       = ISOdate( floor(rawDat$Date), round((rawDat$Date%%1)*100,0), 15 ), # monthly averages
                       numericDate= as.numeric(rawDat$Fraction),
                       CPI        = as.numeric(rawDat$CPI), # reference for inflation
-                      dividend   = as.numeric(rawDat$D), # loads nominal dividend (real ones to be calculated below)
+                      dividend   = as.numeric(rawDat$D), # loads nominal dividend  (real ones to be calculated below)
                       price      = as.numeric(rawDat$P), # loads nominal S&P price (real ones to be calculated below)
-                      earnings   = as.numeric(rawDat$E), # loads nominal earnings (real ones to be calculated below)
+                      earnings   = as.numeric(rawDat$E), # loads nominal earnings  (real ones to be calculated below)
                       TR         = numeric(numData),
                       bonds      = numeric(numData)
    )
@@ -394,8 +394,8 @@ makeStringsFactors <- function() {
 
 selectTypicalStrategiesToCreate <- function(){
    ## Technical strategies
-   doStrat$Boll1      <<- F  # testing score (costs=4%): 11.8
-   doStrat$Boll2      <<- F  # testing score (costs=4%): 12.2
+   doStrat$Boll1      <<- T  # testing score (costs=4%): 11.8
+   doStrat$Boll2      <<- T  # testing score (costs=4%): 11.9
    doStrat$SMA1       <<- T
    doStrat$SMA2       <<- T
    doStrat$reversal1  <<- T
@@ -407,7 +407,7 @@ selectTypicalStrategiesToCreate <- function(){
    doStrat$CAPE_hy3   <<- T
    doStrat$CAPE_NH1   <<- T
    doStrat$CAPE_NH2   <<- T
-   doStrat$detrended1 <<- F  # anything detrended is quarantined
+   doStrat$detrended1 <<- T  # anything detrended is quarantined
    doStrat$detrended2 <<- F  # anything detrended is quarantined
    
    ## Hybrid strategies

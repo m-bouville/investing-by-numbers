@@ -12,28 +12,25 @@
 ############################################
 
 setCombinedDefaultValues <- function() {
-   def$minScore           <<- 12.
+   def$minScore           <<- 11.5
    
-   def$technicalStrategies<<- c(typical$SMA1, typical$SMA2, typical$reversal1)
-   def$technicalScores    <<- c(14.2, 13.0, 15.5)  # 'testing', costs=4%
-#  def$technicalScores    <<- c(11.1, 11.2, 13.5, 11.5, 14.0)  # 'testing', costs=2%
+   def$technicalStrategies<<- c(typical$Boll1, typical$Boll2, typical$SMA1, typical$SMA2, typical$reversal1)
+   def$technicalScores    <<- c(11.8, 11.9, 13.8, 13.1, 15.4)  # 'testing', costs=4%
    def$minScoreTechnical  <<- def$minScore 
    
    def$valueStrategies    <<- c(typical$CAPE_hy1, typical$CAPE_hy2, typical$CAPE_hy3, 
-                                typical$CAPE_NH1, typical$CAPE_NH2)
-   def$valueScores        <<- c(16.4, 16.2, 15.8, 14.1, 14.3)  # 'testing', costs=4%
-#  def$valueScores        <<- c(12.5, 12.4, 11.9, 10.3, 10.6)  # 'testing', costs=2%
+                                typical$CAPE_NH1, typical$CAPE_NH2, typical$detrended1)
+   def$valueScores        <<- c(16.4, 16.2, 15.8, 14.1, 14.2, 11.6)  # 'testing', costs=4%
    def$minScoreValue      <<- def$minScore 
    
    def$hybridStrategies   <<- c(typical$Boll_CAPE1, typical$SMA_CAPE1, typical$SMA_CAPE2, 
                                 typical$Boll_Boll1, typical$Boll_Boll2) #, typical$Boll_balanced1)
-   def$hybridScores       <<- c(14.3, 14.2, 14.6, 15.4, 12.6)  # 'testing', costs=4%
-#  def$hybridScores       <<- c(15.0, 12.6, 13.0, 15.5, 12.6)  # 'testing', costs=2%
+   def$hybridScores       <<- c(13.9, 14.3, 14.4, 15.1, 12.2)  # 'testing', costs=4%
    def$minScoreHybrid     <<- def$minScore 
    
    def$balancedStrategies <<- c(typical$technical, typical$value, typical$hybrid, "stocks")
-   def$balancedScores     <<- c(15.2, 15.9, 15.9, 13.6)   # 'testing', costs=4%
-#  def$balancedScores     <<- c(13.7, 12.3, 15.3)   # 'testing', costs=2%
+   def$balancedScores     <<- c(15.2, 15.5-2, 15.7, 13.5)   # 'testing', costs=4%
+   ## CAPE has been less reliable recently because of the change in accounting mores
    def$minScoreBalanced   <<- def$minScore 
 }
 

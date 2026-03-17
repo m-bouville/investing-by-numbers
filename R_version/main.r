@@ -225,12 +225,13 @@ startTesting <- function(futureYears=10L, tradingCost=4/100, riskAsCost=0/100,
    if (!otherAssetClasses)
       plotAllReturnsVsFour()
 }
-## Using S&P500 data for February 2016, up to 5th:
-# startTesting(lastMonthSP500=1900, downloadAndCheckAllFiles=T, otherAssetClasses=T)
+## Using S&P500 data for March 2016, up to 29th:
+# startTesting(lastMonthSP500=2020, downloadAndCheckAllFiles=T, otherAssetClasses=T)
    
 
 # plotAllReturnsVsFour()
 # checkXlsFileIsUpToDate(force=T)
+# rm(list=ls()); source('~/finances/investing by numbers/main.r'); startTraining(force=T)
 
 
 ## Plotting to png files:

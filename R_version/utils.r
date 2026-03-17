@@ -777,10 +777,10 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost+def
       ## Technical strategies
       {
          if(doStrat$Boll1) 
-            showSummaryForStrategy(typical$Boll1,      displayName="Bollinger 1 **", futureYears=futureYears, costs=costsTechnical, 
+            showSummaryForStrategy(typical$Boll1,      displayName="Bollinger 1 *", futureYears=futureYears, costs=costsTechnical, 
                                    coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
          if(doStrat$Boll2)      
-            showSummaryForStrategy(typical$Boll2,      displayName="Bollinger 2 **", futureYears=futureYears, costs=costsTechnical, 
+            showSummaryForStrategy(typical$Boll2,      displayName="Bollinger 2 *", futureYears=futureYears, costs=costsTechnical, 
                                    coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
          if(doStrat$SMA1)      
             showSummaryForStrategy(typical$SMA1,       displayName="SMA 1", futureYears=futureYears, costs=costsTechnical, 
@@ -792,7 +792,7 @@ showSummaries <- function(futureYears=def$futureYears, costs=def$tradingCost+def
             showSummaryForStrategy(typical$reversal1,  displayName="reversal 1", futureYears=futureYears, costs=costsTechnical, 
                                    coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
          if(doStrat$reversal2)      
-            showSummaryForStrategy(typical$reversal2,  displayName="reversal 2 **", futureYears=futureYears, costs=costsTechnical, 
+            showSummaryForStrategy(typical$reversal2,  displayName="reversal 2 *", futureYears=futureYears, costs=costsTechnical, 
                                    coeffTR=coeffTR, coeffVol=coeffVol, coeffDD2=coeffDD2, force=force)
       }
       print(dashes) 
